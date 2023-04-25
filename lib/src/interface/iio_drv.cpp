@@ -3,26 +3,16 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <iio.h>
+#include "iio_drv.h"
 
 IIO_Driver::IIO_Driver(const std::string &name)
 {
-	ctx = iio_create_scan_context(NULL, 0);
-	if (!ctx) {
-		//error handling
-	}
-
-	dev = iio_context_find_device(ctx, name);
-	if (!dev) {
-		//error handling
-	}
+	// init ctx and dev
 }
 
 
 IIO_Driver::~IIO_Driver()
 {
-	delete ctx;
-	delete dev;
 }
 
 int IIO_Driver::readChannel(const std::string channelName)
@@ -31,7 +21,7 @@ int IIO_Driver::readChannel(const std::string channelName)
 	return 0;
 }
 
-void IIO_Driver::writeChannel(const std::string channelName)
+void IIO_Driver::writeChannel(const std::string channelName, int val)
 {
 	/* find & write channel */
 }
