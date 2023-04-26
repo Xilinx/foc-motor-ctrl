@@ -3,10 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "../interface/iio_drv.h"
 #include "qei.h"
 
-const string QeiSensor::kQeiDriveName = "hls-qei-axi";
+const std::string QeiSensor::kQeiDriverName = "hls-qei-axi";
 
 QeiSensor::QeiSensor(/* init config data*/)
 {
@@ -21,12 +20,12 @@ QeiSensor::~QeiSensor()
 int QeiSensor::getSpeed()
 {
 	// read and return the speed from iio handle channel
-	return 0;
+	return 1000;
 }
 
 int QeiSensor::getPosition()
 {
 	// read and return the theta from iio handle channel
-	return 0;
+	return 90;
 }
 

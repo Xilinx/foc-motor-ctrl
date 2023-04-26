@@ -3,10 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "../interface/iio_drv.h"
 #include "smo.h"
 
-const string SmoSensor::kSmoDriveName = "hls-smo-axi";
+const std::string SmoSensor::kSmoDriverName = "hls-smo-axi";
 
 SmoSensor::SmoSensor(/* init config data*/)
 {

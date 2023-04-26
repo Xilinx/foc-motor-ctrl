@@ -5,10 +5,10 @@
 
 //#include "logging.hpp"
 #include "motor-control/motor-control.hpp"
+#include "sensors/sensor.h"
 /* TODO: implement
 #include "adchub.hpp"
 #include "foc.hpp"
-#include "sensors/sensor.hpp"
 #include "pwm.hpp"
 #include "mc_driver.hpp"
 */
@@ -37,15 +37,15 @@ public:
 		{
 			parseConfig();
 			// init all the driving classes
+			mpSensor=Sensor::getSensorInstance();
 		}
 
 	int getSpeed() override {
-
-		return 0;
+		return mpSensor->getSpeed();
 	}
 
 	int getPosition() override {
-		return 0;
+		return mpSensor->getPosition();
 	}
 
 	int getTorque() override {
@@ -65,7 +65,7 @@ public:
 	}
 
 	FocData getFocCalc() override {
-		FocData data = {0};
+		FocData data = {0,0,0,0,0,0,0,0};
 		return data;
 	}
 
@@ -104,15 +104,16 @@ public:
 
 	~MotorControlImpl() {
 		mSessionId =-1;
+		delete mpSensor;
 	}
 
 private:
 	int mSessionId;
 	string mConfigPath;
 	InitCofig mConfig;
+	Sensor *mpSensor;
 
 	/* TODO: implement
-	Sensor *mpSensor;
 	FOCImpl *mpFoc;		// implement ramp_rate
 	ADCHub *mpAdcHub;
 	PWMImpl *mpPwm;
@@ -134,8 +135,9 @@ MotorControl *MotorControl::mspInstance = nullptr;
 MotorControl::~MotorControl()
 {
 	if (mspInstance) { /* sanity check, though not needed */
-		delete mspInstance;
 		mspInstance = nullptr;
+		// Note: Do not need to delete mspInstance, as delete of this
+		// ptr implies deletion of the derived class instance
 	}
 }
 

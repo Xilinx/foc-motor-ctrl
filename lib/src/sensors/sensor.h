@@ -3,24 +3,17 @@
  * SPDX-License-Identifier: MIT
  */
 
-
-#include "qei.h"
-#include "smo.h"
+#ifndef _SENSOR_HPP_
+#define _SENSOR_HPP_
 
 class Sensor {
 public:
+	virtual ~Sensor();
 	virtual int getSpeed() = 0;
 	virtual int getPosition() = 0;
-	static Sensor *getSensorInstance() {
-		(!isQeiPresent()) {
-			return new SmoSensor(/* constructor parameters for FOC sensor */);
-		}
-		return new QeiSensor(/* constructor parameters for QEI sensor */);
-	}
-
+	static Sensor *getSensorInstance();
 private:
-	static bool isQeiPresent() {
-		// TODO: find if the Qei is present
-		return true;
-	}
+	static bool isQeiPresent();
 };
+
+#endif /*_SENSOR_HPP_*/

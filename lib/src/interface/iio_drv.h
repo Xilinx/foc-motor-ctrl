@@ -18,7 +18,7 @@ public:
 private:
 	struct iio_context *ctx;
 	struct iio_device *dev;
-}
+};
 
 
 #endif //_IIO_DRV_H_
