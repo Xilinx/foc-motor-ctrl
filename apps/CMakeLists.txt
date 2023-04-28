@@ -54,14 +54,8 @@ endif()
 if(BUILD_DASHBOARD_APP)
 	set(APP bokeh_dashboard)
 
-	# Source files for the python app
-	set(SOURCES
-		mc_bokeh.py
-	)
-
-	# Nothing to build
-
-	install(FILES ${SOURCES}
+	install(PROGRAMS mc_bokeh.py
 		DESTINATION ${CMAKE_INSTALL_BINDIR}
+		RENAME ${APP}
 	)
 endif()

@@ -18,6 +18,7 @@ install(TARGETS cpp_libtest
 
 ##### py_libtest #####
 
-install(FILES py_libtest.py
+install(PROGRAMS py_libtest.py
 	DESTINATION ${CMAKE_INSTALL_BINDIR}
+	RENAME py_libtest
 )
