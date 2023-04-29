@@ -1,19 +1,61 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(test_cxx)
-
-# Add cmake module path
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
-
-# Find the motor_control library
-find_package(motor_control REQUIRED)
-
-# Add the include directories for the motor_control library
-include_directories(${MOTOR_CONTROL_INCLUDE_DIRS})
-
+if(BUILD_CANOPEN_APP)
+	#Source file s
+endif()
 # Add application source files
-add_executable(${PROJECT_NAME} cmdline.cpp)
+#add_executable(fmc_cmdline cmdline.cpp)
 
 # Link application with the motor_control library
-target_link_libraries(${PROJECT_NAME} ${MOTOR_CONTROL_LIBRARIES})
+#target_link_libraries(fmc_cmdline ${FOC_MOTOR_CTRL_LIBRARIES})
 
+if(BUILD_CANOPEN_APP)
+	set(APP fmc_canopen)
+
+	# Source files for the canopen app
+	set(SOURCES
+		canopen.cpp
+	)
+
+	# Create the canopen executable
+	add_executable(${APP} ${SOURCES})
+
+	target_compile_features(${APP} PUBLIC cxx_std_11)
+
+	# Link libraries for the canopen executable
+	target_link_libraries(${APP} PRIVATE ${FMC_LIB_NAME})
+
+	install(TARGETS ${APP}
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	)
+endif()
+
+if(BUILD_CMDLINE_APP)
+	set(APP fmc_cmdline)
+
+	# Source files for the cmdline app
+	set(SOURCES
+		cmdline.cpp
+	)
+
+	# Create the canopen executable
+	add_executable(${APP} ${SOURCES})
+
+	target_compile_features(${APP} PUBLIC cxx_std_11)
+
+	# Link libraries for the canopen executable
+	target_link_libraries(${APP} PRIVATE ${FMC_LIB_NAME})
+
+	install(TARGETS ${APP}
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	)
+endif()
+
+if(BUILD_DASHBOARD_APP)
+	set(APP bokeh_dashboard)
+
+	install(PROGRAMS mc_bokeh.py
+		DESTINATION ${CMAKE_INSTALL_BINDIR}
+		RENAME ${APP}
+	)
+endif()
