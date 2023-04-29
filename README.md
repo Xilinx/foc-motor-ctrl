@@ -12,34 +12,54 @@ This library provides both C++ interface as well as Python interface.
 ```bash
 sudo apt install python3-dev python3-pybind11 libiio-dev
 ```
+
 2. Clone the repo into workspace
 ```bash
 git clone https://github.com/Xilinx/foc-motor-ctrl.git
 cd foc-motor-ctrl
 ```
-3. Build and install the library
+
+3. Configure Build
 ```bash
 mkdir -p build
 cd build/
-cmake ..
+cmake -DBUILD_TEST=ON ..
+```
+**Project specific configuration options**
+Options                | Possible Values | Default    | Description
+-----------------------|-----------------|------------|-------------
+BUILD_TEST             | ON, OFF         | OFF        | Choose to build & install test applications for the library.
+BUILD_DASHBOARD_APP    | ON, OFF         | OFF        | Choose to build & install dashboard applications.
+BUILD_CMDLINE_APP      | ON, OFF         | OFF        | Choose to build & install command line applications.
+BUILD_CANOPEN_APP      | ON, OFF         | OFF        | Choose to build & install canopen  applications.
+
+**Other useful cmake configurations**
+Options                | Possible Values | Default    | Description
+-----------------------|-----------------|------------|-------------
+CMAKE_INSTALL_PREFIX   | install location|`/usr/local`| Provide custom install location.
+
+> Provide the build options to cmake with -D\<option\>=\<val\>. For example `cmake -DCMAKE_INSTALL_PREFIX=~/install -DBUILD_TEST=ON -DBUILD_DASHBOARD_APP=ON ..`
+
+4. Build the libraries, applications and tests.
+```
 make
+```
+
+5. Install the libraries, applications and tests
+```
 sudo make install
 ```
 
-> This will install the application in default installation prefix `/usr/local/`. To change the installation location add the location prefix to the cmake command above as `cmake -DCMAKE_INSTALL_PREFIX=<installation/location> ..`
+> Build and Install will be based on the build configuation above. `sudo` is not required for unprevilleged paths.
 
-4. Export the library path
+## Run test application
+
+#### Export the library path
 ```bash
 export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
 export PYTHONPATH=/usr/local/lib:${PYTHONPATH}
 ```
 
-##Run test application
-
-There are two test application, c++ application and python application for testing this library.
-During buildi, if `-DBUILD_TEST=ON` is provided cmake, the cpp_libtest application is build in `<repo>/build/test`
-
-```
 #### Run the C++ test application
 ```
 cpp_libtest
@@ -47,10 +67,11 @@ cpp_libtest
 
 #### Run the python test application
 ```
-python3 /usr/local/bin/py_libtest.py
+py_libtest
 ```
 
 ## License
 
 Copyright (C) 2023, Advanced Micro Devices, Inc.\
 SPDX-License-Identifier: MIT
+
