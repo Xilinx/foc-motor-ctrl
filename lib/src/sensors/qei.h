@@ -10,11 +10,14 @@
 #include "sensor.h"
 #include "../interface/iio_drv.h"
 
-class QeiSensor : public Sensor {
+class QeiSensor : public Sensor
+{
 public:
 	QeiSensor(/* constructor parameters */);
-	virtual int getSpeed() override;
-	virtual int getPosition() override;
+	int getSpeed() override;
+	int getPosition() override;
+	int getDeviceattribute(const std::string &attrName);
+	int setDeviceattribute(const std::string &attrName, const std::string &value);
 	~QeiSensor();
 
 private:
