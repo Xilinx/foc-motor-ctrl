@@ -42,7 +42,7 @@ PYBIND11_MODULE(PY_MODULE_NAME, m) {
         .def_readwrite("flux", &FocData::flux);
 
     py::enum_<GainType>(m, "GainType")
-        .value("kCurrent", GainType::kCurrent)
+        .value("kCurrent", GainType::kTorque)
         .value("kSpeed", GainType::kSpeed)
         .value("kFlux", GainType::kFlux)
         .value("kGainTypeMax", GainType::kGainTypeMax);

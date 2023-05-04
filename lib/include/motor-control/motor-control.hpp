@@ -21,21 +21,24 @@
 
 /* FOC control data */
 
-struct FocData {
-	int i_alpha;
-	int i_beta;
-	int i_d;
-	int i_q;
-	int i_homopolar;
-	int torque;
-	int speed;
-	int flux;
+struct FocData
+{
+	double i_d;
+	double i_q;
+	double i_alpha;
+	double i_beta;
+	double i_homopolar;
+	double speed;
+	double torque;
+	double flux;
 };
 
-enum class GainType {
-	kCurrent = 0,
+enum class GainType
+{
+	kTorque = 0,
 	kSpeed,
 	kFlux,
+	kFieldweakening,
 	kGainTypeMax
 };
 
