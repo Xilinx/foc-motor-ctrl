@@ -37,14 +37,14 @@ IIO_Driver::~IIO_Driver()
 	}
 }
 
-int IIO_Driver::readChannel(const unsigned int index, const std::string &attrName)
+double IIO_Driver::readChannel(const unsigned int index, const std::string &attrName)
 {
 	char buf[32];
 	char *endptr;
-	int value;
+	double value;
 
 	iio_channel_attr_read(channels[index], attrName.c_str(), buf, sizeof(buf));
-	value = strtol(buf, &endptr, BASE);
+	value = strtod(buf, &endptr);
 	if (endptr == buf)
 	{
 		std::cerr << "No data obtained from attribute " << attrName << std::endl;
@@ -63,13 +63,13 @@ int IIO_Driver::writeChannel(const unsigned int index, const std::string &attrNa
 	return ret;
 }
 
-int IIO_Driver::readDeviceattr(const std::string &attrName)
+double IIO_Driver::readDeviceattr(const std::string &attrName)
 {
 	char buf[32];
 	char *endptr;
-	int value;
+	double value;
 	iio_device_attr_read(dev, attrName.c_str(), buf, sizeof(buf));
-	value = strtol(buf, &endptr, BASE);
+	value = strtod(buf, &endptr);
 	if (endptr == buf)
 	{
 		std::cerr << "No data obtained from attribute " << attrName << std::endl;

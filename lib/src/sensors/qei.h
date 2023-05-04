@@ -16,8 +16,7 @@ public:
 	QeiSensor(/* constructor parameters */);
 	int getSpeed() override;
 	int getPosition() override;
-	int getDeviceattribute(const std::string &attrName);
-	int setDeviceattribute(const std::string &attrName, const std::string &value);
+	int startQei();
 	~QeiSensor();
 
 private:

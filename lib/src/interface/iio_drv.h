@@ -15,9 +15,9 @@ class IIO_Driver
 public:
 	IIO_Driver(const std::string &deviceName);
 	~IIO_Driver();
-	int readChannel(const unsigned int index, const std::string &attrName);
+	double readChannel(const unsigned int index, const std::string &attrName);
 	int writeChannel(const unsigned int index, const std::string &attrName, const std::string &value);
-	int readDeviceattr(const std::string &attrName);
+	double readDeviceattr(const std::string &attrName);
 	int writeDeviceattr(const std::string &attrName, const std::string &value);
 
 private:
