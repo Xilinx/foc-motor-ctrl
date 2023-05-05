@@ -5,7 +5,12 @@
 
 #include "qei.h"
 
-const std::string QeiSensor::kQeiDriverName = "hls-qei-axi";
+const std::string QeiSensor::kQeiDriverName = "hls_qei_axi";
+enum Qeichannel
+{
+	RPM = 0,
+	THETA,
+};
 
 QeiSensor::QeiSensor(/* init config data*/)
 {
@@ -19,13 +24,15 @@ QeiSensor::~QeiSensor()
 
 int QeiSensor::getSpeed()
 {
-	// read and return the speed from iio handle channel
-	return 1000;
+	return mQei_IIO_Handle->readChannel(RPM, "raw");
 }
 
 int QeiSensor::getPosition()
 {
-	// read and return the theta from iio handle channel
-	return 90;
+	return mQei_IIO_Handle->readChannel(THETA, "raw");
 }
 
+int QeiSensor::startQei()
+{
+	return mQei_IIO_Handle->writeDeviceattr("ap_ctrl", "1");
+}
