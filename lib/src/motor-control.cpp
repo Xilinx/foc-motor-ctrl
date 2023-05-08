@@ -48,11 +48,13 @@ public:
 	int getVoltage(ElectricalData type) override;
 	bool getFaultStatus(FaultType type) override;
 	FocData getFocCalc() override;
+	MotorOpMode getOperationMode() override;
 
 	void SetSpeed(int speed) override;
 	void SetTorque(int torque) override;
 	void SetPosition(int position) override;
 	void SetGain(GainType gainController, int k_p, int k_i) override;
+	void setOperationMode(MotorOpMode mode) override;
 
 	void clearFaults() override;
 	void clearFaults(FaultCategory category) override;
@@ -67,6 +69,7 @@ private:
 	int mSessionId;
 	string mConfigPath;
 	InitCofig mConfig;
+	MotorOpMode mCurrentMode;
 
 	/*
 	 * Class handlers
@@ -79,6 +82,7 @@ private:
 	*/
 
 	void parseConfig();
+	void transitionMode(MotorOpMode target);
 };
 
 // Initialize the static member variable of the MotorControl class
@@ -118,6 +122,9 @@ MotorControlImpl::MotorControlImpl(int sessionId, string configPath):
 	parseConfig();
 	// init all the driving classes
 	mpSensor=Sensor::getSensorInstance();
+
+	// TODO: Perform init sequence and set the current Mode
+	mCurrentMode = MotorOpMode::kModeOff;
 }
 
 MotorControlImpl::~MotorControlImpl()
@@ -204,4 +211,23 @@ void MotorControlImpl::parseConfig()
 {
 	// parse the config using mConfigPath
 	// and fillup mCofig structure
+}
+
+MotorOpMode MotorControlImpl::getOperationMode()
+{
+	return mCurrentMode;
+}
+
+void MotorControlImpl::setOperationMode(MotorOpMode mode)
+{
+	if(mode != mCurrentMode)
+	{
+		transitionMode(mode);
+	}
+}
+
+void MotorControlImpl::transitionMode(MotorOpMode target)
+{
+	// TODO: Transition to target mode
+	mCurrentMode = target;
 }

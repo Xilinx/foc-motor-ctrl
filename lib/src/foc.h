@@ -15,14 +15,10 @@ struct GainData
 	double ki;
 };
 
-enum class MotorOpMode  {
-	Stop = 0,
-	Speed,
-	Torque,
-	Flux,
-	Openloop
-};
-
+/*
+ * TODO: May be useful to have dedicated OpMode for
+ * FOC
+ */
 class Foc
 {
 public:

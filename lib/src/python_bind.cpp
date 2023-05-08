@@ -22,10 +22,12 @@ PYBIND11_MODULE(PY_MODULE_NAME, m) {
         .def("getVoltage", &MotorControl::getVoltage)
         .def("getFaultStatus", &MotorControl::getFaultStatus)
         .def("getFocCalc", &MotorControl::getFocCalc)
+        .def("getOperationMode", &MotorControl::getOperationMode)
         .def("setSpeed", &MotorControl::SetSpeed)
         .def("setTorque", &MotorControl::SetTorque)
         .def("setPosition", &MotorControl::SetPosition)
         .def("setGain", py::overload_cast<GainType, int, int>(&MotorControl::SetGain))
+        .def("setOperationMode", &MotorControl::setOperationMode)
         .def("clearFaults", py::overload_cast<>(&MotorControl::clearFaults))
         .def("clearFaults", py::overload_cast<FaultCategory>(&MotorControl::clearFaults));
 
@@ -39,6 +41,15 @@ PYBIND11_MODULE(PY_MODULE_NAME, m) {
         .def_readwrite("torque", &FocData::torque)
         .def_readwrite("speed", &FocData::speed)
         .def_readwrite("flux", &FocData::flux);
+
+    py::enum_<MotorOpMode>(m, "MotorOpMode")
+        .value("kModeOff", MotorOpMode::kModeOff)
+        .value("kModeSpeed", MotorOpMode::kModeSpeed)
+        .value("kModeTorque", MotorOpMode::kModeTorque)
+        .value("kModeSpeedFW", MotorOpMode::kModeSpeedFW)
+        .value("kModeOpenLoop", MotorOpMode::kModeOpenLoop)
+        .value("kModePosControl", MotorOpMode::kModePosControl)
+        .value("kModeMax", MotorOpMode::kModeMax);
 
     py::enum_<GainType>(m, "GainType")
         .value("kCurrent", GainType::kTorque)

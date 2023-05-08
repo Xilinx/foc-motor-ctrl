@@ -13,11 +13,23 @@
  *   - Check if absolute type is needed (like uint32_t ).
  *   - Check if FocData structure has everything needed (missing i_c?)
  *   - Need to check if it would be good to return error values for set APIs
+ *   - Error handling in seperate class and include Here.
+ *   - All the set API should return appropriate error codes.
  */
 
 #include <string>
 
 #define DEFAULT_CONFIG_PATH	"/etc/motor-control/config"
+
+enum class MotorOpMode {
+	kModeOff = 0,
+	kModeSpeed,
+	kModeTorque,
+	kModeSpeedFW,
+	kModeOpenLoop,
+	kModePosControl,
+	kModeMax
+};
 
 /* FOC control data */
 
@@ -84,11 +96,13 @@ public:
 	virtual int getVoltage(ElectricalData type) = 0;
 	virtual bool getFaultStatus(FaultType type) = 0;
 	virtual FocData getFocCalc() = 0;
+	virtual MotorOpMode getOperationMode() = 0;
 
 	virtual void SetSpeed(int speed) = 0;
 	virtual void SetTorque(int torque) = 0;
 	virtual void SetPosition(int position) = 0;
 	virtual void SetGain(GainType gainController, int k_p, int k_i) = 0;
+	virtual void setOperationMode(MotorOpMode mode) = 0;
 
 	virtual void clearFaults() = 0;
 	virtual void clearFaults(FaultCategory category) = 0;
