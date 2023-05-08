@@ -26,7 +26,6 @@ PYBIND11_MODULE(PY_MODULE_NAME, m) {
         .def("setTorque", &MotorControl::SetTorque)
         .def("setPosition", &MotorControl::SetPosition)
         .def("setGain", py::overload_cast<GainType, int, int>(&MotorControl::SetGain))
-        .def("setGain", py::overload_cast<GainType, int, int, int>(&MotorControl::SetGain))
         .def("clearFaults", py::overload_cast<>(&MotorControl::clearFaults))
         .def("clearFaults", py::overload_cast<FaultCategory>(&MotorControl::clearFaults));
 

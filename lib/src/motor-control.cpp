@@ -6,9 +6,9 @@
 //#include "logging.hpp"
 #include "motor-control/motor-control.hpp"
 #include "sensors/sensor.h"
-#include "foc.h"
-/* TODO: implement
+/* TODO: implement following
 #include "adchub.hpp"
+#include "foc.hpp"
 #include "pwm.hpp"
 #include "mc_driver.hpp"
 */
@@ -24,6 +24,9 @@
 
 using namespace std;
 
+/*
+ * TODO: config struct should be part of the implemenation class
+ */
 struct InitCofig {
 	int foc_RampRate;
 };
@@ -31,101 +34,51 @@ struct InitCofig {
 class MotorControlImpl : public MotorControl {
 public:
 
-	MotorControlImpl(int sessionId = 0, string configPath = DEFAULT_CONFIG_PATH):
-		mSessionId(sessionId),
-		mConfigPath(configPath)
-		{
-			parseConfig();
-			// init all the driving classes
-			mpSensor=Sensor::getSensorInstance();
-		}
+	MotorControlImpl(int sessionId = 0, string configPath = DEFAULT_CONFIG_PATH);
+	~MotorControlImpl();
 
-	int getSpeed() override {
-		return mpSensor->getSpeed();
-	}
+	/*
+	 * Override the MotorControl APIs for the
+	 * actual implementations.
+	 */
+	int getSpeed() override;
+	int getPosition() override;
+	int getTorque() override;
+	int getCurrent(ElectricalData type) override;
+	int getVoltage(ElectricalData type) override;
+	bool getFaultStatus(FaultType type) override;
+	FocData getFocCalc() override;
 
-	int getPosition() override {
-		return mpSensor->getPosition();
-	}
+	void SetSpeed(int speed) override;
+	void SetTorque(int torque) override;
+	void SetPosition(int position) override;
+	void SetGain(GainType gainController, int k_p, int k_i) override;
 
-	int getTorque() override {
-		return 0;
-	}
+	void clearFaults() override;
+	void clearFaults(FaultCategory category) override;
 
-	int getCurrent(ElectricalData type) override {
-		return 0;
-	}
+	/*
+	 * Implementation specific members
+	 */
 
-	int getVoltage(ElectricalData type) override {
-		return 0;
-	}
-
-	bool getFaultStatus(FaultType type) override {
-		return false;
-	}
-
-	FocData getFocCalc() override {
-		FocData data = {0,0,0,0,0,0,0,0};
-		return data;
-	}
-
-	void SetSpeed(int speed) override {
-
-	}
-
-	void SetTorque(int torque) override {
-
-	}
-
-	void SetPosition(int position) override {
-
-	}
-
-	void SetGain(GainType gainController, int k_p, int k_i) override {
-
-	}
-
-	void SetGain(GainType gainController, int k_p, int k_i, int k_d) override {
-
-	}
-
-	void clearFaults() override {
-
-	}
-
-	void clearFaults(FaultCategory category) override {
-
-	}
-
-	int getSessionId () {
-		return mSessionId;
-	}
-
-	~MotorControlImpl() {
-		mSessionId =-1;
-		delete mpSensor;
-	}
+	int getSessionId ();
 
 private:
 	int mSessionId;
 	string mConfigPath;
 	InitCofig mConfig;
-	Sensor *mpSensor;
 
-	/* TODO: implement
-	FOCImpl *mpFoc;		// implement ramp_rate
+	/*
+	 * Class handlers
+	 */
+	Sensor *mpSensor;
+	/* TODO:
+	FOCImpl *mpFoc;
 	ADCHub *mpAdcHub;
 	PWMImpl *mpPwm;
 	*/
 
-	/*
-	 * Member functions
-	 */
-	void parseConfig() {
-		// parse the config using mConfigPath
-		// and fillup mCofig structure
-	}
-
+	void parseConfig();
 };
 
 // Initialize the static member variable of the MotorControl class
@@ -159,3 +112,96 @@ MotorControl *MotorControl::getMotorControlInstance(int sessionId,
 	return ptr;
 }
 
+MotorControlImpl::MotorControlImpl(int sessionId, string configPath):
+	mSessionId(sessionId), mConfigPath(configPath)
+{
+	parseConfig();
+	// init all the driving classes
+	mpSensor=Sensor::getSensorInstance();
+}
+
+MotorControlImpl::~MotorControlImpl()
+{
+	mSessionId =-1;
+	delete mpSensor;
+}
+
+int MotorControlImpl::getSpeed()
+{
+	return mpSensor->getSpeed();
+}
+
+int MotorControlImpl::getPosition()
+{
+	return mpSensor->getPosition();
+}
+
+int MotorControlImpl::getTorque()
+{
+	/*
+	 * To Implement only after Torque sensor is available.
+	 */
+	return 0;
+}
+
+int MotorControlImpl::getCurrent(ElectricalData type)
+{
+	return 0;
+}
+
+int MotorControlImpl::getVoltage(ElectricalData type)
+{
+	return 0;
+}
+
+bool MotorControlImpl::getFaultStatus(FaultType type)
+{
+	return false;
+}
+
+FocData MotorControlImpl::getFocCalc()
+{
+	FocData data = {0,0,0,0,0,0,0,0};
+	return data;
+}
+
+void MotorControlImpl::SetSpeed(int speed)
+{
+
+}
+
+void MotorControlImpl::SetTorque(int torque)
+{
+
+}
+
+void MotorControlImpl::SetPosition(int position)
+{
+
+}
+
+void MotorControlImpl::SetGain(GainType gainController, int k_p, int k_i)
+{
+
+}
+
+void MotorControlImpl::clearFaults()
+{
+
+}
+
+void MotorControlImpl::clearFaults(FaultCategory category)
+{
+
+}
+
+int MotorControlImpl::getSessionId ()
+{
+	return mSessionId;
+}
+
+void MotorControlImpl::parseConfig()
+{
+	// parse the config using mConfigPath
+	// and fillup mCofig structure
+}

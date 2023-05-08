@@ -89,7 +89,6 @@ public:
 	virtual void SetTorque(int torque) = 0;
 	virtual void SetPosition(int position) = 0;
 	virtual void SetGain(GainType gainController, int k_p, int k_i) = 0;
-	virtual void SetGain(GainType gainController, int k_p, int k_i, int k_d) = 0;
 
 	virtual void clearFaults() = 0;
 	virtual void clearFaults(FaultCategory category) = 0;
