@@ -3,3 +3,340 @@
 # Copyright (C) 2023 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: MIT
 #
+
+import py_foc_motor_ctrl as mcontrol
+from bokeh.plotting import figure, curdoc
+from bokeh.layouts import layout, row, column
+from bokeh.models import Range1d, DataRange1d
+from bokeh.models import Select
+from bokeh.models import TextInput
+from bokeh.models import Paragraph, Div
+from bokeh.models import Button
+from bokeh.driving import linear
+from numpy import nan
+from collections import deque
+
+debug_print = False
+
+css_style = Div(text="""
+<style>
+    body {
+        color: #E0E0E0 !important;
+        background-color: #15191C !important;
+    }
+</style>
+""")
+
+sample_size = 60
+sample_size_actual = 60
+interval = 1
+x = deque([nan] * sample_size)
+
+# Get a MotorControl instance with session ID 1 and default config path
+mc = mcontrol.MotorControl.getMotorControlInstance(1)
+
+# Initialize parameters
+time = 0
+speed_setpoint = mc.getSpeed()
+torque_setpoint = mc.getTorque()
+speed_k = mc.GetGain(mcontrol.GainType.kSpeed)
+speed_Kp = speed_k.kp
+speed_Ki = speed_k.ki
+torque_k = mc.GetGain(mcontrol.GainType.kCurrent)
+torque_Kp = torque_k.kp
+torque_Ki = torque_k.ki
+flux_k = mc.GetGain(mcontrol.GainType.kFlux)
+flux_Kp = flux_k.kp
+flux_Ki = flux_k.ki
+
+# title
+title1 = Div(
+    text="<h1>Kria&trade; SOM: Motor Dashboard</h1>",
+    width=400
+)
+
+plot_titles = [
+    'Phase A Motor Current',
+    'Phase B Motor Current',
+    'Phase C Motor Current',
+    'Motor Angle',
+    'Phase A Motor Voltage',
+    'Phase B Motor Voltage',
+    'Phase C Motor Voltage',
+    'Motor Speed',
+    'Id (FOC)',
+    'Iq (FOC)',
+    'Torque (FOC)',
+    'Speed (FOC)'
+]
+
+num_plots = len(plot_titles)
+plot_data = [0] * num_plots
+data_list = [deque([0] * sample_size) for i in range(num_plots)]
+plot_list = [figure(plot_width=800, plot_height=300, title=title) for title in plot_titles]
+ds_list = [(plot.line(x, plot_data, line_width=2, color="darkseagreen")).data_source for plot, plot_data in zip(plot_list, data_list)]
+
+# sample interval
+def update_interval(attr, old, new):
+    global interval
+    interval = max(float(new), 0)
+    interval_input.value = str(interval)
+    global callback
+    curdoc().remove_periodic_callback(callback)
+    callback = curdoc().add_periodic_callback(update, interval * 1000)
+
+interval_title = Paragraph(text="Interval in Seconds:", width=150, align="center")
+interval_input = TextInput(value=str(interval), width=80)
+interval_input.on_change('value', update_interval)
+
+# sample size
+def update_sample_size(attr, old, new):
+    global sample_size, sample_size_actual
+    new_sample_size = int(new)
+    if new_sample_size < sample_size_actual:
+        excess = sample_size_actual - new_sample_size
+        while excess > 0:
+            x.popleft()
+            for data in data_list:
+                data.popleft()
+            excess = excess - 1
+        sample_size_actual = new_sample_size
+    sample_size = new_sample_size
+
+sample_size_title = Paragraph(text="Sample Size:", width=150, align="center")
+sample_size_input = TextInput(value=str(sample_size), width=80)
+sample_size_input.on_change('value', update_sample_size)
+
+# Mode dropdown
+def change_mode(attr, old, new):
+    mode = str(mode_dropdown.value)
+    if debug_print: print("Mode selected: " + str(mode_dropdown.value))
+    global dynamic_interface
+
+    if mode == "Off":
+        mc.setOperationMode(mcontrol.MotorOpMode.kModeOff)
+        dynamic_interface.children = []
+        speed_Kp_input.disabled = True
+        speed_Ki_input.disabled = True
+        torque_Kp_input.disabled = True
+        torque_Ki_input.disabled = True
+        flux_Kp_input.disabled = True
+        flux_Ki_input.disabled = True
+    elif mode == "Speed":
+        mc.setOperationMode(mcontrol.MotorOpMode.kModeSpeed)
+        speed_setpoint = mc.getSpeed()
+        speed_setpoint_input.value = str(speed_setpoint)
+        dynamic_interface.children = [row(speed_setpoint_title, speed_setpoint_input, margin=(30, 30, 30, 30))]
+        speed_Kp_input.disabled = False
+        speed_Ki_input.disabled = False
+        torque_Kp_input.disabled = False
+        torque_Ki_input.disabled = False
+        flux_Kp_input.disabled = False
+        flux_Ki_input.disabled = False
+    elif mode == "Torque":
+        mc.setOperationMode(mcontrol.MotorOpMode.kModeTorque)
+        torque_setpoint = mc.getTorque()
+        torque_setpoint_input.value = str(torque_setpoint)
+        dynamic_interface.children = [row(torque_setpoint_title, torque_setpoint_input, margin=(30, 30, 30, 30))]
+        speed_Kp_input.disabled = False
+        speed_Ki_input.disabled = False
+        torque_Kp_input.disabled = False
+        torque_Ki_input.disabled = False
+        flux_Kp_input.disabled = False
+        flux_Ki_input.disabled = False
+    elif mode == "Open Loop":
+        mc.setOperationMode(mcontrol.MotorOpMode.kModeOpenLoop)
+        dynamic_interface.children = []
+        speed_Kp_input.disabled = True
+        speed_Ki_input.disabled = True
+        torque_Kp_input.disabled = True
+        torque_Ki_input.disabled = True
+        flux_Kp_input.disabled = True
+        flux_Ki_input.disabled = True
+
+mode_dropdown_title = Paragraph(text="Mode:", width=40, align="center")
+mode_dropdown = Select(
+    value="Off",
+    options=["Off", "Speed", "Torque", "Open Loop"],
+    width=150,
+)
+mode_dropdown.on_change('value', change_mode)
+
+# Speed setpoint
+def update_speed_setpoint(attr, old, new):
+    global speed_setpoint
+    speed_setpoint = float(new)
+    if debug_print: print("New speed_setpoint is: " + str(speed_setpoint))
+    mc.setSpeed(speed_setpoint)
+
+speed_setpoint_title = Paragraph(text="Speed Setpoint:", width=150, align="center")
+speed_setpoint_input = TextInput(value=str(speed_setpoint), width=80)
+speed_setpoint_input.on_change('value', update_speed_setpoint)
+
+# Torque setpoint
+def update_torque_setpoint(attr, old, new):
+    global torque_setpoint
+    torque_setpoint = float(new)
+    if debug_print: print("New torque_setpoint is: " + str(torque_setpoint))
+    mc.setTorque(torque_setpoint)
+
+torque_setpoint_title = Paragraph(text="Torque Setpoint:", width=150, align="center")
+torque_setpoint_input = TextInput(value=str(torque_setpoint), width=80)
+torque_setpoint_input.on_change('value', update_torque_setpoint)
+
+# Gain parameters
+def update_speed_Kp(attr, old, new):
+    global speed_Kp
+    global speed_Ki
+    speed_Kp = float(new)
+    if debug_print: print("New speed_Kp is: " + str(speed_Kp))
+    mc.setGain(mcontrol.GainType.kSpeed, speed_Kp, speed_Ki)
+
+speed_Kp_title = Paragraph(text="Speed Kp:", width=70, align="center")
+speed_Kp_input = TextInput(value=str(speed_Kp), width=80)
+speed_Kp_input.on_change('value', update_speed_Kp)
+speed_Kp_input.disabled = True
+
+def update_speed_Ki(attr, old, new):
+    global speed_Kp
+    global speed_Ki
+    speed_Ki = float(new)
+    if debug_print: print("New speed_Ki is: " + str(speed_Ki))
+    mc.setGain(mcontrol.GainType.kSpeed, speed_Kp, speed_Ki)
+
+speed_Ki_title = Paragraph(text="Speed Ki:", width=70, align="center")
+speed_Ki_input = TextInput(value=str(speed_Ki), width=80)
+speed_Ki_input.on_change('value', update_speed_Ki)
+speed_Ki_input.disabled = True
+
+def update_torque_Kp(attr, old, new):
+    global torque_Kp
+    global torque_Ki
+    torque_Kp = float(new)
+    if debug_print: print("New torque_Kp is: " + str(torque_Kp))
+    mc.setGain(mcontrol.GainType.kCurrent, torque_Kp, torque_Ki)
+
+torque_Kp_title = Paragraph(text="Torque Kp:", width=70, align="center")
+torque_Kp_input = TextInput(value=str(torque_Kp), width=80)
+torque_Kp_input.on_change('value', update_torque_Kp)
+torque_Kp_input.disabled = True
+
+def update_torque_Ki(attr, old, new):
+    global torque_Kp
+    global torque_Ki
+    torque_Ki = float(new)
+    if debug_print: print("New torque_Ki is: " + str(torque_Ki))
+    mc.setGain(mcontrol.GainType.kCurrent, torque_Kp, torque_Ki)
+
+torque_Ki_title = Paragraph(text="Torque Ki:", width=70, align="center")
+torque_Ki_input = TextInput(value=str(torque_Ki), width=80)
+torque_Ki_input.on_change('value', update_torque_Ki)
+torque_Ki_input.disabled = True
+
+def update_flux_Kp(attr, old, new):
+    global flux_Kp
+    global flux_Ki
+    flux_Kp = float(new)
+    if debug_print: print("New flux_Kp is: " + str(flux_Kp))
+    mc.setGain(mcontrol.GainType.kFlux, flux_Kp, flux_Ki)
+
+flux_Kp_title = Paragraph(text="Flux Kp:", width=70, align="center")
+flux_Kp_input = TextInput(value=str(flux_Kp), width=80)
+flux_Kp_input.on_change('value', update_flux_Kp)
+flux_Kp_input.disabled = True
+
+def update_flux_Ki(attr, old, new):
+    global flux_Kp
+    global flux_Ki
+    flux_Ki = float(new)
+    if debug_print: print("New flux_Ki is: " + str(flux_Ki))
+    mc.setGain(mcontrol.GainType.kFlux, flux_Kp, flux_Ki)
+
+flux_Ki_title = Paragraph(text="Flux Ki:", width=70, align="center")
+flux_Ki_input = TextInput(value=str(flux_Ki), width=80)
+flux_Ki_input.on_change('value', update_flux_Ki)
+flux_Ki_input.disabled = True
+
+# Clear Faults button
+def clear_faults():
+    mc.clearFaults()
+
+clear_faults_button = Button(label="Clear Faults", width=100, button_type='primary')
+clear_faults_button.on_click(clear_faults)
+
+@linear()
+def update(step):
+    plot_data[0] = mc.getCurrent(mcontrol.ElectricalData.kPhaseA)
+    plot_data[1] = mc.getCurrent(mcontrol.ElectricalData.kPhaseB)
+    plot_data[2] = mc.getCurrent(mcontrol.ElectricalData.kPhaseC)
+    plot_data[3] = mc.getPosition()
+    plot_data[4] = mc.getVoltage(mcontrol.ElectricalData.kPhaseA)
+    plot_data[5] = mc.getVoltage(mcontrol.ElectricalData.kPhaseB)
+    plot_data[6] = mc.getVoltage(mcontrol.ElectricalData.kPhaseC)
+    plot_data[7] = mc.getSpeed()
+    foc_data = mc.getFocCalc()
+    plot_data[8] = foc_data.i_d
+    plot_data[9] = foc_data.i_q
+    plot_data[10] = foc_data.torque
+    plot_data[11] = foc_data.speed
+
+    global time
+    global sample_size_actual
+    if sample_size_actual >= sample_size:
+        x.popleft()
+    x.append(time)
+    time = time + interval
+
+    for i in range(len(data_list)):
+        if sample_size_actual >= sample_size:
+            data_list[i].popleft()
+        val_read = plot_data[i]
+        data_list[i].append(val_read)
+        ds_list[i].trigger('data', x, data_list[i])
+
+    if sample_size_actual < sample_size:
+        sample_size_actual = sample_size_actual + 1
+
+# margin:  Margin-Top, Margin-Right, Margin-Bottom and Margin-Left
+mode_interface = row(mode_dropdown_title, mode_dropdown, margin=(30, 30, 30, 30))
+
+plot_controls_interface = column(
+    row(sample_size_title, sample_size_input),
+    row(interval_title, interval_input),
+    margin=(30, 30, 30, 30)
+)
+
+gain_controls_interface = column(
+    row(speed_Kp_title, speed_Kp_input),
+    row(speed_Ki_title, speed_Ki_input),
+    row(torque_Kp_title, torque_Kp_input),
+    row(torque_Ki_title, torque_Ki_input),
+    row(flux_Kp_title, flux_Kp_input),
+    row(flux_Ki_title, flux_Ki_input),
+    margin=(30, 30, 30, 30)
+)
+
+dynamic_interface = column()
+
+fault_interface = column(clear_faults_button, margin=(30, 30, 30, 30))
+
+layout1 = layout(
+    column(row(title1, align='center'),
+    row(
+        mode_interface,
+        plot_controls_interface,
+        gain_controls_interface,
+        dynamic_interface,
+        fault_interface
+    ),
+    row(plot_list[0], plot_list[1], plot_list[2], plot_list[3]),
+    row(plot_list[4], plot_list[5], plot_list[6], plot_list[7]),
+    row(plot_list[8], plot_list[9], plot_list[10], plot_list[11]),
+    css_style)
+)
+
+# Add a periodic callback to be run every interval*1000 milliseconds
+callback = curdoc().add_periodic_callback(update, interval * 1000)
+
+curdoc().theme = 'dark_minimal'
+curdoc().add_root(layout1)
