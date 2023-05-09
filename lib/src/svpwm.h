@@ -12,16 +12,16 @@ class Svpwm
 {
 
 public:
-        Svpwm();
-        int setSampleII(int sample);
-        int setDcLink(int volt);
-        int setMode(int mode);
-        int startSvpwm();
-        ~Svpwm();
+	Svpwm();
+	int setSampleII(int sample);
+	int setDcLink(int volt);
+	int setMode(int mode);
+	int startSvpwm();
+	~Svpwm();
 
 private:
-        IIO_Driver *m_Svpwm_IIO_Handle;
-        static const std::string kSvpwmDriverName;
+	IIO_Driver *m_Svpwm_IIO_Handle;
+	static const std::string kSvpwmDriverName;
 };
 
 #endif /* _SVPWM_H_ */
