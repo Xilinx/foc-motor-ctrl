@@ -19,6 +19,7 @@ public:
 	int writeChannel(const unsigned int index, const std::string &attrName, const std::string &value);
 	double readDeviceattr(const std::string &attrName);
 	int writeDeviceattr(const std::string &attrName, const std::string &value);
+	int writeeventattr(const unsigned int index, const std::string &attrName, const std::string &value);
 
 private:
 	struct iio_context *ctx;

@@ -4,6 +4,7 @@
  */
 #include "iio_drv.h"
 #include <iostream>
+#include <fstream>
 #define BASE 10
 
 IIO_Driver::IIO_Driver(const std::string &name)
@@ -86,4 +87,21 @@ int IIO_Driver::writeDeviceattr(const std::string &attrName, const std::string &
 		std::cerr << "Unable to write to attribute " << attrName << std::endl;
 	}
 	return ret;
+}
+
+int IIO_Driver::writeeventattr(const unsigned int index, const std::string &attrName, const std::string &value)
+{
+	const char* id = NULL;
+	const char* cid = NULL;
+
+	id = iio_device_get_id(dev);
+	cid = iio_channel_get_id(channels[index]);
+
+	std::string eventPath = "/sys/bus/iio/devices/" + static_cast<std::string>(id) + "/events/in_" + static_cast<std::string>(cid) + "_" + attrName;
+	std::fstream eventStream(eventPath.c_str());
+	if (!eventStream.is_open())
+			throw std::runtime_error("Unable to find attribute " + attrName);
+	eventStream << value;
+	eventStream.close();
+	return 0;
 }
