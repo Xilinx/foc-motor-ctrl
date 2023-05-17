@@ -145,6 +145,11 @@ double Foc::getTorque()
 	return ret / SCALE;
 }
 
+int Foc::setOperationMode(MotorOpMode mode)
+{
+	return mFoc_IIO_Handle->writeDeviceattr("control_mode", std::to_string(static_cast<int>(mode)).c_str());
+}
+
 FocData Foc::getChanData()
 {
 	FocData data;

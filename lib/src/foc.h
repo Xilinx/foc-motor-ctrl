@@ -15,6 +15,14 @@ struct GainData
 	double ki;
 };
 
+enum class MotorOpMode  {
+	Stop = 0,
+	Speed,
+	Torque,
+	Flux,
+	Openloop
+};
+
 class Foc
 {
 public:
@@ -29,6 +37,7 @@ public:
 	int setVfParam(double vq, double vd, int fixedSpeed);
 	int stopMotor();
 	double getTorque();
+	int setOperationMode(MotorOpMode mode);
 	FocData getChanData();
 	~Foc();
 
