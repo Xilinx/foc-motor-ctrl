@@ -6,9 +6,9 @@
 //#include "logging.hpp"
 #include "motor-control/motor-control.hpp"
 #include "sensors/sensor.h"
+#include "foc.h"
 /* TODO: implement
 #include "adchub.hpp"
-#include "foc.hpp"
 #include "pwm.hpp"
 #include "mc_driver.hpp"
 */
@@ -88,7 +88,6 @@ public:
 	void SetGain(GainType gainController, int k_p, int k_i, int k_d) override {
 
 	}
-
 
 	void clearFaults() override {
 

@@ -29,6 +29,7 @@ target_sources(${FMC_LIB_NAME} PRIVATE
     src/motor-control.cpp
     src/sensors/qei.cpp
     src/sensors/smo.cpp
+    src/foc.cpp
     src/sensors/sensor.cpp
     src/interface/iio_drv.cpp
     src/python_bind.cpp
