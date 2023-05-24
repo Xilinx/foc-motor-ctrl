@@ -39,15 +39,15 @@ public:
 	int getSpeed() override;
 	int getPosition() override;
 	int getTorque() override;
-	int getCurrent(ElectricalData type) override;
-	int getVoltage(ElectricalData type) override;
+	double getCurrent(ElectricalData type) override;
+	double getVoltage(ElectricalData type) override;
 	bool getFaultStatus(FaultType type) override;
 	FocData getFocCalc() override;
 	MotorOpMode getOperationMode() override;
 	GainData GetGain(GainType gainController) override;
 
-	void SetSpeed(int speed) override;
-	void SetTorque(int torque) override;
+	void SetSpeed(double speed) override;
+	void SetTorque(double torque) override;
 	void SetPosition(int position) override;
 	void SetGain(GainType gainController, GainData value) override;
 	void setOperationMode(MotorOpMode mode) override;
@@ -157,12 +157,12 @@ int MotorControlImpl::getTorque()
 	return 0;
 }
 
-int MotorControlImpl::getCurrent(ElectricalData type)
+double MotorControlImpl::getCurrent(ElectricalData type)
 {
 	return 0;
 }
 
-int MotorControlImpl::getVoltage(ElectricalData type)
+double MotorControlImpl::getVoltage(ElectricalData type)
 {
 	return 0;
 }
@@ -177,12 +177,12 @@ FocData MotorControlImpl::getFocCalc()
 	return mFoc.getChanData();
 }
 
-void MotorControlImpl::SetSpeed(int speed)
+void MotorControlImpl::SetSpeed(double speed)
 {
 
 }
 
-void MotorControlImpl::SetTorque(int torque)
+void MotorControlImpl::SetTorque(double torque)
 {
 
 }

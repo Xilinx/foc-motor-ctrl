@@ -98,15 +98,15 @@ public:
 	virtual int getSpeed() = 0;				//Get RPM
 	virtual int getPosition() = 0;				//Get Theta
 	virtual int getTorque() = 0;				// Future Implementation
-	virtual int getCurrent(ElectricalData type) = 0;
-	virtual int getVoltage(ElectricalData type) = 0;
+	virtual double getCurrent(ElectricalData type) = 0;
+	virtual double getVoltage(ElectricalData type) = 0;
 	virtual bool getFaultStatus(FaultType type) = 0;
 	virtual FocData getFocCalc() = 0;
 	virtual MotorOpMode getOperationMode() = 0;
 	virtual GainData GetGain(GainType gainController) = 0;
 
-	virtual void SetSpeed(int speed) = 0;
-	virtual void SetTorque(int torque) = 0;
+	virtual void SetSpeed(double speed) = 0;
+	virtual void SetTorque(double torque) = 0;
 	virtual void SetPosition(int position) = 0;
 	virtual void SetGain(GainType gainController, GainData value) = 0;
 	virtual void setOperationMode(MotorOpMode mode) = 0;
