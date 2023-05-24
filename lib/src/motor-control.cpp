@@ -159,17 +159,17 @@ int MotorControlImpl::getTorque()
 
 double MotorControlImpl::getCurrent(ElectricalData type)
 {
-	return 0;
+	return mAdcHub.getCurrent(type);
 }
 
 double MotorControlImpl::getVoltage(ElectricalData type)
 {
-	return 0;
+	return mAdcHub.getVoltage(type);
 }
 
 bool MotorControlImpl::getFaultStatus(FaultType type)
 {
-	return false;
+	return mAdcHub.getFaultStatus(type);
 }
 
 FocData MotorControlImpl::getFocCalc()
@@ -196,12 +196,12 @@ void MotorControlImpl::SetPosition(int position)
 
 void MotorControlImpl::SetGain(GainType gainController, GainData value)
 {
-
+	mFoc.setGain(gainController, value.kp, value.ki);
 }
 
 void MotorControlImpl::clearFaults()
 {
-
+	mAdcHub.clearFaults();
 }
 
 void MotorControlImpl::clearFaults(FaultCategory category)
