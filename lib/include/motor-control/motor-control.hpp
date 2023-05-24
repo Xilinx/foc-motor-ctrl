@@ -45,6 +45,12 @@ struct FocData
 	double flux;
 };
 
+struct GainData
+{
+	double kp;
+	double ki;
+};
+
 enum class GainType
 {
 	kTorque = 0,
@@ -97,11 +103,12 @@ public:
 	virtual bool getFaultStatus(FaultType type) = 0;
 	virtual FocData getFocCalc() = 0;
 	virtual MotorOpMode getOperationMode() = 0;
+	virtual GainData GetGain(GainType gainController) = 0;
 
 	virtual void SetSpeed(int speed) = 0;
 	virtual void SetTorque(int torque) = 0;
 	virtual void SetPosition(int position) = 0;
-	virtual void SetGain(GainType gainController, int k_p, int k_i) = 0;
+	virtual void SetGain(GainType gainController, GainData value) = 0;
 	virtual void setOperationMode(MotorOpMode mode) = 0;
 
 	virtual void clearFaults() = 0;

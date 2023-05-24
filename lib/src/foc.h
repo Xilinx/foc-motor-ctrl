@@ -9,12 +9,6 @@
 #include "motor-control/motor-control.hpp"
 #include "interface/iio_drv.h"
 
-struct GainData
-{
-	double kp;
-	double ki;
-};
-
 /*
  * TODO: May be useful to have dedicated OpMode for
  * FOC

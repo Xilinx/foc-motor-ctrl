@@ -44,11 +44,12 @@ public:
 	bool getFaultStatus(FaultType type) override;
 	FocData getFocCalc() override;
 	MotorOpMode getOperationMode() override;
+	GainData GetGain(GainType gainController) override;
 
 	void SetSpeed(int speed) override;
 	void SetTorque(int torque) override;
 	void SetPosition(int position) override;
-	void SetGain(GainType gainController, int k_p, int k_i) override;
+	void SetGain(GainType gainController, GainData value) override;
 	void setOperationMode(MotorOpMode mode) override;
 
 	void clearFaults() override;
@@ -193,7 +194,7 @@ void MotorControlImpl::SetPosition(int position)
 	 */
 }
 
-void MotorControlImpl::SetGain(GainType gainController, int k_p, int k_i)
+void MotorControlImpl::SetGain(GainType gainController, GainData value)
 {
 
 }
@@ -222,6 +223,11 @@ void MotorControlImpl::parseConfig()
 MotorOpMode MotorControlImpl::getOperationMode()
 {
 	return mCurrentMode;
+}
+
+GainData MotorControlImpl::GetGain(GainType gainController)
+{
+	return GainData({0,0});
 }
 
 void MotorControlImpl::setOperationMode(MotorOpMode mode)
