@@ -10,6 +10,8 @@
 #include "adchub.h"
 #include "pwm.h"
 #include "svpwm.h"
+#include "default_config.h"
+
 /* TODO: implement following
 #include "mc_driver.hpp"
 #include "logging.hpp"
@@ -71,9 +73,7 @@ private:
 	 */
 	struct {
 		int rampRate;
-
 	}mConfigData;
-
 
 	/*
 	 * Class handlers
@@ -261,13 +261,12 @@ void MotorControlImpl::initMotor(bool full_init)
 	mPwm.setSampleII(1);
 
 	mFoc.setAngleOffset(28);
-	mFoc.setFixedSpeed(0xCE4); //TODO: Fix Scaling (750?)
+	mFoc.setFixedSpeed(VF_FIXED_SPEED); //730 RPM
 
 	mPwm.startPwm();
 	mSvPwm.startSvpwm();
 	mpSensor->start();
 	mFoc.startFoc();
-
 
 	vector <ElectricalData> all_Edata = {ElectricalData::kPhaseA,
 					ElectricalData::kPhaseB,
@@ -292,8 +291,7 @@ void MotorControlImpl::initMotor(bool full_init)
 		mAdcHub.set_current_threshold_falling_limit(phase, -2.7);
 		mAdcHub.set_current_threshold_rising_limit(phase, 2.7);
 	}
-	// TODO:Check mAdcHub.set_voltage_threshold_falling_limit(ElectricalData::kDCLink, 0.5); // script doesn't set it.
-	// DCLink require different settings
+	// Update the thresholds for DCLink. It requires different settings
 	mAdcHub.set_current_threshold_falling_limit(ElectricalData::kDCLink, -0.625);
 	mAdcHub.set_current_threshold_rising_limit(ElectricalData::kDCLink, 0.625);
 
@@ -305,25 +303,22 @@ void MotorControlImpl::initMotor(bool full_init)
 		mAdcHub.disable_undervoltage_protection(phase);
 	}
 
-	//TODO: check Scaling for setGain and Torque. Check the values
-	mFoc.setGain(GainType::kTorque, 151552, 80);
-	mFoc.setGain(GainType::kFlux, 123360, 40);
-	mFoc.setGain(GainType::kSpeed, 650, 5);
-	mFoc.setGain(GainType::kFieldweakening, 65536, 218);
+	mFoc.setGain(GainType::kTorque, TOR_KP, TOR_KI);
+	mFoc.setGain(GainType::kFlux, FLUX_KP, FLUX_KI);
+	mFoc.setGain(GainType::kSpeed, SPEED_KP, SPEED_KI);
+	mFoc.setGain(GainType::kFieldweakening, FW_KP, FW_KI);
 
 	//Note: flux sp is set to zero by motor_stop
-	mFoc.setTorque(28945); // incorrect scalling ??
-	mFoc.setSpeed(500); // after scaling : 32768000
+	mFoc.setTorque(TOR_SP);
+	mFoc.setSpeed(SPEED_SP);
 
-	mFoc.setVfParam(131072, 4294927975, 578);
+	mFoc.setVfParam(VF_VQ, VF_VD, VF_FIXED_SPEED);
 
 	//TODO: enable GD using mc ip
 
 	if(full_init) {
-		//TODO: incorrect use of MotorOpMode. Foc should have its own enum and diff func name
-		mFoc.setOperationMode(static_cast<MotorOpMode>(5)); // open loop
+		transitionMode(MotorOpMode::kModeOpenLoop);
 		usleep(100 * 1000);
-		mFoc.setOperationMode(static_cast<MotorOpMode>(1)); // speed Mode
 	}
 }
 
