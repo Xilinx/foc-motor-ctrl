@@ -12,7 +12,7 @@
 #define PWM_FREQ			96800
 
 #define SPEED_RRATE			16384000
-#define TORQUE_RRATE
+#define TORQUE_RRATE		2894
 
 #define SCALE_FACTOR		65536
 #define TOR_KP				(151552.0/SCALE_FACTOR)

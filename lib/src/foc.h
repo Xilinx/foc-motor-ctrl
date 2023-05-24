@@ -16,8 +16,8 @@
 class Foc
 {
 public:
-	Foc(/* args */);
-	int setSpeed(int speedSp);
+	Foc();
+	int setSpeed(double speedSp);
 	int setTorque(double torqueSp);
 	int setGain(GainType gainController, double kp, double ki);
 	GainData getGain(GainType gainController);
@@ -34,6 +34,8 @@ public:
 private:
 	IIO_Driver *mFoc_IIO_Handle;
 	static const std::string kFocDriverName;
+	double mTargetSpeed;
+	double mTargetTorque;
 };
 
 #endif // _FOC_HPP_

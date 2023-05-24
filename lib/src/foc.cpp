@@ -2,7 +2,10 @@
  * Copyright (C) 2023 Advanced Micro Devices, Inc.
  * SPDX-License-Identifier: MIT
  */
+#include <unistd.h>
 #include "foc.h"
+#include "default_config.h"
+
 #define SCALE 65536
 
 const std::string Foc::kFocDriverName = "hls_foc_periodic";
@@ -28,22 +31,61 @@ Foc::~Foc()
 	delete mFoc_IIO_Handle;
 }
 
-int Foc::setSpeed(int speedSp)
+int Foc::setSpeed(double speedSp)
 {
-	speedSp *= SCALE;
-	/* To do :
-	 * Add ramp logic here
-	 */
-	return mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(speedSp).c_str());
+	mTargetSpeed = speedSp * SCALE;
+	if(mFoc_IIO_Handle->readDeviceattr("control_mode") == 0) {
+		return 0;
+	}
+
+	int currentSpeed = mFoc_IIO_Handle->readDeviceattr("speed_sp");
+
+	// TODO: Add the ramp thread;
+
+	if (currentSpeed < mTargetSpeed) {	 //Ramp Up
+		while ((currentSpeed + SPEED_RRATE)  < mTargetSpeed) {
+			currentSpeed += SPEED_RRATE;
+			mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(currentSpeed).c_str());
+			usleep(500 * 1000);
+		}
+	}
+	else { // Ramp down
+		while ((currentSpeed - SPEED_RRATE)  > mTargetSpeed) {
+			currentSpeed -= SPEED_RRATE;
+			mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(currentSpeed).c_str());
+			usleep(500 * 1000);
+		}
+	}
+
+	return mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(mTargetSpeed).c_str());
 }
 
 int Foc::setTorque(double torqueSp)
 {
-	int itorqueSp = torqueSp * SCALE;
-	/* To do :
-	 * Add ramp logic here
-	 */
-	return mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(itorqueSp).c_str());
+	mTargetTorque = torqueSp * SCALE;
+	if(mFoc_IIO_Handle->readDeviceattr("control_mode") == 0) {
+		return 0;
+	}
+
+	int currentTorque = mFoc_IIO_Handle->readDeviceattr("torque_sp");
+
+	// TODO: Add the ramp thread;
+
+	if (currentTorque < mTargetTorque) {	 //Ramp Up
+		while ((currentTorque + TORQUE_RRATE)  < mTargetTorque) {
+			currentTorque += TORQUE_RRATE;
+			mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(currentTorque).c_str());
+			usleep(500 * 1000);
+		}
+	}
+	else {	 //Ramp Down
+		while ((currentTorque - TORQUE_RRATE) > mTargetTorque) {
+			currentTorque -= TORQUE_RRATE;
+			mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(currentTorque).c_str());
+			usleep(500 * 1000);
+		}
+	}
+	return mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(mTargetTorque).c_str());
 }
 
 int Foc::setGain(GainType gainController, double kp, double ki)
@@ -147,7 +189,10 @@ double Foc::getTorque()
 
 int Foc::setOperationMode(MotorOpMode mode)
 {
-	return mFoc_IIO_Handle->writeDeviceattr("control_mode", std::to_string(static_cast<int>(mode)).c_str());
+	mFoc_IIO_Handle->writeDeviceattr("control_mode", std::to_string(static_cast<int>(mode)).c_str());
+	setSpeed(mTargetSpeed/SCALE);
+	setTorque(mTargetTorque/SCALE);
+	return 0;
 }
 
 FocData Foc::getChanData()

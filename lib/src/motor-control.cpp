@@ -179,12 +179,12 @@ FocData MotorControlImpl::getFocCalc()
 
 void MotorControlImpl::SetSpeed(double speed)
 {
-
+	mFoc.setSpeed(speed);
 }
 
 void MotorControlImpl::SetTorque(double torque)
 {
-
+	mFoc.setTorque(torque);
 }
 
 void MotorControlImpl::SetPosition(int position)
