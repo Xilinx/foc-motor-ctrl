@@ -16,7 +16,7 @@ public:
 	QeiSensor(/* constructor parameters */);
 	int getSpeed() override;
 	int getPosition() override;
-	int startQei();
+	void start() override;
 	~QeiSensor();
 
 private:

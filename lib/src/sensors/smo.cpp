@@ -29,3 +29,7 @@ int SmoSensor::getPosition()
 	return 0;
 }
 
+void SmoSensor::start()
+{
+
+}
