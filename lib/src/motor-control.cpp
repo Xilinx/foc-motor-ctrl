@@ -244,6 +244,22 @@ void MotorControlImpl::transitionMode(MotorOpMode target)
 	/*
 	 * Check if the transition is possible
 	 */
+	switch(target) {
+		case MotorOpMode::kModeOff:
+			mFoc.stopMotor();
+			break;
+		case MotorOpMode::kModeSpeed:
+		case MotorOpMode::kModeTorque:
+		case MotorOpMode::kModeSpeedFW:
+			mFoc.setOperationMode(target);
+			break;
+		case MotorOpMode::kModeOpenLoop:
+			//TODO: incorrect use of MotorOpMode. Foc should have its own enum and diff func name
+			mFoc.setOperationMode(static_cast<MotorOpMode>(5));
+			break;
+		default:
+			return;
+	}
 	mCurrentMode = target;
 }
 
