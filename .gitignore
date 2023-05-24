@@ -32,3 +32,8 @@
 *.app
 
 build/
+
+# IDE meta data
+cscope.files
+tags
+
