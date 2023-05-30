@@ -1,3 +1,6 @@
+#ifndef _MCUIO_H_
+#define _MCUIO_H_
+
 #include "interface/uio_drv.h"
 #define GATE_DRIVE_EN 0x00
 #define PHASE_CURRENT_BALANCE_FAULT_VALUE 0x04
@@ -18,3 +21,5 @@ public:
 	int set_gate_drive(bool value);
 	uint32_t get_gate_drive();
 };
+
+#endif

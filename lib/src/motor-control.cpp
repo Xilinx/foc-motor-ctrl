@@ -11,9 +11,9 @@
 #include "pwm.h"
 #include "svpwm.h"
 #include "default_config.h"
+#include "mc_driver.h"
 
 /* TODO: implement following
-#include "mc_driver.hpp"
 #include "logging.hpp"
 */
 
@@ -41,6 +41,8 @@ public:
 	int getSpeed() override;
 	int getPosition() override;
 	int getTorque() override;
+	double getTorqueSetValue() override;
+	int getSpeedSetValue() override;
 	double getCurrent(ElectricalData type) override;
 	double getVoltage(ElectricalData type) override;
 	bool getFaultStatus(FaultType type) override;
@@ -83,6 +85,7 @@ private:
 	Svpwm mSvPwm;
 	Adchub mAdcHub;
 	Sensor *mpSensor;
+	mc_uio mMcUio;
 
 	void parseConfig();
 	void transitionMode(MotorOpMode target);
@@ -155,6 +158,16 @@ int MotorControlImpl::getTorque()
 	 * To Implement only after Torque sensor is available.
 	 */
 	return 0;
+}
+
+double MotorControlImpl::getTorqueSetValue()
+{
+	return mFoc.getTorqueSetValue();
+}
+
+int MotorControlImpl::getSpeedSetValue()
+{
+	return mFoc.getSpeedSetValue();
 }
 
 double MotorControlImpl::getCurrent(ElectricalData type)
@@ -248,21 +261,20 @@ void MotorControlImpl::transitionMode(MotorOpMode target)
 	switch(target) {
 		case MotorOpMode::kModeOff:
 			//TODO: disable GD using mc ip ~
-			//set_gate_drive(false);
+			mMcUio.set_gate_drive(false);
 			mFoc.stopMotor();
 			break;
 		case MotorOpMode::kModeSpeed:
 		case MotorOpMode::kModeTorque:
 		case MotorOpMode::kModeSpeedFW:
+			mMcUio.set_gate_drive(true);
 			mFoc.setOperationMode(target);
-			//TODO: eanble GD
-			//set_gate_drive(true);
 			break;
 		case MotorOpMode::kModeOpenLoop:
 			//TODO: incorrect use of MotorOpMode. Foc should have its own enum and diff func name
 			mFoc.setOperationMode(static_cast<MotorOpMode>(5));
-			//TODO: eanble GD
-			//set_gate_drive(true);
+
+			mMcUio.set_gate_drive(true);
 			break;
 		default:
 			return;
@@ -300,7 +312,13 @@ void MotorControlImpl::initMotor(bool full_init)
 					ElectricalData::kPhaseC,
 					ElectricalData::kDCLink,
 					};
-
+	/*
+	* calibrating offsets for current channel
+	*/
+	mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseA);
+	mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseB);
+	mAdcHub.calibrateCurrentChannel(ElectricalData::kPhaseC);
+	mAdcHub.calibrateCurrentChannel(ElectricalData::kDCLink);
 	/*
 	 * set scaling for Voltage and Current
 	 */
@@ -343,12 +361,10 @@ void MotorControlImpl::initMotor(bool full_init)
 
 	mFoc.setVfParam(VF_VQ, VF_VD, VF_FIXED_SPEED);
 
-	//TODO: enable GD using mc ip ~
-	//set_gate_drive(true);
+	mMcUio.set_gate_drive(true);
 
 	if(full_init) {
 		transitionMode(MotorOpMode::kModeOpenLoop);
 		usleep(CALIBRATION_WAIT_US);
 	}
 }
-

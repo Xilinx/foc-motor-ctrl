@@ -1,4 +1,5 @@
 #include "mc_driver.h"
+#include <iostream>
 
 const std::string mc_uio::kUioDriverName = "motor_control";
 
@@ -25,10 +26,11 @@ int mc_uio::set_gate_drive(bool value)
         {
             uioHandle->regWrite(GATE_DRIVE_EN, 0x0);
         }
-    }
     return 0;
-}
+    }
 
+    throw std::runtime_error("Failed mapping motor control IP address");
+}
 
 uint32_t mc_uio::get_gate_drive()
 {
