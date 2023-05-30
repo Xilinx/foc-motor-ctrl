@@ -201,6 +201,7 @@ void MotorControlImpl::SetGain(GainType gainController, GainData value)
 
 void MotorControlImpl::clearFaults()
 {
+	transitionMode(MotorOpMode::kModeOff);
 	mAdcHub.clearFaults();
 }
 
@@ -227,7 +228,7 @@ MotorOpMode MotorControlImpl::getOperationMode()
 
 GainData MotorControlImpl::GetGain(GainType gainController)
 {
-	return GainData({0,0});
+	return mFoc.getGain(gainController);
 }
 
 void MotorControlImpl::setOperationMode(MotorOpMode mode)
@@ -246,16 +247,22 @@ void MotorControlImpl::transitionMode(MotorOpMode target)
 	 */
 	switch(target) {
 		case MotorOpMode::kModeOff:
+			//TODO: disable GD using mc ip ~
+			//set_gate_drive(false);
 			mFoc.stopMotor();
 			break;
 		case MotorOpMode::kModeSpeed:
 		case MotorOpMode::kModeTorque:
 		case MotorOpMode::kModeSpeedFW:
 			mFoc.setOperationMode(target);
+			//TODO: eanble GD
+			//set_gate_drive(true);
 			break;
 		case MotorOpMode::kModeOpenLoop:
 			//TODO: incorrect use of MotorOpMode. Foc should have its own enum and diff func name
 			mFoc.setOperationMode(static_cast<MotorOpMode>(5));
+			//TODO: eanble GD
+			//set_gate_drive(true);
 			break;
 		default:
 			return;
@@ -265,18 +272,22 @@ void MotorControlImpl::transitionMode(MotorOpMode target)
 
 void MotorControlImpl::initMotor(bool full_init)
 {
+
+	//TODO: Instead of using the values from the default config
+	//initialize the private member structure with the default config
+	//if the config file is not present.
 	mFoc.stopMotor();
 
-	mSvPwm.setSampleII(1);
-	mSvPwm.setDcLink(24);
-	mSvPwm.setMode(0);
+	mSvPwm.setSampleII(SVP_SAMPLE_II);
+	mSvPwm.setDcLink(SVP_VOLTAGE);
+	mSvPwm.setMode(SVP_MODE);
 
-	mPwm.setFrequency(96800);
-	mPwm.setDeadCycle(2);
-	mPwm.setPhaseShift(0);
-	mPwm.setSampleII(1);
+	mPwm.setFrequency(PWM_FREQ);
+	mPwm.setDeadCycle(PWM_DEAD_CYC);
+	mPwm.setPhaseShift(PWM_PHASE_SHIFT);
+	mPwm.setSampleII(PWM_SAMPLE_II);
 
-	mFoc.setAngleOffset(28);
+	mFoc.setAngleOffset(FOC_ANGLE_OFFSET);
 	mFoc.setFixedSpeed(VF_FIXED_SPEED); //730 RPM
 
 	mPwm.startPwm();
@@ -294,24 +305,26 @@ void MotorControlImpl::initMotor(bool full_init)
 	 * set scaling for Voltage and Current
 	 */
 	for (auto phase : all_Edata) {
-		mAdcHub.setVoltageScale(phase, 0.018);
-		mAdcHub.setCurrentScale(phase, 0.005);
+		mAdcHub.setVoltageScale(phase, ADCHUB_VOL_SCALE);
+		mAdcHub.setCurrentScale(phase, ADCHUB_CUR_SCALE);
 	}
 
 	/*
 	 * set the thresholds for the fault
 	 */
 	for (auto phase : all_Edata) {
-		mAdcHub.set_voltage_threshold_falling_limit(phase, 0.5);
-		mAdcHub.set_voltage_threshold_rising_limit(phase, 28);
-		mAdcHub.set_current_threshold_falling_limit(phase, -2.7);
-		mAdcHub.set_current_threshold_rising_limit(phase, 2.7);
+		mAdcHub.set_voltage_threshold_falling_limit(phase, ADCHUB_VOL_PHASE_FALLING_THRES);
+		mAdcHub.set_voltage_threshold_rising_limit(phase, ADCHUB_VOL_PHASE_RISING_THRES);
+		mAdcHub.set_current_threshold_falling_limit(phase, ADCHUB_CUR_PHASE_FALLING_THRES);
+		mAdcHub.set_current_threshold_rising_limit(phase, ADCHUB_CUR_PHASE_RISING_THRES);
 	}
 	// Update the thresholds for DCLink. It requires different settings
-	mAdcHub.set_current_threshold_falling_limit(ElectricalData::kDCLink, -0.625);
-	mAdcHub.set_current_threshold_rising_limit(ElectricalData::kDCLink, 0.625);
+	mAdcHub.set_current_threshold_falling_limit(ElectricalData::kDCLink,
+													ADCHUB_DCLINK_FALLING_THRES);
+	mAdcHub.set_current_threshold_rising_limit(ElectricalData::kDCLink,
+													ADCHUB_DCLINK_RISING_THRES);
 
-	mAdcHub.setFiltertap(16); //TODO: Check it is doing for all channels whereas script does only for the currents.
+	mAdcHub.setFiltertap(ADCHUB_FILTERTAP); //TODO: Check it is doing for all channels whereas script does only for the currents.
 
 	mAdcHub.clearFaults();
 
@@ -330,11 +343,12 @@ void MotorControlImpl::initMotor(bool full_init)
 
 	mFoc.setVfParam(VF_VQ, VF_VD, VF_FIXED_SPEED);
 
-	//TODO: enable GD using mc ip
+	//TODO: enable GD using mc ip ~
+	//set_gate_drive(true);
 
 	if(full_init) {
 		transitionMode(MotorOpMode::kModeOpenLoop);
-		usleep(100 * 1000);
+		usleep(CALIBRATION_WAIT_US);
 	}
 }
 

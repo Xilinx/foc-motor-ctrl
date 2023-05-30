@@ -5,11 +5,16 @@
 #ifndef _DEFAULT_CONFIG_H_
 #define _DEFAULT_CONFIG_H_
 
-#define SVP_SAMPLE_II		 1
+#define SVP_SAMPLE_II		1
 #define SVP_VOLTAGE			24
-#define SVP_MODE			 0
+#define SVP_MODE			0
 
 #define PWM_FREQ			96800
+#define PWM_DEAD_CYC		2
+#define PWM_PHASE_SHIFT		0
+#define PWM_SAMPLE_II		1
+
+#define FOC_ANGLE_OFFSET	28
 
 #define SPEED_RRATE			16384000
 #define TORQUE_RRATE		2894
@@ -28,9 +33,21 @@
 #define SPEED_SP			500
 
 #define VF_VQ				(131072.0/SCALE_FACTOR)
-#define VF_VD				(4294927975.0/SCALE_FACTOR)
+#define VF_VD				(0.0)
 #define VF_FIXED_SPEED		(3300.0/SCALE_FACTOR)
 
-//TODO: Implement complete set of init values
+#define ADCHUB_VOL_SCALE	0.018
+#define ADCHUB_CUR_SCALE	0.005
+
+#define ADCHUB_VOL_PHASE_FALLING_THRES	0.5
+#define ADCHUB_VOL_PHASE_RISING_THRES	28
+#define ADCHUB_CUR_PHASE_FALLING_THRES	-2.7
+#define ADCHUB_CUR_PHASE_RISING_THRES	2.7
+#define ADCHUB_DCLINK_FALLING_THRES		-0.625
+#define ADCHUB_DCLINK_RISING_THRES		0.625
+
+#define ADCHUB_FILTERTAP	16
+
+#define CALIBRATION_WAIT_US (100 * 1000) //100ms
 
 #endif // _DEFAULT_CONFIG_H_
