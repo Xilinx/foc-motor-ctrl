@@ -180,18 +180,25 @@ int Foc::stopMotor()
 	return 0;
 }
 
-double Foc::getTorque()
+double Foc::getTorqueSetpoint()
 {
 	double ret;
 	ret = mFoc_IIO_Handle->readDeviceattr("torque_sp");
 	return ret / SCALE;
 }
 
+int Foc::getSpeedSetpoint()
+{
+	int ret;
+	ret = mFoc_IIO_Handle->readDeviceattr("speed_sp");
+	return ret / SCALE;
+}
+
 int Foc::setOperationMode(MotorOpMode mode)
 {
 	mFoc_IIO_Handle->writeDeviceattr("control_mode", std::to_string(static_cast<int>(mode)).c_str());
-	setSpeed(mTargetSpeed/SCALE);
-	setTorque(mTargetTorque/SCALE);
+	setSpeed(19660800/SCALE);
+	setTorque(28945/SCALE);
 	return 0;
 }
 

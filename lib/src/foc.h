@@ -26,8 +26,9 @@ public:
 	int setFixedSpeed(int fixedSpeed);
 	int setVfParam(double vq, double vd, int fixedSpeed);
 	int stopMotor();
-	double getTorque();
+	double getTorqueSetpoint();
 	int setOperationMode(MotorOpMode mode);
+	int getSpeedSetpoint ();
 	FocData getChanData();
 	~Foc();
 
