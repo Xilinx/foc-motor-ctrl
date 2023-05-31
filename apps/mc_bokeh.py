@@ -42,8 +42,8 @@ speed_setpoint_max = 5000
 torque_setpoint_min = -2.5
 torque_setpoint_max = 2.5
 
-speed_setpoint = mc.getSpeed()
-torque_setpoint = mc.getTorque()
+speed_setpoint = mc.getSpeedSetpoint()
+torque_setpoint = mc.getTorqueSetpoint()
 speed_k = mc.GetGain(mcontrol.GainType.kSpeed)
 speed_Kp = speed_k.kp
 speed_Ki = speed_k.ki
@@ -130,7 +130,7 @@ def change_mode(attr, old, new):
         flux_Ki_input.disabled = True
     elif mode == "Speed":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeSpeed)
-        speed_setpoint = mc.getSpeed()
+        speed_setpoint = mc.getSpeedSetpoint()
         speed_setpoint_input.value = str(speed_setpoint)
         dynamic_interface.children = [column(
             row(speed_setpoint_title, speed_setpoint_input, margin=(30, 30, 30, 30)),
@@ -143,7 +143,7 @@ def change_mode(attr, old, new):
         flux_Ki_input.disabled = False
     elif mode == "Torque":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeTorque)
-        torque_setpoint = mc.getTorque()
+        torque_setpoint = mc.getTorqueSetpoint()
         torque_setpoint_input.value = str(torque_setpoint)
         dynamic_interface.children = [column(
             row(torque_setpoint_title, torque_setpoint_input, margin=(30, 30, 30, 30)),
