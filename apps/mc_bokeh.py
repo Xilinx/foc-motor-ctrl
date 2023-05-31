@@ -37,6 +37,11 @@ mc = mcontrol.MotorControl.getMotorControlInstance(1)
 
 # Initialize parameters
 time = 0
+speed_setpoint_min = 0
+speed_setpoint_max = 5000
+torque_setpoint_min = -2.5
+torque_setpoint_max = 2.5
+
 speed_setpoint = mc.getSpeed()
 torque_setpoint = mc.getTorque()
 speed_k = mc.GetGain(mcontrol.GainType.kSpeed)
@@ -112,6 +117,7 @@ def change_mode(attr, old, new):
     mode = str(mode_dropdown.value)
     if debug_print: print("Mode selected: " + str(mode_dropdown.value))
     global dynamic_interface
+    error_message.text = ""
 
     if mode == "Off":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeOff)
@@ -126,7 +132,9 @@ def change_mode(attr, old, new):
         mc.setOperationMode(mcontrol.MotorOpMode.kModeSpeed)
         speed_setpoint = mc.getSpeed()
         speed_setpoint_input.value = str(speed_setpoint)
-        dynamic_interface.children = [row(speed_setpoint_title, speed_setpoint_input, margin=(30, 30, 30, 30))]
+        dynamic_interface.children = [column(
+            row(speed_setpoint_title, speed_setpoint_input, margin=(30, 30, 30, 30)),
+            error_message)]
         speed_Kp_input.disabled = False
         speed_Ki_input.disabled = False
         torque_Kp_input.disabled = False
@@ -137,7 +145,9 @@ def change_mode(attr, old, new):
         mc.setOperationMode(mcontrol.MotorOpMode.kModeTorque)
         torque_setpoint = mc.getTorque()
         torque_setpoint_input.value = str(torque_setpoint)
-        dynamic_interface.children = [row(torque_setpoint_title, torque_setpoint_input, margin=(30, 30, 30, 30))]
+        dynamic_interface.children = [column(
+            row(torque_setpoint_title, torque_setpoint_input, margin=(30, 30, 30, 30)),
+            error_message)]
         speed_Kp_input.disabled = False
         speed_Ki_input.disabled = False
         torque_Kp_input.disabled = False
@@ -165,9 +175,14 @@ mode_dropdown.on_change('value', change_mode)
 # Speed setpoint
 def update_speed_setpoint(attr, old, new):
     global speed_setpoint
-    speed_setpoint = float(new)
-    if debug_print: print("New speed_setpoint is: " + str(speed_setpoint))
-    mc.setSpeed(speed_setpoint)
+    if float(new) >= speed_setpoint_min and float(new) <= speed_setpoint_max:
+        speed_setpoint = float(new)
+        if debug_print: print("New speed_setpoint is: " + str(speed_setpoint))
+        mc.setSpeed(speed_setpoint)
+        error_message.text = ""
+    else:
+        speed_setpoint_input.value = str(speed_setpoint)
+        error_message.text = "Error: Invalid input. Speed setpoint must be between " + str(speed_setpoint_min) + " and " + str(speed_setpoint_max) + "."
 
 speed_setpoint_title = Paragraph(text="Speed Setpoint:", width=150, align="center")
 speed_setpoint_input = TextInput(value=str(speed_setpoint), width=80)
@@ -176,9 +191,14 @@ speed_setpoint_input.on_change('value', update_speed_setpoint)
 # Torque setpoint
 def update_torque_setpoint(attr, old, new):
     global torque_setpoint
-    torque_setpoint = float(new)
-    if debug_print: print("New torque_setpoint is: " + str(torque_setpoint))
-    mc.setTorque(torque_setpoint)
+    if float(new) >= torque_setpoint_min and float(new) <= torque_setpoint_max:
+        torque_setpoint = float(new)
+        if debug_print: print("New torque_setpoint is: " + str(torque_setpoint))
+        mc.setTorque(torque_setpoint)
+        error_message.text = ""
+    else:
+        torque_setpoint_input.value = str(torque_setpoint)
+        error_message.text = "Error: Invalid input. Torque setpoint must be between " + str(torque_setpoint_min) + " and " + str(torque_setpoint_max) + "."
 
 torque_setpoint_title = Paragraph(text="Torque Setpoint:", width=150, align="center")
 torque_setpoint_input = TextInput(value=str(torque_setpoint), width=80)
@@ -193,7 +213,7 @@ def update_speed_Kp(attr, old, new):
     mc.setGain(mcontrol.GainType.kSpeed, speed_Kp, speed_Ki)
 
 speed_Kp_title = Paragraph(text="Speed Kp:", width=70, align="center")
-speed_Kp_input = TextInput(value=str(speed_Kp), width=80)
+speed_Kp_input = TextInput(value=str(speed_Kp), width=180)
 speed_Kp_input.on_change('value', update_speed_Kp)
 speed_Kp_input.disabled = True
 
@@ -205,7 +225,7 @@ def update_speed_Ki(attr, old, new):
     mc.setGain(mcontrol.GainType.kSpeed, speed_Kp, speed_Ki)
 
 speed_Ki_title = Paragraph(text="Speed Ki:", width=70, align="center")
-speed_Ki_input = TextInput(value=str(speed_Ki), width=80)
+speed_Ki_input = TextInput(value=str(speed_Ki), width=180)
 speed_Ki_input.on_change('value', update_speed_Ki)
 speed_Ki_input.disabled = True
 
@@ -217,7 +237,7 @@ def update_torque_Kp(attr, old, new):
     mc.setGain(mcontrol.GainType.kCurrent, torque_Kp, torque_Ki)
 
 torque_Kp_title = Paragraph(text="Torque Kp:", width=70, align="center")
-torque_Kp_input = TextInput(value=str(torque_Kp), width=80)
+torque_Kp_input = TextInput(value=str(torque_Kp), width=180)
 torque_Kp_input.on_change('value', update_torque_Kp)
 torque_Kp_input.disabled = True
 
@@ -229,7 +249,7 @@ def update_torque_Ki(attr, old, new):
     mc.setGain(mcontrol.GainType.kCurrent, torque_Kp, torque_Ki)
 
 torque_Ki_title = Paragraph(text="Torque Ki:", width=70, align="center")
-torque_Ki_input = TextInput(value=str(torque_Ki), width=80)
+torque_Ki_input = TextInput(value=str(torque_Ki), width=180)
 torque_Ki_input.on_change('value', update_torque_Ki)
 torque_Ki_input.disabled = True
 
@@ -241,7 +261,7 @@ def update_flux_Kp(attr, old, new):
     mc.setGain(mcontrol.GainType.kFlux, flux_Kp, flux_Ki)
 
 flux_Kp_title = Paragraph(text="Flux Kp:", width=70, align="center")
-flux_Kp_input = TextInput(value=str(flux_Kp), width=80)
+flux_Kp_input = TextInput(value=str(flux_Kp), width=180)
 flux_Kp_input.on_change('value', update_flux_Kp)
 flux_Kp_input.disabled = True
 
@@ -253,7 +273,7 @@ def update_flux_Ki(attr, old, new):
     mc.setGain(mcontrol.GainType.kFlux, flux_Kp, flux_Ki)
 
 flux_Ki_title = Paragraph(text="Flux Ki:", width=70, align="center")
-flux_Ki_input = TextInput(value=str(flux_Ki), width=80)
+flux_Ki_input = TextInput(value=str(flux_Ki), width=180)
 flux_Ki_input.on_change('value', update_flux_Ki)
 flux_Ki_input.disabled = True
 
@@ -263,6 +283,9 @@ def clear_faults():
 
 clear_faults_button = Button(label="Clear Faults", width=100, button_type='primary')
 clear_faults_button.on_click(clear_faults)
+
+# Error message
+error_message = Paragraph(text="", style={'color': 'red'}, width=230, align="center")
 
 @linear()
 def update(step):
