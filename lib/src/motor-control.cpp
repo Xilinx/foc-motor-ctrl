@@ -160,16 +160,6 @@ int MotorControlImpl::getTorque()
 	return 0;
 }
 
-double MotorControlImpl::getTorqueSetValue()
-{
-	return mFoc.getTorqueSetValue();
-}
-
-int MotorControlImpl::getSpeedSetValue()
-{
-	return mFoc.getSpeedSetValue();
-}
-
 double MotorControlImpl::getCurrent(ElectricalData type)
 {
 	return mAdcHub.getCurrent(type);
@@ -312,13 +302,7 @@ void MotorControlImpl::initMotor(bool full_init)
 					ElectricalData::kPhaseC,
 					ElectricalData::kDCLink,
 					};
-	/*
-	* calibrating offsets for current channel
-	*/
-	mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseA);
-	mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseB);
-	mAdcHub.calibrateCurrentChannel(ElectricalData::kPhaseC);
-	mAdcHub.calibrateCurrentChannel(ElectricalData::kDCLink);
+
 	/*
 	 * set scaling for Voltage and Current
 	 */

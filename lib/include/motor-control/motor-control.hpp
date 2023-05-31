@@ -98,6 +98,8 @@ public:
 	virtual int getSpeed() = 0;				//Get RPM
 	virtual int getPosition() = 0;				//Get Theta
 	virtual int getTorque() = 0;				// Future Implementation
+	virtual double getTorqueSetpoint() = 0;
+	virtual int getSpeedSetpoint() = 0;
 	virtual double getCurrent(ElectricalData type) = 0;
 	virtual double getVoltage(ElectricalData type) = 0;
 	virtual bool getFaultStatus(FaultType type) = 0;
