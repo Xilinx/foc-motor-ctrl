@@ -26,6 +26,8 @@ PYBIND11_MODULE(PY_MODULE_NAME, m) {
         .def("GetGain", &MotorControl::GetGain)
         .def("setSpeed", &MotorControl::SetSpeed)
         .def("setTorque", &MotorControl::SetTorque)
+        .def("getSpeedSetpoint", &MotorControl::getSpeedSetpoint)
+        .def("getTorqueSetpoint", &MotorControl::getTorqueSetpoint)
         .def("setPosition", &MotorControl::SetPosition)
         .def("setGain", &MotorControl::SetGain)
         .def("setOperationMode", &MotorControl::setOperationMode)
