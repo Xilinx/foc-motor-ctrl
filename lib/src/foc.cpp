@@ -174,8 +174,8 @@ int Foc::setVfParam(double vq, double vd, int fixedSpeed)
 int Foc::stopMotor()
 {
 	mFoc_IIO_Handle->writeDeviceattr("control_mode", "0");
-	mFoc_IIO_Handle->writeDeviceattr("speed_sp", "0");
-	mFoc_IIO_Handle->writeDeviceattr("torque_sp", "0");
+	mFoc_IIO_Handle->writeDeviceattr("speed_sp", "19660800"); // default speed as 0 will be system fault
+	mFoc_IIO_Handle->writeDeviceattr("torque_sp", "28945");
 	mFoc_IIO_Handle->writeDeviceattr("flux_sp", "0");
 	return 0;
 }
