@@ -27,6 +27,8 @@ public:
 	int set_voltage_threshold_rising_limit(ElectricalData phase, double threshold);
 	int set_current_threshold_falling_limit(ElectricalData phase, double threshold);
 	int set_current_threshold_rising_limit(ElectricalData phase, double threshold);
+	int calibrateCurrentChannel(ElectricalData phase);
+	int calibrateVoltageChannel(ElectricalData phase);
 	int disable_undervoltage_protection(ElectricalData phase);
 	~Adchub();
 

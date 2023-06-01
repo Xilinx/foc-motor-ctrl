@@ -302,7 +302,13 @@ void MotorControlImpl::initMotor(bool full_init)
 					ElectricalData::kPhaseC,
 					ElectricalData::kDCLink,
 					};
-
+	/*
+	* calibrating offsets for current channel
+	*/
+	mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseA);
+	mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseB);
+	mAdcHub.calibrateCurrentChannel(ElectricalData::kPhaseC);
+	mAdcHub.calibrateCurrentChannel(ElectricalData::kDCLink);
 	/*
 	 * set scaling for Voltage and Current
 	 */
