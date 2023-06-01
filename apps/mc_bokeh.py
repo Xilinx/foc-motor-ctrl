@@ -121,7 +121,6 @@ def change_mode(attr, old, new):
 
     if mode == "Off":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeOff)
-        dynamic_interface.children = []
         speed_Kp_input.disabled = True
         speed_Ki_input.disabled = True
         torque_Kp_input.disabled = True
@@ -132,9 +131,6 @@ def change_mode(attr, old, new):
         mc.setOperationMode(mcontrol.MotorOpMode.kModeSpeed)
         speed_setpoint = mc.getSpeedSetpoint()
         speed_setpoint_input.value = str(speed_setpoint)
-        dynamic_interface.children = [column(
-            row(speed_setpoint_title, speed_setpoint_input, margin=(30, 30, 30, 30)),
-            error_message)]
         speed_Kp_input.disabled = False
         speed_Ki_input.disabled = False
         torque_Kp_input.disabled = False
@@ -145,9 +141,6 @@ def change_mode(attr, old, new):
         mc.setOperationMode(mcontrol.MotorOpMode.kModeTorque)
         torque_setpoint = mc.getTorqueSetpoint()
         torque_setpoint_input.value = str(torque_setpoint)
-        dynamic_interface.children = [column(
-            row(torque_setpoint_title, torque_setpoint_input, margin=(30, 30, 30, 30)),
-            error_message)]
         speed_Kp_input.disabled = False
         speed_Ki_input.disabled = False
         torque_Kp_input.disabled = False
@@ -156,7 +149,6 @@ def change_mode(attr, old, new):
         flux_Ki_input.disabled = False
     elif mode == "Open Loop":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeOpenLoop)
-        dynamic_interface.children = []
         speed_Kp_input.disabled = True
         speed_Ki_input.disabled = True
         torque_Kp_input.disabled = True
@@ -185,7 +177,7 @@ def update_speed_setpoint(attr, old, new):
         error_message.text = "Error: Invalid input. Speed setpoint must be between " + str(speed_setpoint_min) + " and " + str(speed_setpoint_max) + "."
 
 speed_setpoint_title = Paragraph(text="Speed Setpoint:", width=150, align="center")
-speed_setpoint_input = TextInput(value=str(speed_setpoint), width=80)
+speed_setpoint_input = TextInput(value=str(speed_setpoint), width=180)
 speed_setpoint_input.on_change('value', update_speed_setpoint)
 
 # Torque setpoint
@@ -201,7 +193,7 @@ def update_torque_setpoint(attr, old, new):
         error_message.text = "Error: Invalid input. Torque setpoint must be between " + str(torque_setpoint_min) + " and " + str(torque_setpoint_max) + "."
 
 torque_setpoint_title = Paragraph(text="Torque Setpoint:", width=150, align="center")
-torque_setpoint_input = TextInput(value=str(torque_setpoint), width=80)
+torque_setpoint_input = TextInput(value=str(torque_setpoint), width=180)
 torque_setpoint_input.on_change('value', update_torque_setpoint)
 
 # Gain parameters
@@ -339,7 +331,12 @@ gain_controls_interface = column(
     margin=(30, 30, 30, 30)
 )
 
-dynamic_interface = column()
+dynamic_interface = column(
+    row(speed_setpoint_title, speed_setpoint_input),
+    row(torque_setpoint_title, torque_setpoint_input),
+    error_message,
+    margin=(30, 30, 30, 30)
+)
 
 fault_interface = column(clear_faults_button, margin=(30, 30, 30, 30))
 
