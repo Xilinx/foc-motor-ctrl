@@ -171,6 +171,17 @@ int Foc::setVfParam(double vq, double vd, int fixedSpeed)
 	mFoc_IIO_Handle->writeDeviceattr("fixed_period_ctrl", std::to_string(fixedSpeed).c_str());
 	return 0;
 }
+
+VfparamData Foc::getVfparam()
+{
+	VfparamData data = {0,0,0};
+
+	data.vq = mFoc_IIO_Handle->readDeviceattr("vq")/SCALE;
+	data.vd = mFoc_IIO_Handle->readDeviceattr("vd")/SCALE;
+	data.period = mFoc_IIO_Handle->readDeviceattr("fixed_period_ctrl")/SCALE;
+	return data;
+}
+
 int Foc::stopMotor()
 {
 	mFoc_IIO_Handle->writeDeviceattr("control_mode", "0");
@@ -180,25 +191,25 @@ int Foc::stopMotor()
 	return 0;
 }
 
-double Foc::getTorqueSetpoint()
+double Foc::getTorqueSetValue()
 {
 	double ret;
-	ret = mFoc_IIO_Handle->readDeviceattr("torque_sp");
+	ret = mTargetTorque;
 	return ret / SCALE;
 }
 
-int Foc::getSpeedSetpoint()
+int Foc::getSpeedSetValue()
 {
 	int ret;
-	ret = mFoc_IIO_Handle->readDeviceattr("speed_sp");
+	ret = mTargetSpeed;
 	return ret / SCALE;
 }
 
 int Foc::setOperationMode(MotorOpMode mode)
 {
 	mFoc_IIO_Handle->writeDeviceattr("control_mode", std::to_string(static_cast<int>(mode)).c_str());
-	setSpeed(19660800/SCALE);
-	setTorque(28945/SCALE);
+	setSpeed(mTargetSpeed/SCALE);
+	setTorque(mTargetTorque/SCALE);
 	return 0;
 }
 

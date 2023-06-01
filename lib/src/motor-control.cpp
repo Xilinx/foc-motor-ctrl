@@ -160,6 +160,16 @@ int MotorControlImpl::getTorque()
 	return 0;
 }
 
+double MotorControlImpl::getTorqueSetValue()
+{
+	return mFoc.getTorqueSetValue();
+}
+
+int MotorControlImpl::getSpeedSetValue()
+{
+	return mFoc.getSpeedSetValue();
+}
+
 double MotorControlImpl::getCurrent(ElectricalData type)
 {
 	return mAdcHub.getCurrent(type);
@@ -263,7 +273,7 @@ void MotorControlImpl::transitionMode(MotorOpMode target)
 		case MotorOpMode::kModeOpenLoop:
 			//TODO: incorrect use of MotorOpMode. Foc should have its own enum and diff func name
 			mFoc.setOperationMode(static_cast<MotorOpMode>(5));
-
+			//TODO: eanble GD
 			mMcUio.set_gate_drive(true);
 			break;
 		default:

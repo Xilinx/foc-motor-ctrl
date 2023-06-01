@@ -25,18 +25,19 @@ public:
 	int setAngleOffset(int angleSh);
 	int setFixedSpeed(int fixedSpeed);
 	int setVfParam(double vq, double vd, int fixedSpeed);
+	VfparamData getVfparam();
 	int stopMotor();
-	double getTorqueSetpoint();
+	double getTorqueSetValue();
 	int setOperationMode(MotorOpMode mode);
-	int getSpeedSetpoint ();
+	int getSpeedSetValue();
 	FocData getChanData();
 	~Foc();
 
 private:
 	IIO_Driver *mFoc_IIO_Handle;
 	static const std::string kFocDriverName;
-	int mTargetSpeed;
-	int mTargetTorque;
+	int mTargetSpeed = 19660800;
+	int mTargetTorque = 28945;
 };
 
 #endif // _FOC_HPP_
