@@ -44,15 +44,9 @@ torque_setpoint_max = 2.5
 
 speed_setpoint = mc.getSpeedSetpoint()
 torque_setpoint = mc.getTorqueSetpoint()
-speed_k = mc.GetGain(mcontrol.GainType.kSpeed)
-speed_Kp = speed_k.kp
-speed_Ki = speed_k.ki
-torque_k = mc.GetGain(mcontrol.GainType.kCurrent)
-torque_Kp = torque_k.kp
-torque_Ki = torque_k.ki
-flux_k = mc.GetGain(mcontrol.GainType.kFlux)
-flux_Kp = flux_k.kp
-flux_Ki = flux_k.ki
+speed_gain = mc.GetGain(mcontrol.GainType.kSpeed)
+torque_gain = mc.GetGain(mcontrol.GainType.kCurrent)
+flux_gain = mc.GetGain(mcontrol.GainType.kFlux)
 
 # title
 title1 = Div(
@@ -208,74 +202,68 @@ torque_setpoint_input.on_change('value', update_torque_setpoint)
 
 # Gain parameters
 def update_speed_Kp(attr, old, new):
-    global speed_Kp
-    global speed_Ki
-    speed_Kp = float(new)
-    if debug_print: print("New speed_Kp is: " + str(speed_Kp))
-    mc.setGain(mcontrol.GainType.kSpeed, speed_Kp, speed_Ki)
+    global speed_gain
+    speed_gain.kp = float(new)
+    if debug_print: print("New speed_Kp is: " + str(speed_gain.kp))
+    mc.setGain(mcontrol.GainType.kSpeed, speed_gain)
 
 speed_Kp_title = Paragraph(text="Speed Kp:", width=70, align="center")
-speed_Kp_input = TextInput(value=str(speed_Kp), width=180)
+speed_Kp_input = TextInput(value=str(speed_gain.kp), width=180)
 speed_Kp_input.on_change('value', update_speed_Kp)
 speed_Kp_input.disabled = True
 
 def update_speed_Ki(attr, old, new):
-    global speed_Kp
-    global speed_Ki
-    speed_Ki = float(new)
-    if debug_print: print("New speed_Ki is: " + str(speed_Ki))
-    mc.setGain(mcontrol.GainType.kSpeed, speed_Kp, speed_Ki)
+    global speed_gain
+    speed_gain.ki = float(new)
+    if debug_print: print("New speed_Ki is: " + str(speed_gain.ki))
+    mc.setGain(mcontrol.GainType.kSpeed, speed_gain)
 
 speed_Ki_title = Paragraph(text="Speed Ki:", width=70, align="center")
-speed_Ki_input = TextInput(value=str(speed_Ki), width=180)
+speed_Ki_input = TextInput(value=str(speed_gain.ki), width=180)
 speed_Ki_input.on_change('value', update_speed_Ki)
 speed_Ki_input.disabled = True
 
 def update_torque_Kp(attr, old, new):
-    global torque_Kp
-    global torque_Ki
-    torque_Kp = float(new)
-    if debug_print: print("New torque_Kp is: " + str(torque_Kp))
-    mc.setGain(mcontrol.GainType.kCurrent, torque_Kp, torque_Ki)
+    global torque_gain
+    torque_gain.kp = float(new)
+    if debug_print: print("New torque_Kp is: " + str(torque_gain.kp))
+    mc.setGain(mcontrol.GainType.kCurrent, torque_gain)
 
 torque_Kp_title = Paragraph(text="Torque Kp:", width=70, align="center")
-torque_Kp_input = TextInput(value=str(torque_Kp), width=180)
+torque_Kp_input = TextInput(value=str(torque_gain.kp), width=180)
 torque_Kp_input.on_change('value', update_torque_Kp)
 torque_Kp_input.disabled = True
 
 def update_torque_Ki(attr, old, new):
-    global torque_Kp
-    global torque_Ki
-    torque_Ki = float(new)
-    if debug_print: print("New torque_Ki is: " + str(torque_Ki))
-    mc.setGain(mcontrol.GainType.kCurrent, torque_Kp, torque_Ki)
+    global torque_gain
+    torque_gain.ki = float(new)
+    if debug_print: print("New torque_Ki is: " + str(torque_gain.ki))
+    mc.setGain(mcontrol.GainType.kCurrent, torque_gain)
 
 torque_Ki_title = Paragraph(text="Torque Ki:", width=70, align="center")
-torque_Ki_input = TextInput(value=str(torque_Ki), width=180)
+torque_Ki_input = TextInput(value=str(torque_gain.ki), width=180)
 torque_Ki_input.on_change('value', update_torque_Ki)
 torque_Ki_input.disabled = True
 
 def update_flux_Kp(attr, old, new):
-    global flux_Kp
-    global flux_Ki
-    flux_Kp = float(new)
-    if debug_print: print("New flux_Kp is: " + str(flux_Kp))
-    mc.setGain(mcontrol.GainType.kFlux, flux_Kp, flux_Ki)
+    global flux_gain
+    flux_gain.kp = float(new)
+    if debug_print: print("New flux_Kp is: " + str(flux_gain.kp))
+    mc.setGain(mcontrol.GainType.kFlux, flux_gain)
 
 flux_Kp_title = Paragraph(text="Flux Kp:", width=70, align="center")
-flux_Kp_input = TextInput(value=str(flux_Kp), width=180)
+flux_Kp_input = TextInput(value=str(flux_gain.kp), width=180)
 flux_Kp_input.on_change('value', update_flux_Kp)
 flux_Kp_input.disabled = True
 
 def update_flux_Ki(attr, old, new):
-    global flux_Kp
-    global flux_Ki
-    flux_Ki = float(new)
-    if debug_print: print("New flux_Ki is: " + str(flux_Ki))
-    mc.setGain(mcontrol.GainType.kFlux, flux_Kp, flux_Ki)
+    global flux_gain
+    flux_gain.ki = float(new)
+    if debug_print: print("New flux_Ki is: " + str(flux_gain.ki))
+    mc.setGain(mcontrol.GainType.kFlux, flux_gain)
 
 flux_Ki_title = Paragraph(text="Flux Ki:", width=70, align="center")
-flux_Ki_input = TextInput(value=str(flux_Ki), width=180)
+flux_Ki_input = TextInput(value=str(flux_gain.ki), width=180)
 flux_Ki_input.on_change('value', update_flux_Ki)
 flux_Ki_input.disabled = True
 
