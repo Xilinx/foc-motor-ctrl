@@ -156,9 +156,19 @@ def change_mode(attr, old, new):
         flux_Kp_input.disabled = True
         flux_Ki_input.disabled = True
 
+current_mode = mc.getOperationMode()
+if current_mode == mcontrol.MotorOpMode.kModeSpeed:
+    current_mode_value = "Speed"
+elif current_mode == mcontrol.MotorOpMode.kModeTorque:
+    current_mode_value = "Torque"
+elif current_mode == mcontrol.MotorOpMode.kModeOpenLoop:
+    current_mode_value = "Open Loop"
+else:
+    current_mode_value = "Off"
+
 mode_dropdown_title = Paragraph(text="Mode:", width=40, align="center")
 mode_dropdown = Select(
-    value="Off",
+    value=current_mode_value,
     options=["Off", "Speed", "Torque", "Open Loop"],
     width=150,
 )
