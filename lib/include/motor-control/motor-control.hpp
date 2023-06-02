@@ -51,13 +51,6 @@ struct GainData
 	double ki;
 };
 
-struct VfparamData
-{
-	double vq;
-	double vd;
-	double period;
-};
-
 enum class GainType
 {
 	kTorque = 0,
@@ -113,12 +106,16 @@ public:
 	virtual FocData getFocCalc() = 0;
 	virtual MotorOpMode getOperationMode() = 0;
 	virtual GainData GetGain(GainType gainController) = 0;
+	virtual double getVfParamVq() = 0;
+	virtual double getVfParamVd() = 0;
 
 	virtual void SetSpeed(double speed) = 0;
 	virtual void SetTorque(double torque) = 0;
 	virtual void SetPosition(int position) = 0;
 	virtual void SetGain(GainType gainController, GainData value) = 0;
 	virtual void setOperationMode(MotorOpMode mode) = 0;
+	virtual void setVfParamVq(double vq) = 0;
+	virtual void setVfParamVd(double vd) = 0;
 
 	virtual void clearFaults() = 0;
 	virtual void clearFaults(FaultCategory category) = 0;

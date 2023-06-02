@@ -24,6 +24,8 @@ PYBIND11_MODULE(PY_MODULE_NAME, m) {
         .def("getFocCalc", &MotorControl::getFocCalc)
         .def("getOperationMode", &MotorControl::getOperationMode)
         .def("GetGain", &MotorControl::GetGain)
+        .def("getVfParamVq", &MotorControl::getVfParamVq)
+        .def("getVfParamVd", &MotorControl::getVfParamVd)
         .def("setSpeed", &MotorControl::SetSpeed)
         .def("setTorque", &MotorControl::SetTorque)
         .def("getSpeedSetpoint", &MotorControl::getSpeedSetValue)
@@ -31,6 +33,8 @@ PYBIND11_MODULE(PY_MODULE_NAME, m) {
         .def("setPosition", &MotorControl::SetPosition)
         .def("setGain", &MotorControl::SetGain)
         .def("setOperationMode", &MotorControl::setOperationMode)
+        .def("setVfParamVq", &MotorControl::setVfParamVq)
+        .def("setVfParamVd", &MotorControl::setVfParamVd)
         .def("clearFaults", py::overload_cast<>(&MotorControl::clearFaults))
         .def("clearFaults", py::overload_cast<FaultCategory>(&MotorControl::clearFaults));
 

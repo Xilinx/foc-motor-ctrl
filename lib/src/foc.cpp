@@ -172,16 +172,6 @@ int Foc::setVfParam(double vq, double vd, int fixedSpeed)
 	return 0;
 }
 
-VfparamData Foc::getVfparam()
-{
-	VfparamData data = {0,0,0};
-
-	data.vq = mFoc_IIO_Handle->readDeviceattr("vq")/SCALE;
-	data.vd = mFoc_IIO_Handle->readDeviceattr("vd")/SCALE;
-	data.period = mFoc_IIO_Handle->readDeviceattr("fixed_period_ctrl")/SCALE;
-	return data;
-}
-
 int Foc::stopMotor()
 {
 	mFoc_IIO_Handle->writeDeviceattr("control_mode", "0");

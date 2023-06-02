@@ -49,12 +49,16 @@ public:
 	FocData getFocCalc() override;
 	MotorOpMode getOperationMode() override;
 	GainData GetGain(GainType gainController) override;
+	double getVfParamVq() override;
+	double getVfParamVd() override;
 
 	void SetSpeed(double speed) override;
 	void SetTorque(double torque) override;
 	void SetPosition(int position) override;
 	void SetGain(GainType gainController, GainData value) override;
 	void setOperationMode(MotorOpMode mode) override;
+	void setVfParamVq(double vq) override;
+	void setVfParamVd(double vd) override;
 
 	void clearFaults() override;
 	void clearFaults(FaultCategory category) override;
@@ -86,6 +90,12 @@ private:
 	Adchub mAdcHub;
 	Sensor *mpSensor;
 	mc_uio mMcUio;
+
+	/*
+	 * Shadow
+	 */
+	double mVq;
+	double mVd;
 
 	void parseConfig();
 	void transitionMode(MotorOpMode target);
@@ -188,6 +198,28 @@ bool MotorControlImpl::getFaultStatus(FaultType type)
 FocData MotorControlImpl::getFocCalc()
 {
 	return mFoc.getChanData();
+}
+
+double MotorControlImpl::getVfParamVq()
+{
+	return mVq;
+}
+
+double MotorControlImpl::getVfParamVd()
+{
+	return mVd;
+}
+
+void MotorControlImpl::setVfParamVd(double vd)
+{
+	mVd = vd;
+	mFoc.setVfParam(mVq, mVd, VF_FIXED_SPEED);
+}
+
+void MotorControlImpl::setVfParamVq(double vq)
+{
+	mVq = vq;
+	mFoc.setVfParam(mVq, mVd, VF_FIXED_SPEED);
 }
 
 void MotorControlImpl::SetSpeed(double speed)
@@ -358,6 +390,9 @@ void MotorControlImpl::initMotor(bool full_init)
 	//Note: flux sp is set to zero by motor_stop
 	mFoc.setTorque(TOR_SP);
 	mFoc.setSpeed(SPEED_SP);
+
+	mVq = VF_VQ;
+	mVd = VF_VD;
 
 	mFoc.setVfParam(VF_VQ, VF_VD, VF_FIXED_SPEED);
 

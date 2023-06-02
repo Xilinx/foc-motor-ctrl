@@ -13,6 +13,7 @@
  * TODO: May be useful to have dedicated OpMode for
  * FOC
  */
+
 class Foc
 {
 public:
@@ -25,7 +26,6 @@ public:
 	int setAngleOffset(int angleSh);
 	int setFixedSpeed(int fixedSpeed);
 	int setVfParam(double vq, double vd, int fixedSpeed);
-	VfparamData getVfparam();
 	int stopMotor();
 	double getTorqueSetValue();
 	int setOperationMode(MotorOpMode mode);
