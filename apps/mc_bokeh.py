@@ -44,6 +44,8 @@ torque_setpoint_max = 2.5
 
 speed_setpoint = mc.getSpeedSetpoint()
 torque_setpoint = mc.getTorqueSetpoint()
+open_loop_vd = mc.getVfParamVd()
+open_loop_vq = mc.getVfParamVq()
 speed_gain = mc.GetGain(mcontrol.GainType.kSpeed)
 torque_gain = mc.GetGain(mcontrol.GainType.kCurrent)
 flux_gain = mc.GetGain(mcontrol.GainType.kFlux)
@@ -200,6 +202,26 @@ torque_setpoint_title = Paragraph(text="Torque Setpoint:", width=150, align="cen
 torque_setpoint_input = TextInput(value=str(torque_setpoint), width=180)
 torque_setpoint_input.on_change('value', update_torque_setpoint)
 
+# Open loop - Vd
+def update_open_loop_vd(attr, old, new):
+    global open_loop_vd
+    open_loop_vd = float(new)
+    mc.setVfParamVd(open_loop_vd)
+
+open_loop_vd_title = Paragraph(text="Open Loop - Vd:", width=150, align="center")
+open_loop_vd_input = TextInput(value=str(open_loop_vd), width=180)
+open_loop_vd_input.on_change('value', update_open_loop_vd)
+
+# Open loop - Vq
+def update_open_loop_vq(attr, old, new):
+    global open_loop_vq
+    open_loop_vq = float(new)
+    mc.setVfParamVq(open_loop_vq)
+
+open_loop_vq_title = Paragraph(text="Open Loop - Vq:", width=150, align="center")
+open_loop_vq_input = TextInput(value=str(open_loop_vq), width=180)
+open_loop_vq_input.on_change('value', update_open_loop_vq)
+
 # Gain parameters
 def update_speed_Kp(attr, old, new):
     global speed_gain
@@ -332,6 +354,8 @@ gain_controls_interface = column(
 dynamic_interface = column(
     row(speed_setpoint_title, speed_setpoint_input),
     row(torque_setpoint_title, torque_setpoint_input),
+    row(open_loop_vd_title, open_loop_vd_input),
+    row(open_loop_vq_title, open_loop_vq_input),
     error_message,
     margin=(30, 30, 30, 30)
 )
