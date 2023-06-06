@@ -29,7 +29,7 @@ css_style = Div(text="""
 
 sample_size = 60
 sample_size_actual = 60
-interval = 1
+interval = 0.5
 x = deque([nan] * sample_size)
 
 # Get a MotorControl instance with session ID 1 and default config path
@@ -37,6 +37,8 @@ mc = mcontrol.MotorControl.getMotorControlInstance(1)
 
 # Initialize parameters
 time = 0
+plot_update_interval = 0
+num_points_per_update = 1
 speed_setpoint_min = 0
 speed_setpoint_max = 5000
 torque_setpoint_min = -2.5
@@ -89,6 +91,8 @@ def update_interval(attr, old, new):
     global callback
     curdoc().remove_periodic_callback(callback)
     callback = curdoc().add_periodic_callback(update, interval * 1000)
+    global num_points_per_update
+    num_points_per_update = int(0.2/interval)
 
 interval_title = Paragraph(text="Interval in Seconds:", width=150, align="center")
 interval_input = TextInput(value=str(interval), width=80)
@@ -338,12 +342,19 @@ def update(step):
     x.append(time)
     time = time + interval
 
+    global plot_update_interval
+    global num_points_per_update
     for i in range(len(data_list)):
         if sample_size_actual >= sample_size:
             data_list[i].popleft()
         val_read = plot_data[i]
         data_list[i].append(val_read)
-        ds_list[i].trigger('data', x, data_list[i])
+        if plot_update_interval == 0:
+            ds_list[i].trigger('data', x, data_list[i])
+
+    plot_update_interval += 1
+    if plot_update_interval >= num_points_per_update:
+            plot_update_interval = 0
 
     if sample_size_actual < sample_size:
         sample_size_actual = sample_size_actual + 1
