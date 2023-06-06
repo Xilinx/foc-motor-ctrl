@@ -94,7 +94,7 @@ def update_interval(attr, old, new):
     global num_points_per_update
     num_points_per_update = int(0.2/interval)
 
-interval_title = Paragraph(text="Interval in Seconds:", width=150, align="center")
+interval_title = Paragraph(text="Sample Interval (Seconds):", width=200, align="center")
 interval_input = TextInput(value=str(interval), width=80)
 interval_input.on_change('value', update_interval)
 
@@ -112,7 +112,7 @@ def update_sample_size(attr, old, new):
         sample_size_actual = new_sample_size
     sample_size = new_sample_size
 
-sample_size_title = Paragraph(text="Sample Size:", width=150, align="center")
+sample_size_title = Paragraph(text="Plot Window Length (Samples):", width=200, align="center")
 sample_size_input = TextInput(value=str(sample_size), width=80)
 sample_size_input.on_change('value', update_sample_size)
 
