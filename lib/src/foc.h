@@ -36,8 +36,8 @@ public:
 private:
 	IIO_Driver *mFoc_IIO_Handle;
 	static const std::string kFocDriverName;
-	int mTargetSpeed = 19660800;
-	int mTargetTorque = 28945;
+	int mTargetSpeed;
+	int mTargetTorque;
 };
 
 #endif // _FOC_HPP_

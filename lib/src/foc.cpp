@@ -4,9 +4,22 @@
  */
 #include <unistd.h>
 #include "foc.h"
+
+/*
+ * TODO: revert inclusion of default_config.h
+ * This temporary, ramp rates and default speed to come through constr or api
+ */
 #include "default_config.h"
 
 #define SCALE 65536
+
+/*
+ * TODO: revert when fixed
+ * Due to bug in the hw, Speed & torque cannot be zero; as it results in fault.
+ * use the working values are default reset values
+ */
+#define RST_SPEED	(300 * (SCALE))
+#define RST_TORQUE	(0.44 * (SCALE))
 
 const std::string Foc::kFocDriverName = "hls_foc_periodic";
 enum FocChannel
@@ -21,7 +34,9 @@ enum FocChannel
 	flux
 };
 
-Foc::Foc(/* args */)
+Foc::Foc():
+	mTargetSpeed(RST_SPEED),
+	mTargetTorque(RST_TORQUE)
 {
 	mFoc_IIO_Handle = new IIO_Driver(kFocDriverName);
 }
@@ -175,8 +190,8 @@ int Foc::setVfParam(double vq, double vd, int fixedSpeed)
 int Foc::stopMotor()
 {
 	mFoc_IIO_Handle->writeDeviceattr("control_mode", "0");
-	mFoc_IIO_Handle->writeDeviceattr("speed_sp", "19660800"); // default speed as 0 will be system fault
-	mFoc_IIO_Handle->writeDeviceattr("torque_sp", "28945");
+	mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(RST_SPEED).c_str());
+	mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(RST_TORQUE).c_str());
 	mFoc_IIO_Handle->writeDeviceattr("flux_sp", "0");
 	return 0;
 }
