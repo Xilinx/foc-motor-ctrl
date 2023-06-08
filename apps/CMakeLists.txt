@@ -52,10 +52,16 @@ if(BUILD_CMDLINE_APP)
 endif()
 
 if(BUILD_DASHBOARD_APP)
-	set(APP bokeh_dashboard)
+	set(APP start_motor_dashboard)
 
-	install(PROGRAMS mc_bokeh.py
+	install(PROGRAMS launch_dashboard.sh
 		DESTINATION ${CMAKE_INSTALL_BINDIR}
 		RENAME ${APP}
 	)
+
+	install(FILES mc_bokeh.py
+		DESTINATION /opt/xilinx/motor-control/dashboard
+		RENAME main.py
+	)
+
 endif()
