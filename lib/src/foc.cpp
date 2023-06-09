@@ -3,10 +3,24 @@
  * SPDX-License-Identifier: MIT
  */
 #include <unistd.h>
+#include <chrono>
 #include "foc.h"
+
+/*
+ * TODO: revert inclusion of default_config.h
+ * This temporary, ramp rates and default speed to come through constr or api
+ */
 #include "default_config.h"
 
-#define SCALE 65536
+#define RAMP_INTERVAL_MS	500
+
+/*
+ * TODO: revert when fixed
+ * Due to bug in the hw, Speed & torque cannot be zero; as it results in fault.
+ * use the working values are default reset values
+ */
+#define RST_SPEED	300
+#define RST_TORQUE	0.44
 
 const std::string Foc::kFocDriverName = "hls_foc_periodic";
 enum FocChannel
@@ -21,7 +35,13 @@ enum FocChannel
 	flux
 };
 
-Foc::Foc(/* args */)
+Foc::Foc():
+	mTargetSpeed(RST_SPEED),
+	mTargetTorque(RST_TORQUE),
+	mDoSpeedRamp(false),
+	mDoTorRamp(false),
+	mSpeedRRate(SPEED_RRATE),
+	mTorRRate(TORQUE_RRATE)
 {
 	mFoc_IIO_Handle = new IIO_Driver(kFocDriverName);
 }
@@ -31,84 +51,58 @@ Foc::~Foc()
 	delete mFoc_IIO_Handle;
 }
 
+
+
 int Foc::setSpeed(double speedSp)
 {
-	mTargetSpeed = speedSp * SCALE;
-	if(mFoc_IIO_Handle->readDeviceattr("control_mode") == 0) {
-		return 0;
-	}
+	std::lock_guard<std::mutex> lock(mSpeedMutex);
+	mTargetSpeed = speedSp;
 
-	int currentSpeed = mFoc_IIO_Handle->readDeviceattr("speed_sp");
-
-	// TODO: Add the ramp thread;
-
-	if (currentSpeed < mTargetSpeed) {	 //Ramp Up
-		while ((currentSpeed + SPEED_RRATE)  < mTargetSpeed) {
-			currentSpeed += SPEED_RRATE;
-			mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(currentSpeed).c_str());
-			usleep(500 * 1000);
+	if(mFoc_IIO_Handle->readDeviceattr("control_mode") != 0) {
+		// if not ramping already
+		if (!mDoSpeedRamp) {
+			mDoSpeedRamp = true;
+			mSpeedThread = std::thread(&Foc::rampSpeed, this);
 		}
 	}
-	else { // Ramp down
-		while ((currentSpeed - SPEED_RRATE)  > mTargetSpeed) {
-			currentSpeed -= SPEED_RRATE;
-			mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(currentSpeed).c_str());
-			usleep(500 * 1000);
-		}
-	}
-
-	return mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(mTargetSpeed).c_str());
+	return 0;
 }
 
 int Foc::setTorque(double torqueSp)
 {
-	mTargetTorque = torqueSp * SCALE;
-	if(mFoc_IIO_Handle->readDeviceattr("control_mode") == 0) {
-		return 0;
-	}
+	std::lock_guard<std::mutex> lock(mTorMutex);
+	mTargetTorque = torqueSp;
 
-	int currentTorque = mFoc_IIO_Handle->readDeviceattr("torque_sp");
-
-	// TODO: Add the ramp thread;
-
-	if (currentTorque < mTargetTorque) {	 //Ramp Up
-		while ((currentTorque + TORQUE_RRATE)  < mTargetTorque) {
-			currentTorque += TORQUE_RRATE;
-			mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(currentTorque).c_str());
-			usleep(500 * 1000);
+	if(mFoc_IIO_Handle->readDeviceattr("control_mode") != 0) {
+		// if not ramping already
+		if (!mDoTorRamp) {
+			mDoTorRamp = true;
+			mTorThread = std::thread(&Foc::rampTorque, this);
 		}
 	}
-	else {	 //Ramp Down
-		while ((currentTorque - TORQUE_RRATE) > mTargetTorque) {
-			currentTorque -= TORQUE_RRATE;
-			mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(currentTorque).c_str());
-			usleep(500 * 1000);
-		}
-	}
-	return mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(mTargetTorque).c_str());
+	return 0;
+
 }
 
 int Foc::setGain(GainType gainController, double kp, double ki)
 {
-	int ikp = kp * SCALE;
-	int iki = ki * SCALE;
 	switch (gainController)
 	{
 	case GainType::kTorque:
-		mFoc_IIO_Handle->writeDeviceattr("torque_kp", std::to_string(ikp).c_str());
-		mFoc_IIO_Handle->writeDeviceattr("torque_ki", std::to_string(iki).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("torque_kp", std::to_string(kp).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("torque_ki", std::to_string(ki).c_str());
 		break;
 	case GainType::kSpeed:
-		mFoc_IIO_Handle->writeDeviceattr("speed_kp", std::to_string(ikp).c_str());
-		mFoc_IIO_Handle->writeDeviceattr("speed_ki", std::to_string(iki).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("speed_kp", std::to_string(kp).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("speed_ki", std::to_string(ki).c_str());
 		break;
 	case GainType::kFlux:
-		mFoc_IIO_Handle->writeDeviceattr("flux_kp", std::to_string(ikp).c_str());
-		mFoc_IIO_Handle->writeDeviceattr("flux_ki", std::to_string(iki).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("flux_kp", std::to_string(kp).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("flux_ki", std::to_string(ki).c_str());
 		break;
 	case GainType::kFieldweakening:
-		mFoc_IIO_Handle->writeDeviceattr("fw_kp", std::to_string(ikp).c_str());
-		mFoc_IIO_Handle->writeDeviceattr("fw_ki", std::to_string(iki).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("fw_kp", std::to_string(kp).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("fw_ki", std::to_string(ki).c_str());
 		break;
 	default:
 		return -1;
@@ -124,20 +118,20 @@ GainData Foc::getGain(GainType gainController)
 	switch (gainController)
 	{
 	case GainType::kTorque:
-		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("torque_kp")/SCALE;
-		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("torque_ki")/SCALE;
+		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("torque_kp");
+		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("torque_ki");
 		break;
 	case GainType::kSpeed:
-		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("speed_kp")/SCALE;
-		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("speed_ki")/SCALE;
+		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("speed_kp");
+		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("speed_ki");
 		break;
 	case GainType::kFlux:
-		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("flux_kp")/SCALE;
-		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("flux_ki")/SCALE;
+		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("flux_kp");
+		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("flux_ki");
 		break;
 	case GainType::kFieldweakening:
-		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("fw_kp")/SCALE;
-		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("fw_ki")/SCALE;
+		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("fw_kp");
+		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("fw_ki");
 		break;
 	default:
 		return gaindata;
@@ -150,56 +144,89 @@ int Foc::startFoc()
 	return mFoc_IIO_Handle->writeDeviceattr("ap_ctrl", "1");
 }
 
-int Foc::setAngleOffset(int angleSh)
+int Foc::setAngleOffset(double angleSh)
 {
 	return mFoc_IIO_Handle->writeDeviceattr("angle_sh", std::to_string(angleSh).c_str());
 }
 
 int Foc::setFixedSpeed(int fixedSpeed)
 {
-	fixedSpeed *= SCALE;
 	return mFoc_IIO_Handle->writeDeviceattr("fixed_period_ctrl", std::to_string(fixedSpeed).c_str());
 }
 
 int Foc::setVfParam(double vq, double vd, int fixedSpeed)
 {
-	int ivq = vq * SCALE;
-	int ivd = vd * SCALE;
-	fixedSpeed *= SCALE;
-	mFoc_IIO_Handle->writeDeviceattr("vq", std::to_string(ivq).c_str());
-	mFoc_IIO_Handle->writeDeviceattr("vd", std::to_string(ivd).c_str());
+	mFoc_IIO_Handle->writeDeviceattr("vq", std::to_string(vq).c_str());
+	mFoc_IIO_Handle->writeDeviceattr("vd", std::to_string(vd).c_str());
 	mFoc_IIO_Handle->writeDeviceattr("fixed_period_ctrl", std::to_string(fixedSpeed).c_str());
 	return 0;
 }
 
+/*
+ * TODO: StopMotor is redundant and can be removed
+ */
 int Foc::stopMotor()
 {
-	mFoc_IIO_Handle->writeDeviceattr("control_mode", "0");
-	mFoc_IIO_Handle->writeDeviceattr("speed_sp", "19660800"); // default speed as 0 will be system fault
-	mFoc_IIO_Handle->writeDeviceattr("torque_sp", "28945");
-	mFoc_IIO_Handle->writeDeviceattr("flux_sp", "0");
-	return 0;
+	return setOperationMode(MotorOpMode::kModeOff);
 }
 
 double Foc::getTorqueSetValue()
 {
-	double ret;
-	ret = mTargetTorque;
-	return ret / SCALE;
+	return mTargetTorque;
 }
 
-int Foc::getSpeedSetValue()
+double Foc::getSpeedSetValue()
 {
-	int ret;
-	ret = mTargetSpeed;
-	return ret / SCALE;
+	return mTargetSpeed;
 }
 
 int Foc::setOperationMode(MotorOpMode mode)
 {
+	std::lock_guard<std::mutex> Slock(mSpeedMutex);
+	std::lock_guard<std::mutex> Tlock(mTorMutex);
+
+	if (mode != MotorOpMode::kModeSpeed) {
+		// not speed mode
+		mDoSpeedRamp = false;
+		if (mSpeedThread.joinable()) {
+			mSpeedThread.join();
+		}
+	}
+
+	if (mode != MotorOpMode::kModeTorque) {
+		// not torque mode
+		mDoTorRamp = false;
+		if (mTorThread.joinable()) {
+			mTorThread.join();
+		}
+	}
+
 	mFoc_IIO_Handle->writeDeviceattr("control_mode", std::to_string(static_cast<int>(mode)).c_str());
-	setSpeed(mTargetSpeed/SCALE);
-	setTorque(mTargetTorque/SCALE);
+
+	switch(mode) {
+		case MotorOpMode::kModeOff:
+			// Reset the SP values to default reset
+			mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(RST_SPEED).c_str());
+			mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(RST_TORQUE).c_str());
+			mFoc_IIO_Handle->writeDeviceattr("flux_sp", "0");
+			break;
+		case MotorOpMode::kModeSpeed:
+			// start ramping
+			if (!mDoSpeedRamp) {
+				mDoSpeedRamp = true;
+				mSpeedThread = std::thread(&Foc::rampSpeed, this);
+			}
+			break;
+		case MotorOpMode::kModeTorque:
+			// start ramping
+			if (!mDoTorRamp) {
+				mDoTorRamp = true;
+				mTorThread = std::thread(&Foc::rampTorque, this);
+			}
+			break;
+		default:
+			break;
+	}
 	return 0;
 }
 
@@ -215,4 +242,79 @@ FocData Foc::getChanData()
 	data.torque = mFoc_IIO_Handle->readChannel(torque_pi_out, "raw");
 	data.flux = mFoc_IIO_Handle->readChannel(flux, "raw");
 	return data;
+}
+
+void Foc::rampSpeed(void)
+{
+
+	while(mDoSpeedRamp) {
+		int currentTarget;
+		int currentSpeed;
+		{
+			std::lock_guard<std::mutex> lock(mSpeedMutex);
+			currentSpeed = mFoc_IIO_Handle->readDeviceattr("speed_sp");
+			currentTarget= mTargetSpeed;
+#if 0
+			if (currentSpeed == currentTarget) {
+				mDoSpeedRamp = false;
+				//todo: join / kill if possible
+				break;
+			}
+#endif
+		}
+
+		int newSpeed = currentTarget;
+
+		if (currentSpeed < currentTarget) {	 //Ramp Up
+			newSpeed = currentSpeed + mSpeedRRate;
+			if (newSpeed > currentTarget)
+				newSpeed = currentTarget;
+		}
+		else if (currentSpeed > currentTarget) {
+			newSpeed = currentSpeed - mSpeedRRate;
+			if (newSpeed < currentTarget)
+				newSpeed = currentTarget;
+		}
+
+		mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(newSpeed).c_str());
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(RAMP_INTERVAL_MS));
+	}
+}
+
+void Foc::rampTorque(void)
+{
+	while(mDoTorRamp) {
+		double currentTarget;
+		double currentTorque;
+		{
+			std::lock_guard<std::mutex> lock(mTorMutex);
+			currentTorque = mFoc_IIO_Handle->readDeviceattr("torque_sp");
+			currentTarget= mTargetTorque;
+#if 0
+			if (currentTorque == currentTarget) {
+				mDoTorRamp = false;
+				//todo: join / kill if possible
+				break;
+			}
+#endif
+		}
+
+		double newTor = currentTarget;
+
+		if (currentTorque < currentTarget) {	 //Ramp Up
+			newTor = currentTorque + mTorRRate;
+			if (newTor > currentTarget)
+				newTor = currentTarget;
+		}
+		else if (currentTorque > currentTarget) {
+			newTor = currentTorque - mTorRRate;
+			if (newTor < currentTarget)
+				newTor = currentTarget;
+		}
+
+		mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(newTor).c_str());
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(RAMP_INTERVAL_MS));
+	}
 }
