@@ -6,6 +6,9 @@
 #ifndef _FOC_HPP_
 #define _FOC_HPP_
 
+#include <thread>
+#include <mutex>
+
 #include "motor-control/motor-control.hpp"
 #include "interface/iio_drv.h"
 
@@ -36,8 +39,21 @@ public:
 private:
 	IIO_Driver *mFoc_IIO_Handle;
 	static const std::string kFocDriverName;
+
 	int mTargetSpeed;
+	int mSpeedRRate;
+	bool mDoSpeedRamp;
+	std::thread mSpeedThread;
+	std::mutex mSpeedMutex;
+	void rampSpeed(void);
+
 	int mTargetTorque;
+	int mTorRRate;
+	bool mDoTorRamp;
+	std::thread mTorThread;
+	std::mutex mTorMutex;
+	void rampTorque(void);
+
 };
 
 #endif // _FOC_HPP_
