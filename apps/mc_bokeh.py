@@ -312,6 +312,7 @@ flux_Ki_input.disabled = True
 # Clear Faults button
 def clear_faults():
     mc.clearFaults()
+    mode_dropdown.value = "Off"
 
 clear_faults_button = Button(label="Clear Faults", width=100, button_type='primary')
 clear_faults_button.on_click(clear_faults)
