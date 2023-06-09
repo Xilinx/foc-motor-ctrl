@@ -12,7 +12,6 @@
  */
 #include "default_config.h"
 
-#define SCALE 65536
 #define RAMP_INTERVAL_MS	500
 
 /*
@@ -20,8 +19,8 @@
  * Due to bug in the hw, Speed & torque cannot be zero; as it results in fault.
  * use the working values are default reset values
  */
-#define RST_SPEED	(300 * (SCALE))
-#define RST_TORQUE	(0.44 * (SCALE))
+#define RST_SPEED	300
+#define RST_TORQUE	0.44
 
 const std::string Foc::kFocDriverName = "hls_foc_periodic";
 enum FocChannel
@@ -57,7 +56,7 @@ Foc::~Foc()
 int Foc::setSpeed(double speedSp)
 {
 	std::lock_guard<std::mutex> lock(mSpeedMutex);
-	mTargetSpeed = speedSp * SCALE;
+	mTargetSpeed = speedSp;
 
 	if(mFoc_IIO_Handle->readDeviceattr("control_mode") != 0) {
 		// if not ramping already
@@ -72,7 +71,7 @@ int Foc::setSpeed(double speedSp)
 int Foc::setTorque(double torqueSp)
 {
 	std::lock_guard<std::mutex> lock(mTorMutex);
-	mTargetTorque = torqueSp * SCALE;
+	mTargetTorque = torqueSp;
 
 	if(mFoc_IIO_Handle->readDeviceattr("control_mode") != 0) {
 		// if not ramping already
@@ -87,25 +86,23 @@ int Foc::setTorque(double torqueSp)
 
 int Foc::setGain(GainType gainController, double kp, double ki)
 {
-	int ikp = kp * SCALE;
-	int iki = ki * SCALE;
 	switch (gainController)
 	{
 	case GainType::kTorque:
-		mFoc_IIO_Handle->writeDeviceattr("torque_kp", std::to_string(ikp).c_str());
-		mFoc_IIO_Handle->writeDeviceattr("torque_ki", std::to_string(iki).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("torque_kp", std::to_string(kp).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("torque_ki", std::to_string(ki).c_str());
 		break;
 	case GainType::kSpeed:
-		mFoc_IIO_Handle->writeDeviceattr("speed_kp", std::to_string(ikp).c_str());
-		mFoc_IIO_Handle->writeDeviceattr("speed_ki", std::to_string(iki).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("speed_kp", std::to_string(kp).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("speed_ki", std::to_string(ki).c_str());
 		break;
 	case GainType::kFlux:
-		mFoc_IIO_Handle->writeDeviceattr("flux_kp", std::to_string(ikp).c_str());
-		mFoc_IIO_Handle->writeDeviceattr("flux_ki", std::to_string(iki).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("flux_kp", std::to_string(kp).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("flux_ki", std::to_string(ki).c_str());
 		break;
 	case GainType::kFieldweakening:
-		mFoc_IIO_Handle->writeDeviceattr("fw_kp", std::to_string(ikp).c_str());
-		mFoc_IIO_Handle->writeDeviceattr("fw_ki", std::to_string(iki).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("fw_kp", std::to_string(kp).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("fw_ki", std::to_string(ki).c_str());
 		break;
 	default:
 		return -1;
@@ -121,20 +118,20 @@ GainData Foc::getGain(GainType gainController)
 	switch (gainController)
 	{
 	case GainType::kTorque:
-		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("torque_kp")/SCALE;
-		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("torque_ki")/SCALE;
+		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("torque_kp");
+		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("torque_ki");
 		break;
 	case GainType::kSpeed:
-		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("speed_kp")/SCALE;
-		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("speed_ki")/SCALE;
+		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("speed_kp");
+		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("speed_ki");
 		break;
 	case GainType::kFlux:
-		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("flux_kp")/SCALE;
-		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("flux_ki")/SCALE;
+		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("flux_kp");
+		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("flux_ki");
 		break;
 	case GainType::kFieldweakening:
-		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("fw_kp")/SCALE;
-		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("fw_ki")/SCALE;
+		gaindata.kp = mFoc_IIO_Handle->readDeviceattr("fw_kp");
+		gaindata.ki = mFoc_IIO_Handle->readDeviceattr("fw_ki");
 		break;
 	default:
 		return gaindata;
@@ -147,24 +144,20 @@ int Foc::startFoc()
 	return mFoc_IIO_Handle->writeDeviceattr("ap_ctrl", "1");
 }
 
-int Foc::setAngleOffset(int angleSh)
+int Foc::setAngleOffset(double angleSh)
 {
 	return mFoc_IIO_Handle->writeDeviceattr("angle_sh", std::to_string(angleSh).c_str());
 }
 
 int Foc::setFixedSpeed(int fixedSpeed)
 {
-	fixedSpeed *= SCALE;
 	return mFoc_IIO_Handle->writeDeviceattr("fixed_period_ctrl", std::to_string(fixedSpeed).c_str());
 }
 
 int Foc::setVfParam(double vq, double vd, int fixedSpeed)
 {
-	int ivq = vq * SCALE;
-	int ivd = vd * SCALE;
-	fixedSpeed *= SCALE;
-	mFoc_IIO_Handle->writeDeviceattr("vq", std::to_string(ivq).c_str());
-	mFoc_IIO_Handle->writeDeviceattr("vd", std::to_string(ivd).c_str());
+	mFoc_IIO_Handle->writeDeviceattr("vq", std::to_string(vq).c_str());
+	mFoc_IIO_Handle->writeDeviceattr("vd", std::to_string(vd).c_str());
 	mFoc_IIO_Handle->writeDeviceattr("fixed_period_ctrl", std::to_string(fixedSpeed).c_str());
 	return 0;
 }
@@ -179,16 +172,12 @@ int Foc::stopMotor()
 
 double Foc::getTorqueSetValue()
 {
-	double ret;
-	ret = mTargetTorque;
-	return ret / SCALE;
+	return mTargetTorque;
 }
 
-int Foc::getSpeedSetValue()
+double Foc::getSpeedSetValue()
 {
-	int ret;
-	ret = mTargetSpeed;
-	return ret / SCALE;
+	return mTargetSpeed;
 }
 
 int Foc::setOperationMode(MotorOpMode mode)
@@ -296,8 +285,8 @@ void Foc::rampSpeed(void)
 void Foc::rampTorque(void)
 {
 	while(mDoTorRamp) {
-		int currentTarget;
-		int currentTorque;
+		double currentTarget;
+		double currentTorque;
 		{
 			std::lock_guard<std::mutex> lock(mTorMutex);
 			currentTorque = mFoc_IIO_Handle->readDeviceattr("torque_sp");
@@ -311,7 +300,7 @@ void Foc::rampTorque(void)
 #endif
 		}
 
-		int newTor = currentTarget;
+		double newTor = currentTarget;
 
 		if (currentTorque < currentTarget) {	 //Ramp Up
 			newTor = currentTorque + mTorRRate;
@@ -329,4 +318,3 @@ void Foc::rampTorque(void)
 		std::this_thread::sleep_for(std::chrono::milliseconds(RAMP_INTERVAL_MS));
 	}
 }
-
