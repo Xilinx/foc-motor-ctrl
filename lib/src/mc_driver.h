@@ -1,25 +1,22 @@
+/*
+ * Copyright (C) 2023 Advanced Micro Devices, Inc.
+ * SPDX-License-Identifier: MIT
+ */
+
 #ifndef _MCUIO_H_
 #define _MCUIO_H_
-
 #include "interface/uio_drv.h"
-#define GATE_DRIVE_EN 0x00
-#define PHASE_CURRENT_BALANCE_FAULT_VALUE 0x04
-#define PHASE_CURRENT_BALANCE_FAULT_ENABLE 0x08
-#define PHASE_CURRENT_BALANCE_FAULT_CLEAR 0x0C
-#define PHASE_CURRENT_BALANCE_FAULT_STATUS 0x10 // read only
-#define MOTOR_CONTORL_UIO_IRQ_DISABLE 0x14
-#define MUX_SEL 0x18
 
-class mc_uio
+class MC_Uio
 {
 private:
 	static const std::string kUioDriverName;
-	UioDrv* uioHandle;
+	UioDrv* mUioHandle;
 public:
-	mc_uio(/* args */);
-	~mc_uio();
-	int set_gate_drive(bool value);
-	uint32_t get_gate_drive();
+	MC_Uio(/* args */);
+	~MC_Uio();
+	int setGateDrive(bool value);
+	uint32_t getGateDrive();
 };
 
 #endif

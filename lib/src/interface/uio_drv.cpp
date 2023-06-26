@@ -12,56 +12,69 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-using namespace std;
+#define UIO_PATH "/sys/class/uio/"
+#define ADDR_PATH "/maps/map0/"
+/* only use the first map (only one mapping is expected for this device) */
+#define PHYSIZE 0x100
 
+using namespace std;
 
 UioDrv::UioDrv(std::string name)
 {
-    find_device_id(name);
-    map_device();
+    findDeviceId(name);
+    mapDevice();
 }
 
 int UioDrv::regWrite(int offset, int value)
 {
-    uint64_t regaddr = virtualAddr + offset;
-    *(volatile int *)(regaddr) = value;
+    if(mVirtualAddr == 0)
+    {
+        return -1;
+    }
+    uint64_t regAddr = mVirtualAddr + offset;
+    *(volatile int *)(regAddr) = value;
     return 0;
 }
 
 uint32_t UioDrv::regRead(int offset)
 {
-    uint64_t regaddr = virtualAddr + offset;
-    return *(volatile int *)(regaddr);
+    if(mVirtualAddr == 0)
+    {
+        return -1;
+    }
+    uint64_t regAddr = mVirtualAddr + offset;
+    return *(volatile int *)(regAddr);
 }
 
-int UioDrv::find_device_id(std::string kUioDriverName)
+int UioDrv::findDeviceId(std::string kUioDriverName)
 {
-    std::string namepath;
+    std::string namePath;
     filesystem::path path = UIO_PATH;
     filesystem::directory_iterator list(path);
     if (list == end(list))
     {
-        throw std::runtime_error("no uio device found");
+        std::cout << " No uio device found for " << kUioDriverName << std::endl;
+        return -1;
     }
 
     for (auto const &entry : list)
     {
-        std::string dname = "";
-        std::string namepath = "/sys/class/uio/" + entry.path().filename().string() + "/name";
-        ifstream devicefile(namepath);
+        std::string dName = "";
+        std::string namePath = "/sys/class/uio/" + entry.path().filename().string() + "/name";
+        ifstream devicefile(namePath);
         if (devicefile.is_open())
         {
-            getline(devicefile, dname);
+            getline(devicefile, dName);
             devicefile.close();
         }
-        if (kUioDriverName == dname)
+        if (kUioDriverName == dName)
         {
             std::cout << "Using uio device " << entry.path().filename().string() << " for motor contorl" << std::endl;
-            kUioDevNo = entry.path().filename().string();
+            mUioDevNode = entry.path().filename().string();
             break;
         }
     }
-    if (kUioDevNo == "NULL")
+    if (mUioDevNode == "NULL")
     {
         std::cout << " No uio device found for " << kUioDriverName << std::endl;
         return -1;
@@ -70,36 +83,36 @@ int UioDrv::find_device_id(std::string kUioDriverName)
     return 0;
 }
 
-int UioDrv::map_device()
+int UioDrv::mapDevice()
 {
     string data = "";
-    string uioaddrpath = UIO_PATH + kUioDevNo + ADDR_PATH + "addr";
-    string uiosizepath = UIO_PATH + kUioDevNo + ADDR_PATH + "size";
+    string uioAddrPath = UIO_PATH + mUioDevNode + ADDR_PATH + "addr";
+    string uioSizePath = UIO_PATH + mUioDevNode + ADDR_PATH + "size";
 
-    ifstream uioaddrfile(uioaddrpath);
+    ifstream uioaddrfile(uioAddrPath);
     if (uioaddrfile.is_open())
     {
         getline(uioaddrfile, data);
         uioaddrfile.close();
         cout << "Map uio physical address: " << data << endl;
-        physicalAddr = stoi(data);
+        mPhysicalAddr = stoi(data);
     }
     else
     {
         cout << "uio addr not found" << endl;
         return -1;
     }
-    ifstream uiosize(uiosizepath);
+    ifstream uiosize(uioSizePath);
     if (uiosize.is_open())
     {
         getline(uiosize, data);
         uiosize.close();
         cout << "Map uio size: " << data << endl;
-        physicalSize = stoi(data);
+        mPhysicalSize = stoi(data);
     }
-    string uionode = "/dev/" + kUioDevNo;
+    string uionode = "/dev/" + mUioDevNode;
 
-    if ((FileHandle = open(uionode.c_str(), O_RDWR)) < 0)
+    if ((mFileHandle = open(uionode.c_str(), O_RDWR)) < 0)
         return -1;
 
     /* system bug in uio-generic driver
@@ -108,30 +121,30 @@ int UioDrv::map_device()
         but in HW the size alvailble is 0x100
         mapping fails with size > 0x100
         */
-    virtualAddr = (uint64_t)mmap(NULL, PHYSIZE,
+    mVirtualAddr = (uint64_t)mmap(NULL, PHYSIZE,
                                  PROT_READ | PROT_WRITE, MAP_SHARED,
-                                 FileHandle,
+                                 mFileHandle,
                                  0 * getpagesize()); /* use map0 */
 
-    if (virtualAddr == (uint64_t)MAP_FAILED)
+    if (mVirtualAddr == (uint64_t)MAP_FAILED)
     {
         perror("Failed to map memory");
-        close(FileHandle);
+        close(mFileHandle);
         return -1;
     }
     return 0;
 }
 
-int UioDrv::release_device()
+int UioDrv::releaseDevice()
 {
-    if (virtualAddr)
+    if (mVirtualAddr)
     {
-        munmap((void *)virtualAddr, PHYSIZE);
-        close(FileHandle);
-        physicalAddr = 0;
-        physicalSize = 0;
-        virtualAddr = 0;
-        FileHandle = -1;
+        munmap((void *)mVirtualAddr, PHYSIZE);
+        close(mFileHandle);
+        mPhysicalAddr = 0;
+        mPhysicalSize = 0;
+        mVirtualAddr = 0;
+        mFileHandle = -1;
     }
     return 0;
 }
@@ -139,5 +152,5 @@ int UioDrv::release_device()
 
 UioDrv::~UioDrv()
 {
-    release_device();
+    releaseDevice();
 }
