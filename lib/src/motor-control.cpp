@@ -350,7 +350,6 @@ void MotorControlImpl::initMotor(bool full_init)
 	mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseA);
 	mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseB);
 	mAdcHub.calibrateCurrentChannel(ElectricalData::kPhaseC);
-	mAdcHub.calibrateCurrentChannel(ElectricalData::kDCLink);
 	/*
 	 * set scaling for Voltage and Current
 	 */
