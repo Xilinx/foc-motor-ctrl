@@ -356,8 +356,9 @@ void MotorControlImpl::initMotor(bool full_init)
 	 */
 	for (auto phase : all_Edata) {
 		mAdcHub.setVoltageScale(phase, ADCHUB_VOL_SCALE);
-		mAdcHub.setCurrentScale(phase, ADCHUB_CUR_SCALE);
+		mAdcHub.setCurrentScale(phase, ADCHUB_STATOR_CUR_SCALE);
 	}
+	mAdcHub.setCurrentScale(ElectricalData::kDCLink, ADCHUB_DC_CUR_SCALE);
 
 	/*
 	 * set the thresholds for the fault
