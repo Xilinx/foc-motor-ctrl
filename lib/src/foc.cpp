@@ -144,9 +144,14 @@ int Foc::startFoc()
 	return mFoc_IIO_Handle->writeDeviceattr("ap_ctrl", "1");
 }
 
-int Foc::setAngleOffset(double angleSh)
+int Foc::setAngleOffset(int angleSh)
 {
 	return mFoc_IIO_Handle->writeDeviceattr("angle_sh", std::to_string(angleSh).c_str());
+}
+
+int Foc::setFixedAngleCmd(int angleCmd)
+{
+    return mFoc_IIO_Handle->writeDeviceattr("fixed_angle_cpr", std::to_string(angleCmd).c_str());
 }
 
 int Foc::setFixedSpeed(int fixedSpeed)

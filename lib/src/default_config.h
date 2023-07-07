@@ -14,8 +14,6 @@
 #define PWM_PHASE_SHIFT		0
 #define PWM_SAMPLE_II		1
 
-#define FOC_ANGLE_OFFSET	0.00042724609375
-
 #define SPEED_RRATE			250
 #define TORQUE_RRATE		0.0441589355468
 
@@ -27,11 +25,12 @@
 #define SPEED_KI			0.0000762939453125
 #define FW_KP				0.009918212890625
 #define FW_KI				0.0000762939453125
+#define CPR                 1000
 
 #define TOR_SP				0.4416656494140625
 #define SPEED_SP			500
 
-#define VF_VQ				2.0
+#define VF_VQ				4.0
 #define VF_VD				0.0
 #define VF_FIXED_SPEED		3300
 
@@ -50,4 +49,6 @@
 
 #define CALIBRATION_WAIT_US (100 * 1000) //100ms
 
+#define ANGLE2CPR(x)    (x * CPR )/360
+#define THETAE90DEG     125
 #endif // _DEFAULT_CONFIG_H_

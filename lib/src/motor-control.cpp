@@ -100,6 +100,7 @@ private:
 	void parseConfig();
 	void transitionMode(MotorOpMode target);
 	void initMotor(bool full_init);
+	int Angle2CPR (int angle);
 };
 
 // Initialize the static member variable of the MotorControl class
@@ -314,6 +315,11 @@ void MotorControlImpl::transitionMode(MotorOpMode target)
 	mCurrentMode = target;
 }
 
+int MotorControlImpl::Angle2CPR(int angle)
+{
+	return angle * 1000 / 360;
+}
+
 void MotorControlImpl::initMotor(bool full_init)
 {
 
@@ -331,7 +337,6 @@ void MotorControlImpl::initMotor(bool full_init)
 	mPwm.setPhaseShift(PWM_PHASE_SHIFT);
 	mPwm.setSampleII(PWM_SAMPLE_II);
 
-	mFoc.setAngleOffset(FOC_ANGLE_OFFSET);
 	mFoc.setFixedSpeed(VF_FIXED_SPEED); //730 RPM
 
 	mPwm.startPwm();
@@ -350,6 +355,12 @@ void MotorControlImpl::initMotor(bool full_init)
 	mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseA);
 	mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseB);
 	mAdcHub.calibrateCurrentChannel(ElectricalData::kPhaseC);
+	/*
+	* KD240 hardware has non-linearity at value < 500mA, thus not including in
+	* DC offset calc.
+	*/
+	//mAdcHub.calibrateCurrentChannel(ElectricalData::kDCLink);
+
 	/*
 	 * set scaling for Voltage and Current
 	 */
@@ -396,10 +407,20 @@ void MotorControlImpl::initMotor(bool full_init)
 
 	mFoc.setVfParam(VF_VQ, VF_VD, VF_FIXED_SPEED);
 
+	transitionMode(MotorOpMode::kModeOff);
 	mMcUio.set_gate_drive(true);
 
 	if(full_init) {
+
 		transitionMode(MotorOpMode::kModeOpenLoop);
 		usleep(CALIBRATION_WAIT_US);
-	}
+		transitionMode(MotorOpMode::kModeOff);
+		mFoc.setAngleOffset(0);
+		mFoc.setFixedAngleCmd(0);
+		mFoc.setOperationMode(MotorOpMode::kModeFixedAngle);
+		int positionalCpr = ANGLE2CPR(mpSensor->getPosition());
+		int cprAligned = ((positionalCpr - THETAE90DEG) > 0) ? (positionalCpr
+				- THETAE90DEG) : (positionalCpr - THETAE90DEG + CPR);
+		mFoc.setAngleOffset(cprAligned);
+    }
 }
