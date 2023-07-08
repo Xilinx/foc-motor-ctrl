@@ -309,6 +309,10 @@ void MotorControlImpl::transitionMode(MotorOpMode target)
 			//TODO: eanble GD
 			mMcUio.set_gate_drive(true);
 			break;
+		case MotorOpMode::kModeFixedAngle:
+			mMcUio.set_gate_drive(true);
+			mFoc.setOperationMode(target);
+			break;
 		default:
 			return;
 	}
@@ -417,10 +421,12 @@ void MotorControlImpl::initMotor(bool full_init)
 		transitionMode(MotorOpMode::kModeOff);
 		mFoc.setAngleOffset(0);
 		mFoc.setFixedAngleCmd(0);
-		mFoc.setOperationMode(MotorOpMode::kModeFixedAngle);
+		transitionMode(MotorOpMode::kModeFixedAngle);
+		usleep(CALIBRATION_WAIT_US);
 		int positionalCpr = ANGLE2CPR(mpSensor->getPosition());
 		int cprAligned = ((positionalCpr - THETAE90DEG) > 0) ? (positionalCpr
 				- THETAE90DEG) : (positionalCpr - THETAE90DEG + CPR);
 		mFoc.setAngleOffset(cprAligned);
+		transitionMode(MotorOpMode::kModeOff);
     }
 }
