@@ -47,7 +47,7 @@
 
 #define ADCHUB_FILTERTAP	32
 
-#define CALIBRATION_WAIT_US (100 * 1000) //100ms
+#define CALIBRATION_WAIT_US (500 * 1000) //500ms
 
 #define ANGLE2CPR(x)    (x * CPR )/360
 #define THETAE90DEG     125
