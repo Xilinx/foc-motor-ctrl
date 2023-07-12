@@ -26,6 +26,8 @@
  *   - Check Naming convention and use '_' after the specifier if required.
  */
 
+#define ANGLE2CPR(x)    (((x) * CPR )/360)
+
 using namespace std;
 
 class MotorControlImpl : public MotorControl {
@@ -100,7 +102,6 @@ private:
 	void parseConfig();
 	void transitionMode(MotorOpMode target);
 	void initMotor(bool full_init);
-	int Angle2CPR (int angle);
 };
 
 // Initialize the static member variable of the MotorControl class
@@ -317,11 +318,6 @@ void MotorControlImpl::transitionMode(MotorOpMode target)
 			return;
 	}
 	mCurrentMode = target;
-}
-
-int MotorControlImpl::Angle2CPR(int angle)
-{
-	return angle * 1000 / 360;
 }
 
 void MotorControlImpl::initMotor(bool full_init)

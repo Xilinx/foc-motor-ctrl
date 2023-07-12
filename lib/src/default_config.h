@@ -25,7 +25,7 @@
 #define SPEED_KI			0.0000762939453125
 #define FW_KP				0.009918212890625
 #define FW_KI				0.0000762939453125
-#define CPR                 1000
+#define CPR				1000
 
 #define TOR_SP				0.4416656494140625
 #define SPEED_SP			500
@@ -49,6 +49,5 @@
 
 #define CALIBRATION_WAIT_US (500 * 1000) //500ms
 
-#define ANGLE2CPR(x)    (x * CPR )/360
 #define THETAE90DEG     125
 #endif // _DEFAULT_CONFIG_H_
