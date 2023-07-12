@@ -26,7 +26,8 @@ public:
 	int setGain(GainType gainController, double kp, double ki);
 	GainData getGain(GainType gainController);
 	int startFoc();
-	int setAngleOffset(double angleSh);
+	int setAngleOffset(int angleSh);
+	int setFixedAngleCmd(int angleCmd);
 	int setFixedSpeed(int fixedSpeed);
 	int setVfParam(double vq, double vd, int fixedSpeed);
 	int stopMotor();

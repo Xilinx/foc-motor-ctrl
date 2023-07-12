@@ -26,6 +26,8 @@
  *   - Check Naming convention and use '_' after the specifier if required.
  */
 
+#define ANGLE2CPR(x)    (((x) * CPR )/360)
+
 using namespace std;
 
 class MotorControlImpl : public MotorControl {
@@ -308,6 +310,10 @@ void MotorControlImpl::transitionMode(MotorOpMode target)
 			//TODO: eanble GD
 			mMcUio.set_gate_drive(true);
 			break;
+		case MotorOpMode::kModeFixedAngle:
+			mMcUio.set_gate_drive(true);
+			mFoc.setOperationMode(target);
+			break;
 		default:
 			return;
 	}
@@ -331,7 +337,6 @@ void MotorControlImpl::initMotor(bool full_init)
 	mPwm.setPhaseShift(PWM_PHASE_SHIFT);
 	mPwm.setSampleII(PWM_SAMPLE_II);
 
-	mFoc.setAngleOffset(FOC_ANGLE_OFFSET);
 	mFoc.setFixedSpeed(VF_FIXED_SPEED); //730 RPM
 
 	mPwm.startPwm();
@@ -350,14 +355,20 @@ void MotorControlImpl::initMotor(bool full_init)
 	mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseA);
 	mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseB);
 	mAdcHub.calibrateCurrentChannel(ElectricalData::kPhaseC);
-	mAdcHub.calibrateCurrentChannel(ElectricalData::kDCLink);
+	/*
+	* KD240 hardware has non-linearity at value < 500mA, thus not including in
+	* DC offset calc.
+	*/
+	//mAdcHub.calibrateCurrentChannel(ElectricalData::kDCLink);
+
 	/*
 	 * set scaling for Voltage and Current
 	 */
 	for (auto phase : all_Edata) {
 		mAdcHub.setVoltageScale(phase, ADCHUB_VOL_SCALE);
-		mAdcHub.setCurrentScale(phase, ADCHUB_CUR_SCALE);
+		mAdcHub.setCurrentScale(phase, ADCHUB_STATOR_CUR_SCALE);
 	}
+	mAdcHub.setCurrentScale(ElectricalData::kDCLink, ADCHUB_DC_CUR_SCALE);
 
 	/*
 	 * set the thresholds for the fault
@@ -396,10 +407,22 @@ void MotorControlImpl::initMotor(bool full_init)
 
 	mFoc.setVfParam(VF_VQ, VF_VD, VF_FIXED_SPEED);
 
+	transitionMode(MotorOpMode::kModeOff);
 	mMcUio.set_gate_drive(true);
 
 	if(full_init) {
+
 		transitionMode(MotorOpMode::kModeOpenLoop);
 		usleep(CALIBRATION_WAIT_US);
-	}
+		transitionMode(MotorOpMode::kModeOff);
+		mFoc.setAngleOffset(0);
+		mFoc.setFixedAngleCmd(0);
+		transitionMode(MotorOpMode::kModeFixedAngle);
+		usleep(CALIBRATION_WAIT_US);
+		int positionalCpr = ANGLE2CPR(mpSensor->getPosition());
+		int cprAligned = ((positionalCpr - THETAE90DEG) > 0) ? (positionalCpr
+				- THETAE90DEG) : (positionalCpr - THETAE90DEG + CPR);
+		mFoc.setAngleOffset(cprAligned);
+		transitionMode(MotorOpMode::kModeOff);
+    }
 }
