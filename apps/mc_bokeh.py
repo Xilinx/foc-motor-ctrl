@@ -8,6 +8,7 @@ import py_foc_motor_ctrl as mcontrol
 from bokeh.plotting import figure, curdoc
 from bokeh.layouts import layout, row, column
 from bokeh.models import Range1d, DataRange1d
+from bokeh.models import LinearAxis
 from bokeh.models import Select
 from bokeh.models import TextInput
 from bokeh.models import Paragraph, Div
@@ -15,8 +16,6 @@ from bokeh.models import Button
 from bokeh.driving import linear
 from numpy import nan
 from collections import deque
-
-debug_print = False
 
 css_style = Div(text="""
 <style>
@@ -58,30 +57,71 @@ flux_gain = mc.GetGain(mcontrol.GainType.kFlux)
 
 # title
 title1 = Div(
-    text="<h1>Kria&trade; SOM: Motor Dashboard</h1>",
-    width=400
+    text="<h1>Kria&trade; SOM: FOC Motor Dashboard</h1>",
+    width=500
 )
 
-plot_titles = [
-    'Phase A Motor Current',
-    'Phase B Motor Current',
-    'Phase C Motor Current',
-    'Motor Angle',
-    'Phase A Motor Voltage',
-    'Phase B Motor Voltage',
-    'Phase C Motor Voltage',
-    'Motor Speed',
-    'Id (FOC)',
-    'Iq (FOC)',
-    'Torque (FOC)',
-    'Speed (FOC)'
-]
+color_list = ["darkseagreen", "steelblue", "indianred", "chocolate", "gold", "mediumaquamarine"]
 
-num_plots = len(plot_titles)
-plot_data = [0] * num_plots
-data_list = [deque([0] * sample_size) for i in range(num_plots)]
-plot_list = [figure(plot_width=800, plot_height=300, title=title) for title in plot_titles]
-ds_list = [(plot.line(x, plot_data, line_width=2, color="darkseagreen")).data_source for plot, plot_data in zip(plot_list, data_list)]
+# Electrical Plot
+electrical_data_titles = [
+    'Phase A Current',
+    'Phase B Current',
+    'Phase C Current',
+    'Phase A Voltage',
+    'Phase B Voltage',
+    'Phase C Voltage'
+]
+num_electrical_data = len(electrical_data_titles)
+electrical_data = [0] * num_electrical_data
+electrical_data_list = [deque([0] * sample_size) for i in range(num_electrical_data)]
+electrical_plot = figure(plot_width=1000, plot_height=300, title='Electrical Data')
+electrical_lines = [0] * num_electrical_data
+electrical_ds_list = [0] * num_electrical_data
+electrical_plot.yaxis.visible = False
+electrical_plot.extra_y_ranges["Current"] = DataRange1d(only_visible=True)
+electrical_plot.add_layout(LinearAxis(y_range_name="Current", axis_label="Current (mA)"), 'left')
+electrical_plot.extra_y_ranges["Voltage"] = DataRange1d(only_visible=True)
+electrical_plot.add_layout(LinearAxis(y_range_name="Voltage", axis_label="Voltage (V)"), 'right')
+
+for i in range(num_electrical_data):
+    electrical_lines[i] = electrical_plot.line(x, electrical_data_list[i], line_width=2, color=color_list[i], legend_label=electrical_data_titles[i], y_range_name=electrical_data_titles[i][8:])
+
+electrical_plot.extra_y_ranges["Current"].renderers = [electrical_lines[0], electrical_lines[1], electrical_lines[2]]
+electrical_plot.extra_y_ranges["Voltage"].renderers = [electrical_lines[3], electrical_lines[4], electrical_lines[5]]
+electrical_plot.legend.click_policy = "hide"
+electrical_plot.add_layout(electrical_plot.legend[0], 'right')
+
+for i in range(num_electrical_data):
+    electrical_ds_list[i] = electrical_lines[i].data_source
+
+# Mechanical Plot
+mechanical_data_titles = [
+    'Motor Speed',
+    'Motor Position'
+]
+num_mechanical_data = len(mechanical_data_titles)
+mechanical_data = [0] * num_mechanical_data
+mechanical_data_list = [deque([0] * sample_size) for i in range(num_mechanical_data)]
+mechanical_plot = figure(plot_width=1000, plot_height=300, title='Mechanical Data')
+mechanical_lines = [0] * num_mechanical_data
+mechanical_ds_list = [0] * num_mechanical_data
+mechanical_plot.yaxis.visible = False
+mechanical_plot.extra_y_ranges["Speed"] = DataRange1d(only_visible=True)
+mechanical_plot.add_layout(LinearAxis(y_range_name="Speed", axis_label="Speed (rpm)"), 'left')
+mechanical_plot.extra_y_ranges["Position"] = DataRange1d(only_visible=True)
+mechanical_plot.add_layout(LinearAxis(y_range_name="Position", axis_label="Position (degrees)"), 'right')
+
+for i in range(num_mechanical_data):
+    mechanical_lines[i] = mechanical_plot.line(x, mechanical_data_list[i], line_width=2, color=color_list[i], legend_label=mechanical_data_titles[i], y_range_name=mechanical_data_titles[i][6:])
+
+mechanical_plot.extra_y_ranges["Speed"].renderers = [mechanical_lines[0]]
+mechanical_plot.extra_y_ranges["Position"].renderers = [mechanical_lines[1]]
+mechanical_plot.legend.click_policy = "hide"
+mechanical_plot.add_layout(mechanical_plot.legend[0], 'right')
+
+for i in range(num_mechanical_data):
+    mechanical_ds_list[i] = mechanical_lines[i].data_source
 
 # sample interval
 def update_interval(attr, old, new):
@@ -106,7 +146,9 @@ def update_sample_size(attr, old, new):
         excess = sample_size_actual - new_sample_size
         while excess > 0:
             x.popleft()
-            for data in data_list:
+            for data in electrical_data_list:
+                data.popleft()
+            for data in mechanical_data_list:
                 data.popleft()
             excess = excess - 1
         sample_size_actual = new_sample_size
@@ -119,7 +161,6 @@ sample_size_input.on_change('value', update_sample_size)
 # Mode dropdown
 def change_mode(attr, old, new):
     mode = str(mode_dropdown.value)
-    if debug_print: print("Mode selected: " + str(mode_dropdown.value))
     global dynamic_interface
     error_message.text = ""
 
@@ -183,14 +224,13 @@ def update_speed_setpoint(attr, old, new):
     global speed_setpoint
     if float(new) >= speed_setpoint_min and float(new) <= speed_setpoint_max:
         speed_setpoint = float(new)
-        if debug_print: print("New speed_setpoint is: " + str(speed_setpoint))
         mc.setSpeed(speed_setpoint)
         error_message.text = ""
     else:
         speed_setpoint_input.value = str(speed_setpoint)
         error_message.text = "Error: Invalid input. Speed setpoint must be between " + str(speed_setpoint_min) + " and " + str(speed_setpoint_max) + "."
 
-speed_setpoint_title = Paragraph(text="Speed Setpoint:", width=150, align="center")
+speed_setpoint_title = Paragraph(text="Speed Setpoint:", width=110, align="center")
 speed_setpoint_input = TextInput(value=str(speed_setpoint), width=180)
 speed_setpoint_input.on_change('value', update_speed_setpoint)
 
@@ -199,14 +239,13 @@ def update_torque_setpoint(attr, old, new):
     global torque_setpoint
     if float(new) >= torque_setpoint_min and float(new) <= torque_setpoint_max:
         torque_setpoint = float(new)
-        if debug_print: print("New torque_setpoint is: " + str(torque_setpoint))
         mc.setTorque(torque_setpoint)
         error_message.text = ""
     else:
         torque_setpoint_input.value = str(torque_setpoint)
         error_message.text = "Error: Invalid input. Torque setpoint must be between " + str(torque_setpoint_min) + " and " + str(torque_setpoint_max) + "."
 
-torque_setpoint_title = Paragraph(text="Torque Setpoint:", width=150, align="center")
+torque_setpoint_title = Paragraph(text="Torque Setpoint:", width=110, align="center")
 torque_setpoint_input = TextInput(value=str(torque_setpoint), width=180)
 torque_setpoint_input.on_change('value', update_torque_setpoint)
 
@@ -215,14 +254,13 @@ def update_open_loop_vd(attr, old, new):
     global open_loop_vd
     if float(new) >= open_loop_vd_min and float(new) <= open_loop_vd_max:
         open_loop_vd = float(new)
-        if debug_print: print("New open_loop_vd is: " + str(open_loop_vd))
         mc.setVfParamVd(open_loop_vd)
         error_message.text = ""
     else:
         open_loop_vd_input.value = str(open_loop_vd)
         error_message.text = "Error: Invalid input. Open Loop - Vd must be between " + str(open_loop_vd_min) + " and " + str(open_loop_vd_max) + "."
 
-open_loop_vd_title = Paragraph(text="Open Loop - Vd:", width=150, align="center")
+open_loop_vd_title = Paragraph(text="Open Loop - Vd:", width=110, align="center")
 open_loop_vd_input = TextInput(value=str(open_loop_vd), width=180)
 open_loop_vd_input.on_change('value', update_open_loop_vd)
 
@@ -231,14 +269,13 @@ def update_open_loop_vq(attr, old, new):
     global open_loop_vq
     if float(new) >= open_loop_vq_min and float(new) <= open_loop_vq_max:
         open_loop_vq = float(new)
-        if debug_print: print("New open_loop_vq is: " + str(open_loop_vq))
         mc.setVfParamVq(open_loop_vq)
         error_message.text = ""
     else:
         open_loop_vq_input.value = str(open_loop_vq)
         error_message.text = "Error: Invalid input. Open Loop - Vq must be between " + str(open_loop_vq_min) + " and " + str(open_loop_vq_max) + "."
 
-open_loop_vq_title = Paragraph(text="Open Loop - Vq:", width=150, align="center")
+open_loop_vq_title = Paragraph(text="Open Loop - Vq:", width=110, align="center")
 open_loop_vq_input = TextInput(value=str(open_loop_vq), width=180)
 open_loop_vq_input.on_change('value', update_open_loop_vq)
 
@@ -246,7 +283,6 @@ open_loop_vq_input.on_change('value', update_open_loop_vq)
 def update_speed_Kp(attr, old, new):
     global speed_gain
     speed_gain.kp = float(new)
-    if debug_print: print("New speed_Kp is: " + str(speed_gain.kp))
     mc.setGain(mcontrol.GainType.kSpeed, speed_gain)
 
 speed_Kp_title = Paragraph(text="Speed Kp:", width=70, align="center")
@@ -257,7 +293,6 @@ speed_Kp_input.disabled = True
 def update_speed_Ki(attr, old, new):
     global speed_gain
     speed_gain.ki = float(new)
-    if debug_print: print("New speed_Ki is: " + str(speed_gain.ki))
     mc.setGain(mcontrol.GainType.kSpeed, speed_gain)
 
 speed_Ki_title = Paragraph(text="Speed Ki:", width=70, align="center")
@@ -268,7 +303,6 @@ speed_Ki_input.disabled = True
 def update_torque_Kp(attr, old, new):
     global torque_gain
     torque_gain.kp = float(new)
-    if debug_print: print("New torque_Kp is: " + str(torque_gain.kp))
     mc.setGain(mcontrol.GainType.kCurrent, torque_gain)
 
 torque_Kp_title = Paragraph(text="Torque Kp:", width=70, align="center")
@@ -279,7 +313,6 @@ torque_Kp_input.disabled = True
 def update_torque_Ki(attr, old, new):
     global torque_gain
     torque_gain.ki = float(new)
-    if debug_print: print("New torque_Ki is: " + str(torque_gain.ki))
     mc.setGain(mcontrol.GainType.kCurrent, torque_gain)
 
 torque_Ki_title = Paragraph(text="Torque Ki:", width=70, align="center")
@@ -290,7 +323,6 @@ torque_Ki_input.disabled = True
 def update_flux_Kp(attr, old, new):
     global flux_gain
     flux_gain.kp = float(new)
-    if debug_print: print("New flux_Kp is: " + str(flux_gain.kp))
     mc.setGain(mcontrol.GainType.kFlux, flux_gain)
 
 flux_Kp_title = Paragraph(text="Flux Kp:", width=70, align="center")
@@ -301,7 +333,6 @@ flux_Kp_input.disabled = True
 def update_flux_Ki(attr, old, new):
     global flux_gain
     flux_gain.ki = float(new)
-    if debug_print: print("New flux_Ki is: " + str(flux_gain.ki))
     mc.setGain(mcontrol.GainType.kFlux, flux_gain)
 
 flux_Ki_title = Paragraph(text="Flux Ki:", width=70, align="center")
@@ -318,40 +349,43 @@ clear_faults_button = Button(label="Clear Faults", width=100, button_type='prima
 clear_faults_button.on_click(clear_faults)
 
 # Error message
-error_message = Paragraph(text="", style={'color': 'red'}, width=230, align="center")
+error_message = Paragraph(text="", style={'color': 'red'}, width=290, align="center")
 
 @linear()
 def update(step):
-    plot_data[0] = mc.getCurrent(mcontrol.ElectricalData.kPhaseA)
-    plot_data[1] = mc.getCurrent(mcontrol.ElectricalData.kPhaseB)
-    plot_data[2] = mc.getCurrent(mcontrol.ElectricalData.kPhaseC)
-    plot_data[3] = mc.getPosition()
-    plot_data[4] = mc.getVoltage(mcontrol.ElectricalData.kPhaseA)
-    plot_data[5] = mc.getVoltage(mcontrol.ElectricalData.kPhaseB)
-    plot_data[6] = mc.getVoltage(mcontrol.ElectricalData.kPhaseC)
-    plot_data[7] = mc.getSpeed()
-    foc_data = mc.getFocCalc()
-    plot_data[8] = foc_data.i_d
-    plot_data[9] = foc_data.i_q
-    plot_data[10] = foc_data.torque
-    plot_data[11] = foc_data.speed
+    electrical_data[0] = mc.getCurrent(mcontrol.ElectricalData.kPhaseA)
+    electrical_data[1] = mc.getCurrent(mcontrol.ElectricalData.kPhaseB)
+    electrical_data[2] = mc.getCurrent(mcontrol.ElectricalData.kPhaseC)
+    electrical_data[3] = mc.getVoltage(mcontrol.ElectricalData.kPhaseA)
+    electrical_data[4] = mc.getVoltage(mcontrol.ElectricalData.kPhaseB)
+    electrical_data[5] = mc.getVoltage(mcontrol.ElectricalData.kPhaseC)
+
+    mechanical_data[0] = mc.getSpeed()
+    mechanical_data[1] = mc.getPosition()
 
     global time
     global sample_size_actual
+    global plot_update_interval
+    global num_points_per_update
+
     if sample_size_actual >= sample_size:
         x.popleft()
     x.append(time)
     time = time + interval
 
-    global plot_update_interval
-    global num_points_per_update
-    for i in range(len(data_list)):
+    for i in range(len(electrical_data_list)):
         if sample_size_actual >= sample_size:
-            data_list[i].popleft()
-        val_read = plot_data[i]
-        data_list[i].append(val_read)
+            electrical_data_list[i].popleft()
+        electrical_data_list[i].append(electrical_data[i])
         if plot_update_interval == 0:
-            ds_list[i].trigger('data', x, data_list[i])
+            electrical_ds_list[i].trigger('data', x, electrical_data_list[i])
+
+    for i in range(len(mechanical_data_list)):
+        if sample_size_actual >= sample_size:
+            mechanical_data_list[i].popleft()
+        mechanical_data_list[i].append(mechanical_data[i])
+        if plot_update_interval == 0:
+            mechanical_ds_list[i].trigger('data', x, mechanical_data_list[i])
 
     plot_update_interval += 1
     if plot_update_interval >= num_points_per_update:
@@ -399,9 +433,8 @@ layout1 = layout(
         dynamic_interface,
         fault_interface
     ),
-    row(plot_list[0], plot_list[1], plot_list[2], plot_list[3]),
-    row(plot_list[4], plot_list[5], plot_list[6], plot_list[7]),
-    row(plot_list[8], plot_list[9], plot_list[10], plot_list[11]),
+    row(electrical_plot, margin=(30, 30, 30, 30)),
+    row(mechanical_plot, margin=(30, 30, 30, 30)),
     css_style)
 )
 
