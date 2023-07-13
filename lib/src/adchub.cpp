@@ -133,10 +133,39 @@ int Adchub::setCurrentScale(ElectricalData phase, double scale)
 	return 0;
 }
 
-int Adchub::setFiltertap(int filtertap)
+int Adchub::setCurrentFiltertap(ElectricalData phase, int filtertap)
 {
-	for (int index = 0; index < channelMax; index++)
-		mAdchub_IIO_Handle->writeChannel(index, "set_filter_tap", std::to_string(filtertap).c_str());
+	switch (phase)
+	{
+	case ElectricalData::kPhaseA:
+		return mAdchub_IIO_Handle->writeChannel(current1_ac, "set_filter_tap", std::to_string(filtertap).c_str());
+	case ElectricalData::kPhaseB:
+		return mAdchub_IIO_Handle->writeChannel(current3_ac, "set_filter_tap", std::to_string(filtertap).c_str());
+	case ElectricalData::kPhaseC:
+		return mAdchub_IIO_Handle->writeChannel(current5_ac, "set_filter_tap", std::to_string(filtertap).c_str());
+	case ElectricalData::kDCLink:
+		return mAdchub_IIO_Handle->writeChannel(current7_dc, "set_filter_tap", std::to_string(filtertap).c_str());
+	default:
+		return -1;
+	}
+	return 0;
+}
+
+int Adchub::setVoltageFiltertap(ElectricalData phase, int filtertap)
+{
+	switch (phase)
+	{
+	case ElectricalData::kPhaseA:
+		return mAdchub_IIO_Handle->writeChannel(voltage0_ac, "set_filter_tap", std::to_string(filtertap).c_str());
+	case ElectricalData::kPhaseB:
+		return mAdchub_IIO_Handle->writeChannel(voltage2_ac, "set_filter_tap", std::to_string(filtertap).c_str());
+	case ElectricalData::kPhaseC:
+		return mAdchub_IIO_Handle->writeChannel(voltage4_ac, "set_filter_tap", std::to_string(filtertap).c_str());
+	case ElectricalData::kDCLink:
+		return mAdchub_IIO_Handle->writeChannel(voltage6_dc, "set_filter_tap", std::to_string(filtertap).c_str());
+	default:
+		return -1;
+	}
 	return 0;
 }
 
