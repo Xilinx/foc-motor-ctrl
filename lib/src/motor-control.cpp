@@ -385,7 +385,13 @@ void MotorControlImpl::initMotor(bool full_init)
 	mAdcHub.set_current_threshold_rising_limit(ElectricalData::kDCLink,
 													ADCHUB_DCLINK_RISING_THRES);
 
-	mAdcHub.setFiltertap(ADCHUB_FILTERTAP); //TODO: Check it is doing for all channels whereas script does only for the currents.
+	for (auto phase : all_Edata) {
+
+		mAdcHub.setCurrentFiltertap(phase, ADCHUB_FILTERTAP);
+		mAdcHub.setVoltageFiltertap(phase, ADCHUB_FILTERTAP);
+	}
+
+	mAdcHub.setCurrentFiltertap(ElectricalData::kDCLink, DCLINK_FILTERTAP);
 
 	mAdcHub.clearFaults();
 
