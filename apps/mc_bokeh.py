@@ -13,6 +13,7 @@ from bokeh.models import Select
 from bokeh.models import TextInput
 from bokeh.models import Paragraph, Div
 from bokeh.models import Button
+from bokeh.models import Label
 from bokeh.driving import linear
 from numpy import nan
 from collections import deque
@@ -122,6 +123,61 @@ mechanical_plot.add_layout(mechanical_plot.legend[0], 'right')
 
 for i in range(num_mechanical_data):
     mechanical_ds_list[i] = mechanical_lines[i].data_source
+
+# Fault Status Indicators
+fault_status_plot_x = [1, 1, 1, 2, 2, 2]
+fault_status_plot_y = [3, 2, 1, 3, 2, 1]
+fault_list = [
+    mcontrol.FaultType.kPhaseA_OC,
+    mcontrol.FaultType.kPhaseB_OC,
+    mcontrol.FaultType.kPhaseC_OC,
+    mcontrol.FaultType.kDCLink_OC,
+    mcontrol.FaultType.kDCLink_OV,
+    mcontrol.FaultType.kDCLink_UV
+]
+fault_labels = [
+    "PhaseA_OC",
+    "PhaseB_OC",
+    "PhaseC_OC",
+    "DCLink_OC",
+    "DCLink_OV",
+    "DCLink_UV"
+]
+
+fault_colors = [""] * len(fault_labels)
+for i in range(len(fault_list)):
+    fault_colors[i] = "red" if mc.getFaultStatus(fault_list[i]) else "green"
+
+fault_status_plot = figure(plot_width=400, plot_height=200, title='Fault Status')
+fault_status_plot.grid.visible = False
+fault_status_plot.axis.visible = False
+fault_status_plot.x_range = Range1d(0.8, 3)
+fault_status_plot.y_range = Range1d(0.5, 3.5)
+fault_status_plot.toolbar.active_drag = None
+fault_status_plot.toolbar.active_scroll = None
+fault_status_plot.toolbar.active_tap = None
+fault_status_plot.toolbar.logo = None
+fault_status_plot.toolbar_location = None
+
+for i in range(len(fault_labels)):
+    mytext = Label(
+        x = fault_status_plot_x[i]+0.15,
+        y = fault_status_plot_y[i]-0.15,
+        text = fault_labels[i],
+        text_color = '#E0E0E0',
+        text_font_size = '14px')
+    fault_status_plot.add_layout(mytext)
+
+fault_status_ds = fault_status_plot.circle(fault_status_plot_x, fault_status_plot_y, radius=0.1, color=fault_colors).data_source
+
+# Fault Status Callback
+def update_fault_status():
+    for i in range(len(fault_list)):
+        fault_colors[i] = "red" if mc.getFaultStatus(fault_list[i]) else "green"
+    fault_status_ds.trigger('data', fault_colors, fault_colors)
+
+fault_status_callback_interval = 1000 #milliseconds
+fault_status_callback = curdoc().add_periodic_callback(update_fault_status, fault_status_callback_interval)
 
 # sample interval
 def update_interval(attr, old, new):
@@ -344,6 +400,7 @@ flux_Ki_input.disabled = True
 def clear_faults():
     mc.clearFaults()
     mode_dropdown.value = "Off"
+    update_fault_status()
 
 clear_faults_button = Button(label="Clear Faults", width=100, button_type='primary')
 clear_faults_button.on_click(clear_faults)
@@ -422,7 +479,7 @@ dynamic_interface = column(
     margin=(30, 30, 30, 30)
 )
 
-fault_interface = column(clear_faults_button, margin=(30, 30, 30, 30))
+fault_interface = column(fault_status_plot, clear_faults_button, margin=(30, 30, 30, 30))
 
 layout1 = layout(
     column(row(title1, align='center'),
