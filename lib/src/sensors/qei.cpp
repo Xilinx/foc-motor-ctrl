@@ -32,7 +32,7 @@ int QeiSensor::getPosition()
 	return mQei_IIO_Handle->readChannel(THETA, "raw");
 }
 
-int QeiSensor::startQei()
+void QeiSensor::start()
 {
-	return mQei_IIO_Handle->writeDeviceattr("ap_ctrl", "1");
+	mQei_IIO_Handle->writeDeviceattr("ap_ctrl", "1");
 }

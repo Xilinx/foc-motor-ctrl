@@ -15,6 +15,7 @@ public:
 	SmoSensor(/* constructor parameters */);
 	virtual int getSpeed() override;
 	virtual int getPosition() override;
+	virtual void start() override;
 	~SmoSensor();
 
 private:

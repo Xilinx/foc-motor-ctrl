@@ -133,10 +133,39 @@ int Adchub::setCurrentScale(ElectricalData phase, double scale)
 	return 0;
 }
 
-int Adchub::setFiltertap(int filtertap)
+int Adchub::setCurrentFiltertap(ElectricalData phase, int filtertap)
 {
-	for (int index = 0; index < channelMax; index++)
-		mAdchub_IIO_Handle->writeChannel(index, "set_filter_tap", std::to_string(filtertap).c_str());
+	switch (phase)
+	{
+	case ElectricalData::kPhaseA:
+		return mAdchub_IIO_Handle->writeChannel(current1_ac, "set_filter_tap", std::to_string(filtertap).c_str());
+	case ElectricalData::kPhaseB:
+		return mAdchub_IIO_Handle->writeChannel(current3_ac, "set_filter_tap", std::to_string(filtertap).c_str());
+	case ElectricalData::kPhaseC:
+		return mAdchub_IIO_Handle->writeChannel(current5_ac, "set_filter_tap", std::to_string(filtertap).c_str());
+	case ElectricalData::kDCLink:
+		return mAdchub_IIO_Handle->writeChannel(current7_dc, "set_filter_tap", std::to_string(filtertap).c_str());
+	default:
+		return -1;
+	}
+	return 0;
+}
+
+int Adchub::setVoltageFiltertap(ElectricalData phase, int filtertap)
+{
+	switch (phase)
+	{
+	case ElectricalData::kPhaseA:
+		return mAdchub_IIO_Handle->writeChannel(voltage0_ac, "set_filter_tap", std::to_string(filtertap).c_str());
+	case ElectricalData::kPhaseB:
+		return mAdchub_IIO_Handle->writeChannel(voltage2_ac, "set_filter_tap", std::to_string(filtertap).c_str());
+	case ElectricalData::kPhaseC:
+		return mAdchub_IIO_Handle->writeChannel(voltage4_ac, "set_filter_tap", std::to_string(filtertap).c_str());
+	case ElectricalData::kDCLink:
+		return mAdchub_IIO_Handle->writeChannel(voltage6_dc, "set_filter_tap", std::to_string(filtertap).c_str());
+	default:
+		return -1;
+	}
 	return 0;
 }
 
@@ -210,6 +239,44 @@ int Adchub::set_current_threshold_rising_limit(ElectricalData phase, double thre
 		return mAdchub_IIO_Handle->writeeventattr(current5_ac, attrName.c_str(), std::to_string(threshold).c_str());
 	case ElectricalData::kDCLink:
 		return mAdchub_IIO_Handle->writeeventattr(current7_dc, attrName.c_str(), std::to_string(threshold).c_str());
+	default:
+		return -1;
+	}
+	return 0;
+}
+
+int Adchub::calibrateCurrentChannel(ElectricalData phase)
+{
+	std::string attrName = "calibrate";
+	switch (phase)
+	{
+	case ElectricalData::kPhaseA:
+		return mAdchub_IIO_Handle->writeChannel(current1_ac, attrName.c_str(), "1");
+	case ElectricalData::kPhaseB:
+		return mAdchub_IIO_Handle->writeChannel(current3_ac, attrName.c_str(), "1");
+	case ElectricalData::kPhaseC:
+		return mAdchub_IIO_Handle->writeChannel(current5_ac, attrName.c_str(), "1");
+	case ElectricalData::kDCLink:
+		return mAdchub_IIO_Handle->writeChannel(current7_dc, attrName.c_str(), "1");
+	default:
+		return -1;
+	}
+	return 0;
+}
+
+int Adchub::calibrateVoltageChannel(ElectricalData phase)
+{
+	std::string attrName = "calibrate";
+	switch (phase)
+	{
+	case ElectricalData::kPhaseA:
+		return mAdchub_IIO_Handle->writeChannel(voltage0_ac, attrName.c_str(), "1");
+	case ElectricalData::kPhaseB:
+		return mAdchub_IIO_Handle->writeChannel(voltage2_ac, attrName.c_str(), "1");
+	case ElectricalData::kPhaseC:
+		return mAdchub_IIO_Handle->writeChannel(voltage4_ac, attrName.c_str(), "1");
+	case ElectricalData::kDCLink:
+		return mAdchub_IIO_Handle->writeChannel(voltage6_dc, attrName.c_str(), "1");
 	default:
 		return -1;
 	}

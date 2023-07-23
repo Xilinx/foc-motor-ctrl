@@ -33,8 +33,10 @@ target_sources(${FMC_LIB_NAME} PRIVATE
     src/pwm.cpp
     src/svpwm.cpp
     src/adchub.cpp
+    src/mc_driver.cpp
     src/sensors/sensor.cpp
     src/interface/iio_drv.cpp
+    src/interface/uio_drv.cpp
     src/python_bind.cpp
 )
 

@@ -22,11 +22,14 @@ public:
 	int clearFaults();
 	int setVoltageScale(ElectricalData phase, double scale);
 	int setCurrentScale(ElectricalData phase, double scale);
-	int setFiltertap(int filtertap);
+	int setCurrentFiltertap(ElectricalData phase, int filtertap);
+	int setVoltageFiltertap(ElectricalData phase, int filtertap);
 	int set_voltage_threshold_falling_limit(ElectricalData phase, double threshold);
 	int set_voltage_threshold_rising_limit(ElectricalData phase, double threshold);
 	int set_current_threshold_falling_limit(ElectricalData phase, double threshold);
 	int set_current_threshold_rising_limit(ElectricalData phase, double threshold);
+	int calibrateCurrentChannel(ElectricalData phase);
+	int calibrateVoltageChannel(ElectricalData phase);
 	int disable_undervoltage_protection(ElectricalData phase);
 	~Adchub();
 

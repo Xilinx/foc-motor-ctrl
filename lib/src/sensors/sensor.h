@@ -11,6 +11,7 @@ public:
 	virtual ~Sensor();
 	virtual int getSpeed() = 0;
 	virtual int getPosition() = 0;
+	virtual void start() = 0;
 	static Sensor *getSensorInstance();
 private:
 	static bool isQeiPresent();
