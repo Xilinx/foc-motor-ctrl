@@ -42,3 +42,30 @@ uint32_t MC_Uio::getGateDrive()
 {
     return mUioHandle->regRead(GATE_DRIVE_EN);
 }
+
+int MC_Uio::getEventFd(FaultType event)
+{
+	// Verify if the event is supported by the driver
+	// Determine the device that needs to be opened for the blocking read
+	// open the device and return the FD.
+	return -1; //TODO: return file descriptor to /dev/adchub
+}
+
+void MC_Uio::enableEvent(FaultType event)
+{
+	// Verify if the event is supported by the driver
+	// Enable the Fault
+}
+
+void MC_Uio::disableEvent(FaultType event)
+{
+	// Verify if the event is supported by the driver
+	// Disable the Fault
+}
+
+bool MC_Uio::getEventStatus(FaultType event)
+{
+	// Verify if the event is supported by the driver
+	// Return the current status of the fault
+	return false;
+}

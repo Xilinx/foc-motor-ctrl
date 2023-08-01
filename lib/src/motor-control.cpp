@@ -194,7 +194,7 @@ double MotorControlImpl::getVoltage(ElectricalData type)
 
 bool MotorControlImpl::getFaultStatus(FaultType type)
 {
-	return mAdcHub.getFaultStatus(type);
+	return mAdcHub.getEventStatus(type);
 }
 
 FocData MotorControlImpl::getFocCalc()

@@ -7,18 +7,18 @@
 #define _ADC_HUB_H
 
 #include "../include/motor-control/motor-control.hpp"
+#include "event_control.h"
 #include "interface/iio_drv.h"
 
 enum class ElectricalData;
 enum class FaultType;
 
-class Adchub
+class Adchub : public EventControl
 {
 public:
 	Adchub();
 	double getCurrent(ElectricalData phase);
 	double getVoltage(ElectricalData phase);
-	bool getFaultStatus(FaultType fault);
 	int clearFaults();
 	int setVoltageScale(ElectricalData phase, double scale);
 	int setCurrentScale(ElectricalData phase, double scale);
@@ -32,6 +32,12 @@ public:
 	int calibrateVoltageChannel(ElectricalData phase);
 	int disable_undervoltage_protection(ElectricalData phase);
 	~Adchub();
+
+	// Fault Handling
+	bool getEventStatus(FaultType event) override;
+	int getEventFd(FaultType event) override;
+	void enableEvent(FaultType event) override;
+	void disableEvent(FaultType event) override;
 
 private:
 	static const std::string kAdcHubDriverName;
