@@ -1,38 +1,44 @@
+/*
+ * Copyright (C) 2023 Advanced Micro Devices, Inc.
+ * SPDX-License-Identifier: MIT
+ */
+
 #include "mc_driver.h"
 #include <iostream>
 
-const std::string mc_uio::kUioDriverName = "motor_control";
+/*
+ * Hardware Offsets
+ */
+#define GATE_DRIVE_EN 0x00
+#define PHASE_CURRENT_BALANCE_FAULT_VALUE 0x04
+#define PHASE_CURRENT_BALANCE_FAULT_ENABLE 0x08
+#define PHASE_CURRENT_BALANCE_FAULT_CLEAR 0x0C
+#define PHASE_CURRENT_BALANCE_FAULT_STATUS 0x10 // read only
+#define MOTOR_CONTORL_UIO_IRQ_DISABLE 0x14
+#define MUX_SEL 0x18
 
+const std::string MC_Uio::kUioDriverName = "motor_control";
 
-mc_uio::mc_uio(/* args */)
+MC_Uio::MC_Uio(/* args */)
 {
-	uioHandle = new UioDrv(kUioDriverName);
+	mUioHandle = new UioDrv(kUioDriverName);
 }
 
-mc_uio::~mc_uio()
+MC_Uio::~MC_Uio()
 {
-	delete uioHandle;
+	delete mUioHandle;
 }
 
-int mc_uio::set_gate_drive(bool value)
+int MC_Uio::setGateDrive(bool value)
 {
-    if (uioHandle->virtualAddr)
-    {
-        if (value)
-        {
-            uioHandle->regWrite(GATE_DRIVE_EN, 0x1);
-        }
+    if (value)
+            mUioHandle->regWrite(GATE_DRIVE_EN, 0x1);
         else
-        {
-            uioHandle->regWrite(GATE_DRIVE_EN, 0x0);
-        }
+            mUioHandle->regWrite(GATE_DRIVE_EN, 0x0);
     return 0;
-    }
-
-    throw std::runtime_error("Failed mapping motor control IP address");
 }
 
-uint32_t mc_uio::get_gate_drive()
+uint32_t MC_Uio::getGateDrive()
 {
-    return uioHandle->regRead(GATE_DRIVE_EN);
+    return mUioHandle->regRead(GATE_DRIVE_EN);
 }

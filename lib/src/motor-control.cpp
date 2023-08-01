@@ -91,7 +91,7 @@ private:
 	Svpwm mSvPwm;
 	Adchub mAdcHub;
 	Sensor *mpSensor;
-	mc_uio mMcUio;
+	MC_Uio mMcUio;
 
 	/*
 	 * Shadow
@@ -295,23 +295,23 @@ void MotorControlImpl::transitionMode(MotorOpMode target)
 	switch(target) {
 		case MotorOpMode::kModeOff:
 			//TODO: disable GD using mc ip ~
-			mMcUio.set_gate_drive(false);
+			mMcUio.setGateDrive(false);
 			mFoc.stopMotor();
 			break;
 		case MotorOpMode::kModeSpeed:
 		case MotorOpMode::kModeTorque:
 		case MotorOpMode::kModeSpeedFW:
-			mMcUio.set_gate_drive(true);
+			mMcUio.setGateDrive(true);
 			mFoc.setOperationMode(target);
 			break;
 		case MotorOpMode::kModeOpenLoop:
 			//TODO: incorrect use of MotorOpMode. Foc should have its own enum and diff func name
 			mFoc.setOperationMode(static_cast<MotorOpMode>(5));
 			//TODO: eanble GD
-			mMcUio.set_gate_drive(true);
+			mMcUio.setGateDrive(true);
 			break;
 		case MotorOpMode::kModeFixedAngle:
-			mMcUio.set_gate_drive(true);
+			mMcUio.setGateDrive(true);
 			mFoc.setOperationMode(target);
 			break;
 		default:
@@ -414,7 +414,7 @@ void MotorControlImpl::initMotor(bool full_init)
 	mFoc.setVfParam(VF_VQ, VF_VD, VF_FIXED_SPEED);
 
 	transitionMode(MotorOpMode::kModeOff);
-	mMcUio.set_gate_drive(true);
+	mMcUio.setGateDrive(true);
 
 	if(full_init) {
 
