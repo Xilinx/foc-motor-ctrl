@@ -8,12 +8,14 @@ import py_foc_motor_ctrl as mcontrol
 from bokeh.plotting import figure, curdoc
 from bokeh.layouts import layout, row, column
 from bokeh.models import Range1d, DataRange1d
+from bokeh.models import ColumnDataSource
 from bokeh.models import LinearAxis
 from bokeh.models import Select
 from bokeh.models import TextInput
 from bokeh.models import Paragraph, Div
 from bokeh.models import Button
 from bokeh.models import Label
+from bokeh.models import RadioGroup
 from bokeh.driving import linear
 from numpy import nan
 from collections import deque
@@ -79,6 +81,7 @@ electrical_data_list = [deque([0] * sample_size) for i in range(num_electrical_d
 electrical_plot = figure(plot_width=1000, plot_height=300, title='Electrical Data')
 electrical_lines = [0] * num_electrical_data
 electrical_ds_list = [0] * num_electrical_data
+electrical_plot.xaxis.axis_label = "Time (s)"
 electrical_plot.yaxis.visible = False
 electrical_plot.extra_y_ranges["Current"] = DataRange1d(only_visible=True)
 electrical_plot.add_layout(LinearAxis(y_range_name="Current", axis_label="Current (mA)"), 'left')
@@ -107,6 +110,7 @@ mechanical_data_list = [deque([0] * sample_size) for i in range(num_mechanical_d
 mechanical_plot = figure(plot_width=1000, plot_height=300, title='Mechanical Data')
 mechanical_lines = [0] * num_mechanical_data
 mechanical_ds_list = [0] * num_mechanical_data
+mechanical_plot.xaxis.axis_label = "Time (s)"
 mechanical_plot.yaxis.visible = False
 mechanical_plot.extra_y_ranges["Speed"] = DataRange1d(only_visible=True)
 mechanical_plot.add_layout(LinearAxis(y_range_name="Speed", axis_label="Speed (rpm)"), 'left')
@@ -123,6 +127,105 @@ mechanical_plot.add_layout(mechanical_plot.legend[0], 'right')
 
 for i in range(num_mechanical_data):
     mechanical_ds_list[i] = mechanical_lines[i].data_source
+
+# Live Analysis Plot
+live_analysis_options = [
+    "PhA Current",
+    "PhB Current",
+    "PhC Current",
+    "I_d",
+    "I_q",
+    "I_alpha",
+    "I_beta",
+    "PhA Voltage",
+    "PhB Voltage",
+    "PhC Voltage",
+    "Speed"
+]
+live_analysis_axis_labels = {
+    "PhA Current": "Phase A Current (mA)",
+    "PhB Current": "Phase B Current (mA)",
+    "PhC Current": "Phase C Current (mA)",
+    "I_d": "Direct Current (mA)",
+    "I_q": "Quadrature Current (mA)",
+    "I_alpha": "I_alpha (mA)",
+    "I_beta": "I_beta (mA)",
+    "PhA Voltage": "Phase A Voltage (V)",
+    "PhB Voltage": "Phase B Voltage (V)",
+    "PhC Voltage": "Phase C Voltage (V)",
+    "Speed": "Speed (rpm)"
+}
+live_analysis_x_selection = live_analysis_options[0]
+live_analysis_y_selection = live_analysis_options[1]
+
+def live_analysis_select_data(self):
+    global live_analysis_x_data_list
+    global live_analysis_y_data_list
+    global live_analysis_x_selection
+    global live_analysis_y_selection
+
+    for i in range(len(live_analysis_x_data_list)):
+        live_analysis_x_data_list.popleft()
+        live_analysis_x_data_list.append(nan)
+        live_analysis_y_data_list.popleft()
+        live_analysis_y_data_list.append(nan)
+
+    live_analysis_x_selection = live_analysis_options[live_analysis_x_options.active]
+    live_analysis_y_selection = live_analysis_options[live_analysis_y_options.active]
+    live_analysis_plot.xaxis.axis_label = live_analysis_axis_labels[live_analysis_x_selection]
+    live_analysis_plot.yaxis.axis_label = live_analysis_axis_labels[live_analysis_y_selection]
+
+live_analysis_x_title = Paragraph(text="X-Axis Data:", width=80, align="start")
+live_analysis_x_options = RadioGroup(labels=live_analysis_options, active=0)
+live_analysis_x_options.on_click(live_analysis_select_data)
+live_analysis_y_title = Paragraph(text="Y-Axis Data:", width=80, align="start")
+live_analysis_y_options = RadioGroup(labels=live_analysis_options, active=1)
+live_analysis_y_options.on_click(live_analysis_select_data)
+
+def get_live_analysis_data(val):
+    if val == "PhA Current":
+        return mc.getCurrent(mcontrol.ElectricalData.kPhaseA)
+    elif val == "PhB Current":
+        return mc.getCurrent(mcontrol.ElectricalData.kPhaseB)
+    elif val == "PhC Current":
+        return mc.getCurrent(mcontrol.ElectricalData.kPhaseC)
+    elif val == "I_d":
+        return mc.getFocCalc().i_d
+    elif val == "I_q":
+        return mc.getFocCalc().i_q
+    elif val == "I_alpha":
+        return mc.getFocCalc().i_alpha
+    elif val == "I_beta":
+        return mc.getFocCalc().i_beta
+    elif val == "PhA Voltage":
+        return mc.getVoltage(mcontrol.ElectricalData.kPhaseA)
+    elif val == "PhB Voltage":
+        return mc.getVoltage(mcontrol.ElectricalData.kPhaseB)
+    elif val == "PhC Voltage":
+        return mc.getVoltage(mcontrol.ElectricalData.kPhaseC)
+    elif val == "Speed":
+        return mc.getSpeed()
+    else:
+        return 0
+
+live_analysis_x_data = 0
+live_analysis_y_data = 0
+live_analysis_x_data_list = deque([0] * sample_size)
+live_analysis_y_data_list = deque([0] * sample_size)
+
+live_analysis_plot = figure(plot_width=800, plot_height=620, title="Live Analysis")
+live_analysis_source = ColumnDataSource(dict(x=live_analysis_x_data_list, y=live_analysis_y_data_list))
+live_analysis_scatter = live_analysis_plot.scatter(
+    x="x",
+    y="y",
+    size=20,
+    marker="circle",
+    color="red",
+    source=live_analysis_source
+    )
+live_analysis_ds = live_analysis_scatter.data_source
+live_analysis_plot.xaxis.axis_label = live_analysis_axis_labels[live_analysis_x_selection]
+live_analysis_plot.yaxis.axis_label = live_analysis_axis_labels[live_analysis_y_selection]
 
 # Fault Status Indicators
 fault_status_plot_x = [1, 1, 1, 2, 2, 2]
@@ -188,7 +291,7 @@ def update_interval(attr, old, new):
     curdoc().remove_periodic_callback(callback)
     callback = curdoc().add_periodic_callback(update, interval * 1000)
     global num_points_per_update
-    num_points_per_update = int(0.2/interval)
+    num_points_per_update = round(0.6/interval)
 
 interval_title = Paragraph(text="Sample Interval (Seconds):", width=200, align="center")
 interval_input = TextInput(value=str(interval), width=80)
@@ -202,6 +305,8 @@ def update_sample_size(attr, old, new):
         excess = sample_size_actual - new_sample_size
         while excess > 0:
             x.popleft()
+            live_analysis_x_data_list.popleft()
+            live_analysis_y_data_list.popleft()
             for data in electrical_data_list:
                 data.popleft()
             for data in mechanical_data_list:
@@ -420,6 +525,9 @@ def update(step):
     mechanical_data[0] = mc.getSpeed()
     mechanical_data[1] = mc.getPosition()
 
+    live_analysis_x_data = get_live_analysis_data(live_analysis_x_selection)
+    live_analysis_y_data = get_live_analysis_data(live_analysis_y_selection)
+
     global time
     global sample_size_actual
     global plot_update_interval
@@ -427,8 +535,15 @@ def update(step):
 
     if sample_size_actual >= sample_size:
         x.popleft()
+        live_analysis_x_data_list.popleft()
+        live_analysis_y_data_list.popleft()
     x.append(time)
+    live_analysis_x_data_list.append(live_analysis_x_data)
+    live_analysis_y_data_list.append(live_analysis_y_data)
     time = time + interval
+
+    if plot_update_interval == 0:
+        live_analysis_ds.trigger('data', live_analysis_ds, live_analysis_ds)
 
     for i in range(len(electrical_data_list)):
         if sample_size_actual >= sample_size:
@@ -482,17 +597,28 @@ dynamic_interface = column(
 fault_interface = column(fault_status_plot, clear_faults_button, margin=(30, 30, 30, 30))
 
 layout1 = layout(
-    column(row(title1, align='center'),
-    row(
-        mode_interface,
-        plot_controls_interface,
-        gain_controls_interface,
-        dynamic_interface,
-        fault_interface
-    ),
-    row(electrical_plot, margin=(30, 30, 30, 30)),
-    row(mechanical_plot, margin=(30, 30, 30, 30)),
-    css_style)
+    column(
+        row(title1, align='center'),
+        row(
+            mode_interface,
+            plot_controls_interface,
+            gain_controls_interface,
+            dynamic_interface,
+            fault_interface
+        ),
+        row(
+            column(
+                row(electrical_plot, margin=(30, 30, 10, 30)),
+                row(mechanical_plot, margin=(10, 30, 30, 30))
+            ),
+            row(live_analysis_plot, margin=(30, 30, 30, 30)),
+            column(
+                column(live_analysis_x_title, live_analysis_x_options, margin=(50, 5, 5, 5)),
+                column(live_analysis_y_title, live_analysis_y_options, margin=(5, 5, 5, 5))
+            )
+        ),
+        css_style
+    )
 )
 
 # Add a periodic callback to be run every interval*1000 milliseconds
