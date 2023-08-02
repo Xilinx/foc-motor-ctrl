@@ -19,8 +19,8 @@ EventManager::EventManager() : mMonitorRunning(true)
 	mThread = std::thread(&EventManager::monitorThread, this);
 }
 
-int EventManager::registerEvent(FaultType event, EventControl* driver,
-                                std::function<void(FaultType)> cb)
+int EventManager::registerEvent(FaultId event, EventControl* driver,
+                                std::function<void(FaultId)> cb)
 {
 	int fd = driver->getEventFd(event);
 	if (fd < 0) {
@@ -48,7 +48,7 @@ int EventManager::registerEvent(FaultType event, EventControl* driver,
 	return 0;
 }
 
-int EventManager::deRegisterEvent(FaultType event)
+int EventManager::deRegisterEvent(FaultId event)
 {
 	mLock.lock(); // Acquire the lock before modifying the data structures
 
@@ -118,10 +118,10 @@ void EventManager::monitorThread()
 			// Find the events associated with this file descriptor
 			auto it = mEvent_registered.find(fd);
 			if (it != mEvent_registered.end()) {
-				const std::vector<FaultType>& events = it->second;
+				const std::vector<FaultId>& events = it->second;
 
 				// Call the registered callbacks for each event associated with this FD
-				for (FaultType event : events) {
+				for (FaultId event : events) {
 					auto callback_it = mCallBacks.find(event);
 					if (callback_it != mCallBacks.end()) {
 						// Call the corresponding callback function

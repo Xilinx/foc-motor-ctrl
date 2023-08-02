@@ -70,19 +70,19 @@ enum class ElectricalData {
 };
 
 /*
- * FaultTypes denoted as
+ * FaultIds denoted as
  * OC = Over Current
  * OV = Over Voltage
  * UV = Under Voltage
  */
-enum class FaultType {
+enum class FaultId {
 	kPhaseA_OC = 0,
 	kPhaseB_OC,
 	kPhaseC_OC,
 	kDCLink_OC,
 	kDCLink_OV,
 	kDCLink_UV,
-	kFalutTypeMax
+	kFaultIdMax
 };
 
 enum class FaultCategory {
@@ -103,7 +103,7 @@ public:
 	virtual int getSpeedSetValue() = 0;
 	virtual double getCurrent(ElectricalData type) = 0;
 	virtual double getVoltage(ElectricalData type) = 0;
-	virtual bool getFaultStatus(FaultType type) = 0;
+	virtual bool getFaultStatus(FaultId type) = 0;
 	virtual FocData getFocCalc() = 0;
 	virtual MotorOpMode getOperationMode() = 0;
 	virtual GainData GetGain(GainType gainController) = 0;

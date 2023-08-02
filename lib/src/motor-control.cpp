@@ -47,7 +47,7 @@ public:
 	int getSpeedSetValue() override;
 	double getCurrent(ElectricalData type) override;
 	double getVoltage(ElectricalData type) override;
-	bool getFaultStatus(FaultType type) override;
+	bool getFaultStatus(FaultId type) override;
 	FocData getFocCalc() override;
 	MotorOpMode getOperationMode() override;
 	GainData GetGain(GainType gainController) override;
@@ -192,7 +192,7 @@ double MotorControlImpl::getVoltage(ElectricalData type)
 	return mAdcHub.getVoltage(type);
 }
 
-bool MotorControlImpl::getFaultStatus(FaultType type)
+bool MotorControlImpl::getFaultStatus(FaultId type)
 {
 	return mAdcHub.getEventStatus(type);
 }

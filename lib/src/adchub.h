@@ -10,9 +10,6 @@
 #include "event_control.h"
 #include "interface/iio_drv.h"
 
-enum class ElectricalData;
-enum class FaultType;
-
 class Adchub : public EventControl
 {
 public:
@@ -34,10 +31,10 @@ public:
 	~Adchub();
 
 	// Fault Handling
-	bool getEventStatus(FaultType event) override;
-	int getEventFd(FaultType event) override;
-	void enableEvent(FaultType event) override;
-	void disableEvent(FaultType event) override;
+	bool getEventStatus(FaultId event) override;
+	int getEventFd(FaultId event) override;
+	void enableEvent(FaultId event) override;
+	void disableEvent(FaultId event) override;
 
 private:
 	static const std::string kAdcHubDriverName;

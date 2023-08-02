@@ -22,10 +22,10 @@ public:
 	uint32_t getGateDrive();
 
 	// Fault Handling
-	bool getEventStatus(FaultType event) override;
-	int getEventFd(FaultType event) override;
-	void enableEvent(FaultType event) override;
-	void disableEvent(FaultType event) override;
+	bool getEventStatus(FaultId event) override;
+	int getEventFd(FaultId event) override;
+	void enableEvent(FaultId event) override;
+	void disableEvent(FaultId event) override;
 };
 
 #endif

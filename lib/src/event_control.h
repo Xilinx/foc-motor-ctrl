@@ -9,10 +9,10 @@
 
 class EventControl {
 public:
-	virtual bool getEventStatus(FaultType event) = 0;
-	virtual int getEventFd(FaultType event) = 0;
-	virtual void enableEvent(FaultType event) = 0;
-	virtual void disableEvent(FaultType event) = 0;
+	virtual bool getEventStatus(FaultId event) = 0;
+	virtual int getEventFd(FaultId event) = 0;
+	virtual void enableEvent(FaultId event) = 0;
+	virtual void disableEvent(FaultId event) = 0;
 	/**
 	 * TODO: Add threshold settings also here
 	 */

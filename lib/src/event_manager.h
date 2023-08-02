@@ -22,9 +22,9 @@
 class EventManager {
 public:
 	EventManager();
-	int registerEvent(FaultType event, EventControl *driver,
-			  std::function<void(FaultType)> cb);
-	int deRegisterEvent(FaultType event);
+	int registerEvent(FaultId event, EventControl *driver,
+			  std::function<void(FaultId)> cb);
+	int deRegisterEvent(FaultId event);
 	~EventManager();
 private:
 	void monitorThread(void);
@@ -34,9 +34,9 @@ private:
 	bool mMonitorRunning;
 	int epoll_fd;
 	std::vector<int> desc_list;
-	std::map<int,std::vector <FaultType>> mEvent_registered;
+	std::map<int,std::vector <FaultId>> mEvent_registered;
 	std::map<int,EventControl *> mDrivers;
-	std::map<FaultType,std::function<void(FaultType)>> mCallBacks;
+	std::map<FaultId,std::function<void(FaultId)>> mCallBacks;
 
 	std::thread mThread;
 	std::mutex mLock; //TODO: check if this is required.

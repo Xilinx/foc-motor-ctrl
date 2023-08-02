@@ -60,28 +60,28 @@ double Adchub::getVoltage(ElectricalData phase)
 	return 0;
 }
 
-bool Adchub::getEventStatus(FaultType event)
+bool Adchub::getEventStatus(FaultId event)
 {
 	// Verify if the event is supported by the driver
 	int data;
 	switch (event)
 	{
-	case FaultType::kPhaseA_OC:
+	case FaultId::kPhaseA_OC:
 		data = mAdchub_IIO_Handle->readChannel(current1_ac, "over_range_fault_status");
 		break;
-	case FaultType::kPhaseB_OC:
+	case FaultId::kPhaseB_OC:
 		data = mAdchub_IIO_Handle->readChannel(current3_ac, "over_range_fault_status");
 		break;
-	case FaultType::kPhaseC_OC:
+	case FaultId::kPhaseC_OC:
 		data = mAdchub_IIO_Handle->readChannel(current5_ac, "over_range_fault_status");
 		break;
-	case FaultType::kDCLink_OC:
+	case FaultId::kDCLink_OC:
 		data = mAdchub_IIO_Handle->readChannel(current7_dc, "over_range_fault_status");
 		break;
-	case FaultType::kDCLink_OV:
+	case FaultId::kDCLink_OV:
 		data = mAdchub_IIO_Handle->readChannel(voltage6_dc, "over_range_fault_status");
 		break;
-	case FaultType::kDCLink_UV:
+	case FaultId::kDCLink_UV:
 		data = mAdchub_IIO_Handle->readChannel(voltage6_dc, "under_range_fault_status");
 		break;
 	default:
@@ -303,7 +303,7 @@ int Adchub::disable_undervoltage_protection(ElectricalData phase)
 	return 0;
 }
 
-int Adchub::getEventFd(FaultType event)
+int Adchub::getEventFd(FaultId event)
 {
 	// Verify if the event is supported by the driver
 	// Determine the device that needs to be opened for the blocking read
@@ -311,13 +311,13 @@ int Adchub::getEventFd(FaultType event)
 	return -1; //TODO: return file descriptor to /dev/adchub
 }
 
-void Adchub::enableEvent(FaultType event)
+void Adchub::enableEvent(FaultId event)
 {
 	// Verify if the event is supported by the driver
 	// Enable the required fault
 }
 
-void Adchub::disableEvent(FaultType event)
+void Adchub::disableEvent(FaultId event)
 {
 	// Verify if the event is supported by the driver
 	// Disable the requested fault
