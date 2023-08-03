@@ -5,17 +5,31 @@
 #ifndef _EVENT_CONTROL_H_
 #define _EVENT_CONTROL_H_
 
-#include "../include/motor-control/motor-control.hpp"
+#include <unordered_set>
+#include "motor-control/motor-control.hpp"
 
 class EventControl {
 public:
+	EventControl(std::initializer_list<FaultId> events = {}):
+		mSupportedEvents(events)
+	{
+	}
+
 	virtual bool getEventStatus(FaultId event) = 0;
 	virtual int getEventFd(FaultId event) = 0;
 	virtual void enableEvent(FaultId event) = 0;
 	virtual void disableEvent(FaultId event) = 0;
+
 	/**
 	 * TODO: Add threshold settings also here
 	 */
+
+	bool isSupportedEvent(FaultId e) const
+	{
+		return (mSupportedEvents.find(e) != mSupportedEvents.end());
+	}
+private:
+	const std::unordered_set<FaultId> mSupportedEvents;
 };
 
 #endif // _EVENT_CONTROL_H_
