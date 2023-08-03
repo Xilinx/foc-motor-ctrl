@@ -82,6 +82,8 @@ enum class FaultId {
 	kDCLink_OC,
 	kDCLink_OV,
 	kDCLink_UV,
+	kPhaseImbalance,
+	kAvgPowerFault,
 	kFaultIdMax
 };
 

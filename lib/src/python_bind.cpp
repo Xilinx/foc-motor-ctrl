@@ -83,7 +83,9 @@ PYBIND11_MODULE(PY_MODULE_NAME, m) {
         .value("kDCLink_OC", FaultId::kDCLink_OC)
         .value("kDCLink_OV", FaultId::kDCLink_OV)
         .value("kDCLink_UV", FaultId::kDCLink_UV)
-        .value("kFaultIdMax", FaultId::kFaultIdMax);
+        .value("kPhaseImbalance", FaultId::kPhaseImbalance)
+        .value("kAvgPowerFault", FaultId::kAvgPowerFault)
+        .value("kFalutIdMax", FaultId::kFaultIdMax);
 
     py::enum_<FaultCategory>(m, "FaultCategory")
         .value("kFaultCategoryMax", FaultCategory::kFaultCategoryMax);
