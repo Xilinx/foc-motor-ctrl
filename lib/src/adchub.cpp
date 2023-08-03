@@ -1,8 +1,10 @@
-#include "adchub.h"
 /*
  * Copyright (C) 2023 Advanced Micro Devices, Inc.
  * SPDX-License-Identifier: MIT
  */
+
+#include <cassert>
+#include "adchub.h"
 
 const std::string Adchub::kAdcHubDriverName = "xilinx_adc_hub";
 
@@ -19,7 +21,14 @@ enum AdcChannels
 	channelMax
 };
 
-Adchub::Adchub()
+Adchub::Adchub(): EventControl( /* List of supported Faults */
+		{ FaultId::kPhaseA_OC,
+		  FaultId::kPhaseB_OC,
+		  FaultId::kPhaseC_OC,
+		  FaultId::kDCLink_OC,
+		  FaultId::kDCLink_OV,
+		  FaultId::kDCLink_UV,
+		})
 {
 	mAdchub_IIO_Handle = new IIO_Driver(kAdcHubDriverName);
 }
@@ -62,32 +71,47 @@ double Adchub::getVoltage(ElectricalData phase)
 
 bool Adchub::getEventStatus(FaultId event)
 {
+	bool status = false;
 	// Verify if the event is supported by the driver
-	int data;
+	assert(isSupportedEvent(event));
+
 	switch (event)
 	{
 	case FaultId::kPhaseA_OC:
-		data = mAdchub_IIO_Handle->readChannel(current1_ac, "over_range_fault_status");
+		status = status || mAdchub_IIO_Handle->readChannel(
+					current1_ac, "over_range_fault_status");
+		status = status || mAdchub_IIO_Handle->readChannel(
+					current1_ac, "under_range_fault_status");
 		break;
 	case FaultId::kPhaseB_OC:
-		data = mAdchub_IIO_Handle->readChannel(current3_ac, "over_range_fault_status");
+		status = status || mAdchub_IIO_Handle->readChannel(
+					current3_ac, "over_range_fault_status");
+		status = status || mAdchub_IIO_Handle->readChannel(
+					current3_ac, "under_range_fault_status");
 		break;
 	case FaultId::kPhaseC_OC:
-		data = mAdchub_IIO_Handle->readChannel(current5_ac, "over_range_fault_status");
+		status = status || mAdchub_IIO_Handle->readChannel(
+					current5_ac, "over_range_fault_status");
+		status = status || mAdchub_IIO_Handle->readChannel(
+					current5_ac, "under_range_fault_status");
 		break;
 	case FaultId::kDCLink_OC:
-		data = mAdchub_IIO_Handle->readChannel(current7_dc, "over_range_fault_status");
+		status = status || mAdchub_IIO_Handle->readChannel(
+					current7_dc, "over_range_fault_status");
 		break;
 	case FaultId::kDCLink_OV:
-		data = mAdchub_IIO_Handle->readChannel(voltage6_dc, "over_range_fault_status");
+		status = status || mAdchub_IIO_Handle->readChannel(
+					voltage6_dc, "over_range_fault_status");
 		break;
 	case FaultId::kDCLink_UV:
-		data = mAdchub_IIO_Handle->readChannel(voltage6_dc, "under_range_fault_status");
+		status = status || mAdchub_IIO_Handle->readChannel(
+					voltage6_dc, "under_range_fault_status");
 		break;
 	default:
-		return false;
+		status = false;
 	}
-	return (data) ? true : false;
+
+	return status;
 }
 
 int Adchub::clearFaults()
@@ -305,21 +329,25 @@ int Adchub::disable_undervoltage_protection(ElectricalData phase)
 
 int Adchub::getEventFd(FaultId event)
 {
+	int fd = -1;
 	// Verify if the event is supported by the driver
+	assert(isSupportedEvent(event));
 	// Determine the device that needs to be opened for the blocking read
 	// open the device and return the FD.
-	return -1; //TODO: return file descriptor to /dev/adchub
+	return fd; //TODO: return file descriptor to /dev/adchub
 }
 
 void Adchub::enableEvent(FaultId event)
 {
 	// Verify if the event is supported by the driver
+	assert(isSupportedEvent(event));
 	// Enable the required fault
 }
 
 void Adchub::disableEvent(FaultId event)
 {
 	// Verify if the event is supported by the driver
+	assert(isSupportedEvent(event));
 	// Disable the requested fault
 }
 

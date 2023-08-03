@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "mc_driver.h"
 #include <iostream>
+#include <cassert>
+#include "mc_driver.h"
 
 /*
  * Hardware Offsets
@@ -19,7 +20,8 @@
 
 const std::string MC_Uio::kUioDriverName = "motor_control";
 
-MC_Uio::MC_Uio(/* args */)
+MC_Uio::MC_Uio(): EventControl( /* List of supported Faults */
+		{ FaultId::kPhaseImbalance })
 {
 	mUioHandle = new UioDrv(kUioDriverName);
 }
@@ -46,6 +48,7 @@ uint32_t MC_Uio::getGateDrive()
 int MC_Uio::getEventFd(FaultId event)
 {
 	// Verify if the event is supported by the driver
+	assert(isSupportedEvent(event));
 	// Determine the device that needs to be opened for the blocking read
 	// open the device and return the FD.
 	return -1; //TODO: return file descriptor to /dev/adchub
@@ -54,18 +57,21 @@ int MC_Uio::getEventFd(FaultId event)
 void MC_Uio::enableEvent(FaultId event)
 {
 	// Verify if the event is supported by the driver
+	assert(isSupportedEvent(event));
 	// Enable the Fault
 }
 
 void MC_Uio::disableEvent(FaultId event)
 {
 	// Verify if the event is supported by the driver
+	assert(isSupportedEvent(event));
 	// Disable the Fault
 }
 
 bool MC_Uio::getEventStatus(FaultId event)
 {
 	// Verify if the event is supported by the driver
+	assert(isSupportedEvent(event));
 	// Return the current status of the fault
 	return false;
 }
