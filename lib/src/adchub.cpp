@@ -69,51 +69,6 @@ double Adchub::getVoltage(ElectricalData phase)
 	return 0;
 }
 
-bool Adchub::getEventStatus(FaultId event)
-{
-	bool status = false;
-	// Verify if the event is supported by the driver
-	assert(isSupportedEvent(event));
-
-	switch (event)
-	{
-	case FaultId::kPhaseA_OC:
-		status = status || mAdchub_IIO_Handle->readChannel(
-					current1_ac, "over_range_fault_status");
-		status = status || mAdchub_IIO_Handle->readChannel(
-					current1_ac, "under_range_fault_status");
-		break;
-	case FaultId::kPhaseB_OC:
-		status = status || mAdchub_IIO_Handle->readChannel(
-					current3_ac, "over_range_fault_status");
-		status = status || mAdchub_IIO_Handle->readChannel(
-					current3_ac, "under_range_fault_status");
-		break;
-	case FaultId::kPhaseC_OC:
-		status = status || mAdchub_IIO_Handle->readChannel(
-					current5_ac, "over_range_fault_status");
-		status = status || mAdchub_IIO_Handle->readChannel(
-					current5_ac, "under_range_fault_status");
-		break;
-	case FaultId::kDCLink_OC:
-		status = status || mAdchub_IIO_Handle->readChannel(
-					current7_dc, "over_range_fault_status");
-		break;
-	case FaultId::kDCLink_OV:
-		status = status || mAdchub_IIO_Handle->readChannel(
-					voltage6_dc, "over_range_fault_status");
-		break;
-	case FaultId::kDCLink_UV:
-		status = status || mAdchub_IIO_Handle->readChannel(
-					voltage6_dc, "under_range_fault_status");
-		break;
-	default:
-		status = false;
-	}
-
-	return status;
-}
-
 int Adchub::clearFaults()
 {
 	for (int index = 0; index < channelMax; index++)
@@ -327,28 +282,191 @@ int Adchub::disable_undervoltage_protection(ElectricalData phase)
 	return 0;
 }
 
+int Adchub::getChannelId(FaultId event)
+{
+	AdcChannels channel_id = channelMax;
+
+	switch (event) {
+	case FaultId::kPhaseA_OC:
+		channel_id = current1_ac;
+		break;
+	case FaultId::kPhaseB_OC:
+		channel_id = current3_ac;
+		break;
+	case FaultId::kPhaseC_OC:
+		channel_id = current5_ac;
+		break;
+	case FaultId::kDCLink_OC:
+		channel_id = current7_dc;
+		break;
+	case FaultId::kDCLink_OV:
+	case FaultId::kDCLink_UV:
+		channel_id = voltage6_dc;
+		break;
+	default:
+		// Should never come here.
+		assert(false);
+	}
+
+	return (channel_id == channelMax)? -1 : static_cast<int>(channel_id);
+}
+
+bool Adchub::getEventStatus(FaultId event)
+{
+	assert(isSupportedEvent(event));
+
+	bool status = false;
+	int channel_id = getChannelId(event);
+	std::vector<std::string> attr;
+
+	switch (event) {
+	case FaultId::kPhaseA_OC:
+	case FaultId::kPhaseB_OC:
+	case FaultId::kPhaseC_OC:
+		attr.push_back("over_range_fault_status");
+		attr.push_back("under_range_fault_status");
+		break;
+	case FaultId::kDCLink_OC:
+	case FaultId::kDCLink_OV:
+		attr.push_back("over_range_fault_status");
+		break;
+	case FaultId::kDCLink_UV:
+		attr.push_back("under_range_fault_status");
+		break;
+	default:
+		break;
+	}
+
+	if (channel_id != -1) {
+		for (auto a : attr) {
+			status = status ||
+				 mAdchub_IIO_Handle->readChannel(channel_id,
+								 a.c_str());
+		}
+	}
+
+	return status;
+}
+
+void Adchub::clearEvent(FaultId event)
+{
+	assert(isSupportedEvent(event));
+
+	int channel_id = getChannelId(event);
+
+	if (channel_id != -1) {
+		mAdchub_IIO_Handle->writeChannel(channel_id,
+						 "fault_clear", "1");
+	}
+}
+
+void Adchub::setUpperThreshold(FaultId event, double val)
+{
+	assert(isSupportedEvent(event));
+	int channel_id = getChannelId(event);
+	std::string attrName = "thresh_rising_value";
+
+	if (channel_id != -1) {
+		mAdchub_IIO_Handle->writeeventattr(channel_id,
+						   attrName.c_str(),
+						   std::to_string(val).c_str());
+	}
+}
+
+void Adchub::setLowerThreshold(FaultId event, double val)
+{
+	assert(isSupportedEvent(event));
+	int channel_id = getChannelId(event);
+	std::string attrName = "thresh_falling_value";
+
+	if (channel_id != -1) {
+		mAdchub_IIO_Handle->writeeventattr(channel_id,
+						   attrName.c_str(),
+						   std::to_string(val).c_str());
+	}
+}
+
+double Adchub::getUpperThreshold(FaultId event)
+{
+	//Not Implemented
+	assert(false); //TODO: remove after readeventattr is available & implemented
+	assert(isSupportedEvent(event));
+
+	double threshold = 0;
+	int channel_id = getChannelId(event);
+	std::string attrName = "thresh_rising_value";
+
+	if (channel_id != -1) {
+	}
+	return threshold;
+}
+
+double Adchub::getLowerThreshold(FaultId event)
+{
+	//Not Implemented
+	assert(false); //TODO: remove after readeventattr is available & implemented
+	assert(isSupportedEvent(event));
+
+	double threshold = 0;
+	int channel_id = getChannelId(event);
+	std::string attrName = "thresh_falling_value";
+
+	if (channel_id != -1) {
+	}
+	return 0;
+}
+
 int Adchub::getEventFd(FaultId event)
 {
-	int fd = -1;
-	// Verify if the event is supported by the driver
 	assert(isSupportedEvent(event));
+	int fd = -1;
 	// Determine the device that needs to be opened for the blocking read
 	// open the device and return the FD.
 	return fd; //TODO: return file descriptor to /dev/adchub
 }
 
+void Adchub::eventEnableDisable(FaultId event, bool enable)
+{
+	int channel_id = getChannelId(event);
+	std::vector<std::string> attr;
+
+	switch (event) {
+	case FaultId::kPhaseA_OC:
+	case FaultId::kPhaseB_OC:
+	case FaultId::kPhaseC_OC:
+		attr.push_back("thresh_rising_en");
+		attr.push_back("thresh_falling_en");
+		break;
+	case FaultId::kDCLink_OC:
+	case FaultId::kDCLink_OV:
+		attr.push_back("thresh_rising_en");
+		break;
+	case FaultId::kDCLink_UV:
+		attr.push_back("thresh_falling_en");
+		break;
+	default:
+		break;
+	}
+
+	if (channel_id != -1) {
+		for (auto a : attr) {
+			mAdchub_IIO_Handle->writeeventattr(channel_id,
+							   a.c_str(),
+							   std::to_string(enable).c_str());
+		}
+	}
+}
+
 void Adchub::enableEvent(FaultId event)
 {
-	// Verify if the event is supported by the driver
 	assert(isSupportedEvent(event));
-	// Enable the required fault
+	eventEnableDisable(event, true);
 }
 
 void Adchub::disableEvent(FaultId event)
 {
-	// Verify if the event is supported by the driver
 	assert(isSupportedEvent(event));
-	// Disable the requested fault
+	eventEnableDisable(event, false);
 }
 
 Adchub::~Adchub()
