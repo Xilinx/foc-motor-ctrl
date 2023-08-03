@@ -15,6 +15,7 @@ class MC_Uio : public EventControl
 private:
 	static const std::string kUioDriverName;
 	UioDrv* mUioHandle;
+	int fd;
 public:
 	MC_Uio(/* args */);
 	~MC_Uio();
