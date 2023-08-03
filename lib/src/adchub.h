@@ -51,6 +51,7 @@ private:
 	static const std::string kAdcHubDriverName;
 	IIO_Driver *mAdchub_IIO_Handle;
 
+	int fd;
 	int getChannelId(FaultId event);
 	void eventEnableDisable(FaultId event, bool enable);
 };

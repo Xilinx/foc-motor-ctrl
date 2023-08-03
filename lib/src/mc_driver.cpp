@@ -23,7 +23,7 @@
 const std::string MC_Uio::kUioDriverName = "motor_control";
 
 MC_Uio::MC_Uio() : EventControl(/* List of supported Faults */
-								{FaultId::kPhaseImbalance})
+		 {FaultId::kPhaseImbalance})
 {
 	std::string uioPath;
 	fd = -1;

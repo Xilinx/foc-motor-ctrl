@@ -5,6 +5,8 @@
 
 #include <cassert>
 #include "adchub.h"
+#include "fcntl.h"
+#include "unistd.h"
 
 const std::string Adchub::kAdcHubDriverName = "xilinx_adc_hub";
 
@@ -30,7 +32,16 @@ Adchub::Adchub(): EventControl( /* List of supported Faults */
 		  FaultId::kDCLink_UV,
 		})
 {
+	std::string devId, fdPath;
+	fd = -1;
+
 	mAdchub_IIO_Handle = new IIO_Driver(kAdcHubDriverName);
+	mAdchub_IIO_Handle->getDeviceId(devId);
+	fdPath = "/dev/" + devId;
+	fd = open(fdPath.c_str(), O_RDONLY);
+	if (fd < 0) {
+		perror("open");
+	}
 }
 
 double Adchub::getCurrent(ElectricalData phase)
@@ -388,8 +399,6 @@ void Adchub::setLowerThreshold(FaultId event, double val)
 
 double Adchub::getUpperThreshold(FaultId event)
 {
-	//Not Implemented
-	assert(false); //TODO: remove after readeventattr is available & implemented
 	assert(isSupportedEvent(event));
 
 	double threshold = 0;
@@ -397,14 +406,13 @@ double Adchub::getUpperThreshold(FaultId event)
 	std::string attrName = "thresh_rising_value";
 
 	if (channel_id != -1) {
+		threshold = mAdchub_IIO_Handle->readeventattr(channel_id, attrName);
 	}
 	return threshold;
 }
 
 double Adchub::getLowerThreshold(FaultId event)
 {
-	//Not Implemented
-	assert(false); //TODO: remove after readeventattr is available & implemented
 	assert(isSupportedEvent(event));
 
 	double threshold = 0;
@@ -412,17 +420,15 @@ double Adchub::getLowerThreshold(FaultId event)
 	std::string attrName = "thresh_falling_value";
 
 	if (channel_id != -1) {
+		threshold = mAdchub_IIO_Handle->readeventattr(channel_id, attrName);
 	}
-	return 0;
+	return threshold;
 }
 
 int Adchub::getEventFd(FaultId event)
 {
 	assert(isSupportedEvent(event));
-	int fd = -1;
-	// Determine the device that needs to be opened for the blocking read
-	// open the device and return the FD.
-	return fd; //TODO: return file descriptor to /dev/adchub
+	return fd;
 }
 
 void Adchub::eventEnableDisable(FaultId event, bool enable)
@@ -471,5 +477,6 @@ void Adchub::disableEvent(FaultId event)
 
 Adchub::~Adchub()
 {
+	close (fd);
 	delete mAdchub_IIO_Handle;
 }

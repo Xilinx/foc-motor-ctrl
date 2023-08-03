@@ -20,8 +20,11 @@ public:
 	double readDeviceattr(const std::string &attrName);
 	int writeDeviceattr(const std::string &attrName, const std::string &value);
 	int writeeventattr(const unsigned int index, const std::string &attrName, const std::string &value);
+	double readeventattr(const unsigned int index, const std::string &attrName);
+	void getDeviceId(std::string &deviceId);
 
 private:
+	std::string devId;
 	struct iio_context *ctx;
 	struct iio_device *dev;
 	unsigned int channelCount;

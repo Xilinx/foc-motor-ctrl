@@ -28,6 +28,8 @@ IIO_Driver::IIO_Driver(const std::string &name)
 	{
 		channels.push_back(iio_device_get_channel(dev, i));
 	}
+
+	devId = static_cast<std::string>(iio_device_get_id(dev));
 }
 
 IIO_Driver::~IIO_Driver()
@@ -91,17 +93,34 @@ int IIO_Driver::writeDeviceattr(const std::string &attrName, const std::string &
 
 int IIO_Driver::writeeventattr(const unsigned int index, const std::string &attrName, const std::string &value)
 {
-	const char* id = NULL;
-	const char* cid = NULL;
+	const char *cid = NULL;
 
-	id = iio_device_get_id(dev);
 	cid = iio_channel_get_id(channels[index]);
-
-	std::string eventPath = "/sys/bus/iio/devices/" + static_cast<std::string>(id) + "/events/in_" + static_cast<std::string>(cid) + "_" + attrName;
+	std::string eventPath = "/sys/bus/iio/devices/" + devId + "/events/in_" + static_cast<std::string>(cid) + "_" + attrName;
 	std::fstream eventStream(eventPath.c_str());
 	if (!eventStream.is_open())
-			throw std::runtime_error("Unable to find attribute " + attrName);
+		throw std::runtime_error("Unable to find attribute " + attrName);
 	eventStream << value;
 	eventStream.close();
 	return 0;
+}
+
+double IIO_Driver::readeventattr(const unsigned int index, const std::string &attrName)
+{
+	const char *cid = NULL;
+	double data;
+
+	cid = iio_channel_get_id(channels[index]);
+	std::string eventPath = "/sys/bus/iio/devices/" + devId + "/events/in_" + static_cast<std::string>(cid) + "_" + attrName;
+	std::fstream eventStream(eventPath.c_str());
+	if (!eventStream.is_open())
+		throw std::runtime_error("Unable to find attribute " + attrName);
+	eventStream >> data;
+	eventStream.close();
+	return data;
+}
+
+void IIO_Driver::getDeviceId(std::string &deviceId)
+{
+	deviceId = devId;
 }

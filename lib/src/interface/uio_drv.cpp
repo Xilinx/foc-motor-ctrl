@@ -53,7 +53,7 @@ int UioDrv::findUioDevicenode(string &name)
         std::cerr << "Uio dev node not found" << std::endl;
         return -1;
     }
-    name = "/dev/uio/" + UioDrv::mUioDevNode;
+    name = "/dev/" + UioDrv::mUioDevNode;
     return 0;
 }
 
