@@ -20,6 +20,11 @@ public:
 	virtual void enableEvent(FaultId event) = 0;
 	virtual void disableEvent(FaultId event) = 0;
 
+	virtual void clearEvent(FaultId event) = 0;
+	virtual void setUpperThreshold(FaultId event, double val) = 0;
+	virtual void setLowerThreshold(FaultId event, double val) = 0;
+	virtual double getUpperThreshold(FaultId event) = 0;
+	virtual double getLowerThreshold(FaultId event) = 0;
 	/**
 	 * TODO: Add threshold settings also here
 	 */
