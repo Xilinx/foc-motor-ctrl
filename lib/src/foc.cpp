@@ -37,11 +37,11 @@ enum FocChannel
 
 Foc::Foc():
 	mTargetSpeed(RST_SPEED),
-	mTargetTorque(RST_TORQUE),
-	mDoSpeedRamp(false),
-	mDoTorRamp(false),
 	mSpeedRRate(SPEED_RRATE),
-	mTorRRate(TORQUE_RRATE)
+	mDoSpeedRamp(false),
+	mTargetTorque(RST_TORQUE),
+	mTorRRate(TORQUE_RRATE),
+	mDoTorRamp(false)
 {
 	mFoc_IIO_Handle = new IIO_Driver(kFocDriverName);
 }

@@ -14,17 +14,12 @@
 #include "mc_driver.h"
 #include "event_manager.h"
 
-/* TODO: implement following
-#include "logging.hpp"
-*/
-
 /** TODO List:
- *   - Move fucntion definitions out of the class
- *   - Use smart pointers if make sense
  *   - populate InitConfig structure
  *	- If possible group the drivers specific init as sub strutures defined
  *	in respective drivers
- *   - Check Naming convention and use '_' after the specifier if required.
+ *   - Implement logging facility.
+ *   - Implement exceptions for the runtime errors.
  */
 
 #define ANGLE2CPR(x)    (((x) * CPR )/360)
@@ -64,7 +59,6 @@ public:
 	void setVfParamVd(double vd) override;
 
 	void clearFaults() override;
-	void clearFaults(FaultCategory category) override;
 
 	/*
 	 * Implementation specific members
@@ -78,13 +72,6 @@ private:
 	MotorOpMode mCurrentMode;
 
 	/*
-	 * Persistent Settings
-	 */
-	struct {
-		int rampRate;
-	}mConfigData;
-
-	/*
 	 * Class handlers
 	 */
 	Foc mFoc;
@@ -96,7 +83,8 @@ private:
 	EventManager mEvents;
 
 	/*
-	 * Shadow
+	 * Shadow Vq and Vd
+	 * TODO: Find the right place
 	 */
 	double mVq;
 	double mVd;
@@ -169,6 +157,7 @@ int MotorControlImpl::getPosition()
 
 int MotorControlImpl::getTorque()
 {
+	//TODO: NOT IMPLEMENTED
 	/*
 	 * To Implement only after Torque sensor is available.
 	 */
@@ -239,6 +228,8 @@ void MotorControlImpl::SetTorque(double torque)
 
 void MotorControlImpl::SetPosition(int position)
 {
+	//TODO: NOT IMPLEMENTED
+	static_cast<void>(position);
 	/*
 	 * Not availabe untill position control
 	 */
@@ -253,11 +244,6 @@ void MotorControlImpl::clearFaults()
 {
 	transitionMode(MotorOpMode::kModeOff);
 	mAdcHub.clearFaults();
-}
-
-void MotorControlImpl::clearFaults(FaultCategory category)
-{
-
 }
 
 int MotorControlImpl::getSessionId ()
