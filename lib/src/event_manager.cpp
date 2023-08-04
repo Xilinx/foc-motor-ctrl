@@ -4,14 +4,30 @@
  */
 
 #include <unistd.h>
+#include <cassert>
 #include "event_manager.h"
 
-EventManager::EventManager() : mMonitorRunning(true)
+EventManager::EventManager(std::initializer_list<EventControl *> drivers) :
+		mMonitorRunning(true)
 {
-	epoll_fd = epoll_create1(0);
-	if (epoll_fd < 0) {
+	/*
+	 * Initialize driver map for each event
+	 */
+	for (int i = 0; i < static_cast<int>(FaultId::kFaultIdMax); i++) {
+		FaultId event = static_cast<FaultId>(i);
+		for (auto drv: drivers) {
+			if (drv->isSupportedEvent(event)) {
+				mEventController[event] = drv;
+				mEventStatus[event] = false; //just for sanity
+				break;
+			}
+		}
+	}
+
+	mEpoll_fd = epoll_create1(0);
+	if (mEpoll_fd < 0) {
 		perror("Failed to create epoll file descriptor");
-		//TODO: Handle the error
+		assert(false);
 		return;
 	}
 
@@ -19,13 +35,37 @@ EventManager::EventManager() : mMonitorRunning(true)
 	mThread = std::thread(&EventManager::monitorThread, this);
 }
 
-int EventManager::registerEvent(FaultId event, EventControl* driver,
-                                std::function<void(FaultId)> cb)
+bool EventManager::getStatus(FaultId event) const
 {
+	bool status = false;
+	if (auto fault = mEventStatus.find(event); fault != mEventStatus.end())
+		status = fault->second;
+	return status;
+}
+
+int EventManager::activateAllEvents(EventCallback cb /* = nullptr */)
+{
+	int status = 0;
+	for (auto const& e : mEventController) {
+		if (e.second)
+			status += activateEvent(e.first, cb);
+	}
+	return status;
+}
+
+int EventManager::activateEvent(FaultId event, EventCallback cb /* = nullptr */)
+{
+	auto driver = mEventController[event];
+
+	if (!driver) {
+		assert(false);
+		return -1;
+	}
+
 	int fd = driver->getEventFd(event);
+
 	if (fd < 0) {
-		// Failed to get the event file descriptor
-		// TODO:
+		assert(false);
 		return -1;
 	}
 
@@ -37,9 +77,17 @@ int EventManager::registerEvent(FaultId event, EventControl* driver,
 		return -1;
 	}
 
-	// Register the event and callback in the maps
-	mEvent_registered[fd].push_back(event);
-	mDrivers[fd] = driver;
+	/*
+	 * Register the event and callback in the maps.
+	 * Make sure to have unique entry for the RegisteredEvent
+	 * Below find logic is equivalent to
+	 * mRegisteredEvents[fd].push_back(event); but each entry is unique
+	 */
+	auto &eventList = mRegisteredEvents[fd];
+	if (std::find(eventList.begin(), eventList.end(), event) ==
+							eventList.end()) {
+		eventList.push_back(event);
+	}
 	mCallBacks[event] = cb;
 
 	driver->enableEvent(event);
@@ -48,34 +96,72 @@ int EventManager::registerEvent(FaultId event, EventControl* driver,
 	return 0;
 }
 
-int EventManager::deRegisterEvent(FaultId event)
+int EventManager::resetAllEvents(void)
 {
-	mLock.lock(); // Acquire the lock before modifying the data structures
+	int status = 0;
+	for (auto const& e : mEventController) {
+		if(e.second) {
+			status += resetEvent(e.first);
+		}
+	}
+	return status;
+}
+int EventManager::resetEvent(FaultId e)
+{
+	int status = 0;
+	auto driver = mEventController[e];
+	if (driver)
+	{
+		status += deactivateEvent(e);
+		driver->clearEvent(e);
+	}
+	mEventStatus[e]=false;
+	return status;
+}
 
-	// Find the event in the callback map
+int EventManager::deactivateAllEvents(void)
+{
+	int status = 0;
+	for (auto const& e : mEventController) {
+		if(e.second) {
+			status += deactivateEvent(e.first);
+		}
+	}
+	return status;
+}
+
+int EventManager::deactivateEvent(FaultId event)
+{
+	auto driver = mEventController[event];
+	assert(driver);
+
+	mLock.lock();
 	auto it = mCallBacks.find(event);
-	if (it == mCallBacks.end()) {
-		// Event not found in the callback map
-		mLock.unlock(); // Release the lock before returning
-		return -1;
+	if (it != mCallBacks.end()) {
+		// Remove the event from the callback map
+		mCallBacks.erase(it);
 	}
 
-	// Remove the event from the callback map
-	mCallBacks.erase(it);
-
 	// Find and remove the event from the registered events
-	for (auto& entry : mEvent_registered) {
+	for (auto& entry : mRegisteredEvents) {
 		auto& events = entry.second;
 		auto events_it = std::find(events.begin(), events.end(), event);
 		if (events_it != events.end()) {
 			events.erase(events_it);
-			break; // We assume each event can only be registered once for each driver
+			break; // Assuming unique entry for the event
+		}
+
+		if(events.empty()) {
+			// if FD has no event, removeDescriptor
+			removeDescriptor(entry.first);
 		}
 	}
 
-	// TODO: if FD has not event, removeDescriptor
+	if (driver) {
+		driver->disableEvent(event);
+	}
 
-	mLock.unlock(); // Release the lock after modifying the data structures
+	mLock.unlock();
 	return 0;
 }
 
@@ -85,16 +171,17 @@ EventManager::~EventManager()
 	mMonitorRunning = false;
 
 	// Cleanup: Remove all descriptors from the epoll set and close them
-	for (int fd : desc_list) {
+	for (int fd : mDescList) {
 		removeDescriptor(fd);
 		close(fd);
 	}
 
-	//TODO: Check for joinable.
-	mThread.join();
+	if (mThread.joinable()) {
+		mThread.join();
+	}
 
 	// Close the epoll file descriptor
-	close(epoll_fd);
+	close(mEpoll_fd);
 }
 
 void EventManager::monitorThread()
@@ -104,33 +191,39 @@ void EventManager::monitorThread()
 
 	while (mMonitorRunning) {
 		std::array<struct epoll_event, MAX_EVENTS> events;
-		int num_events = epoll_wait(epoll_fd, events.data(), MAX_EVENTS, -1);
+		int num_events = epoll_wait(mEpoll_fd, events.data(), MAX_EVENTS, -1);
 		if (num_events < 0) {
-			// epoll_wait error
-			// TODO: Handle the epoll_wait error
+			// epoll_wait error. could be exception
+			assert(false);
 			continue; // Continue to the next iteration of the loop
 		}
 
 		for (int i = 0; i < num_events; ++i) {
 			int fd = events[i].data.fd;
-			mLock.lock(); // Acquire the lock before accessing data structures
-
 			// Find the events associated with this file descriptor
-			auto it = mEvent_registered.find(fd);
-			if (it != mEvent_registered.end()) {
+			auto it = mRegisteredEvents.find(fd);
+			if (it != mRegisteredEvents.end()) {
 				const std::vector<FaultId>& events = it->second;
-
-				// Call the registered callbacks for each event associated with this FD
+				/*
+				 * Call the registered callbacks for each
+				 * event associated with this FD
+				 */
 				for (FaultId event : events) {
-					auto callback_it = mCallBacks.find(event);
-					if (callback_it != mCallBacks.end()) {
-						// Call the corresponding callback function
-						callback_it->second(event);
+					auto driver = mEventController[event];
+					if (driver && driver->getEventStatus(event)) {
+						mEventStatus[event] = true;
+						auto cb = mCallBacks[event];
+						/*
+						 * TODO: make sure form epoo_wait
+						 * to here, the event was not
+						 * deactivated or activated.
+						 */
+						deactivateEvent(event);
+						if(cb)
+							cb(event);
 					}
 				}
 			}
-
-			mLock.unlock(); // Release the lock after accessing data structures
 		}
 	}
 }
@@ -140,28 +233,77 @@ int EventManager::addDescriptor(int fd)
 	struct epoll_event event;
 	event.events = EPOLLIN;
 	event.data.fd = fd;
+	int status = 0;
 
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &event) < 0) {
-		perror("Failed to add file descriptor to epoll");
-		return -1;
+	/*
+	 * Add the descriptor to the epoll interest list.
+	 * Even if it was already added, attempt to add it again as oppose to
+	 * check the vector (mDescList) for the entry.
+	 * The error condition of already exist is ignored.
+	 * This approach allows to verify that the FD exists in the
+	 * interest list (as a sanity) and during the error check,
+	 * it can be verified if it is in the desc_list as well.
+	 */
+
+	if (epoll_ctl(mEpoll_fd, EPOLL_CTL_ADD, fd, &event) < 0) {
+		if (errno == EEXIST) {
+			// The descriptor is already monitored.
+			assert(std::find(mDescList.begin(), mDescList.end(), fd) !=
+							mDescList.end());
+		} else {
+			perror("Failed to add file descriptor to epoll");
+			status = -1;
+		}
+	} else {
+		mDescList.push_back(fd);
 	}
 
-	desc_list.push_back(fd);
-	return 0;
+	return status;
 }
 
 int EventManager::removeDescriptor(int fd)
 {
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, nullptr) < 0) {
+	if (epoll_ctl(mEpoll_fd, EPOLL_CTL_DEL, fd, nullptr) < 0) {
 		perror("Failed to remove file descriptor from epoll");
 		return -1;
 	}
 
-	auto it = std::find(desc_list.begin(), desc_list.end(), fd);
-	if (it != desc_list.end()) {
-		desc_list.erase(it);
+	auto it = std::find(mDescList.begin(), mDescList.end(), fd);
+	if (it != mDescList.end()) {
+		mDescList.erase(it);
 	}
 
 	return 0;
 }
 
+void EventManager::setUpperThreshold(FaultId event, double val)
+{
+	if(mEventController[event]) {
+		mEventController[event]->setUpperThreshold(event, val);
+	}
+}
+
+void EventManager::setLowerThreshold(FaultId event, double val)
+{
+	if(mEventController[event]) {
+		mEventController[event]->setLowerThreshold(event, val);
+	}
+}
+
+double EventManager::getUpperThreshold(FaultId event)
+{
+	double threshold = 0.0;
+	if(mEventController[event]) {
+		threshold = mEventController[event]->getUpperThreshold(event);
+	}
+	return threshold;
+}
+
+double EventManager::getLowerThreshold(FaultId event)
+{
+	double threshold = 0.0;
+	if(mEventController[event]) {
+		threshold = mEventController[event]->getLowerThreshold(event);
+	}
+	return threshold;
+}

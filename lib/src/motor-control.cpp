@@ -12,6 +12,7 @@
 #include "svpwm.h"
 #include "default_config.h"
 #include "mc_driver.h"
+#include "event_manager.h"
 
 /* TODO: implement following
 #include "logging.hpp"
@@ -92,6 +93,7 @@ private:
 	Adchub mAdcHub;
 	Sensor *mpSensor;
 	MC_Uio mMcUio;
+	EventManager mEvents;
 
 	/*
 	 * Shadow
@@ -136,7 +138,8 @@ MotorControl *MotorControl::getMotorControlInstance(int sessionId,
 }
 
 MotorControlImpl::MotorControlImpl(int sessionId, string configPath):
-	mSessionId(sessionId), mConfigPath(configPath)
+	mSessionId(sessionId), mConfigPath(configPath),
+	mEvents({&mAdcHub, &mMcUio})
 {
 	parseConfig();
 

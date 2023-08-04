@@ -21,25 +21,70 @@
 
 class EventManager {
 public:
-	EventManager();
-	int registerEvent(FaultId event, EventControl *driver,
-			  std::function<void(FaultId)> cb);
-	int deRegisterEvent(FaultId event);
+	using EventCallback = std::function<void(FaultId)>;
+
+	EventManager(std::initializer_list<EventControl *> drivers);
+
+	/*
+	 * Get event status
+	 */
+	bool getStatus(FaultId) const;
+
+	/*
+	 * Change event monitoring state
+	 */
+	int activateAllEvents(EventCallback cb = nullptr);
+	int activateEvent(FaultId event, EventCallback cb = nullptr);
+	int deactivateAllEvents(void);
+	int deactivateEvent(FaultId event);
+	int resetAllEvents(void);	// deactivate and clear events
+	int resetEvent(FaultId event);
+
+	/*
+	 * Configure the event parameters
+	 */
+	void setUpperThreshold(FaultId event, double val);
+	void setLowerThreshold(FaultId event, double val);
+	double getUpperThreshold(FaultId event);
+	double getLowerThreshold(FaultId event);
+
 	~EventManager();
+
 private:
-	void monitorThread(void);
+	/*
+	 * Utilities
+	 */
 	int addDescriptor(int fd);
 	int removeDescriptor(int fd);
 
-	bool mMonitorRunning;
-	int epoll_fd;
-	std::vector<int> desc_list;
-	std::map<int,std::vector <FaultId>> mEvent_registered;
-	std::map<int,EventControl *> mDrivers;
-	std::map<FaultId,std::function<void(FaultId)>> mCallBacks;
-
+	/*
+	 * Monitoring Thread
+	 */
+	void monitorThread(void);
 	std::thread mThread;
-	std::mutex mLock; //TODO: check if this is required.
+	bool mMonitorRunning;
+	int mEpoll_fd;
+
+	/*
+	 * Data structures for holding status of events
+	 */
+
+	/*
+	 * Using Unordered_map vs std::map in favor of better lookup performance'
+	 * TODO: consider using Array. But will restrict to assume the FaultId is
+	 * is used as index & sequential starting from 0.
+	 */
+	std::unordered_map<FaultId,bool> mEventStatus;
+
+	/*
+	 * Other Data strucutures for the state maintainance
+	 * and Event operations and storage.
+	 */
+	std::mutex mLock;
+	std::map<FaultId, EventControl *> mEventController;
+	std::map<int,std::vector <FaultId>> mRegisteredEvents;
+	std::vector<int> mDescList;
+	std::map<FaultId,EventCallback> mCallBacks;
 };
 
 #endif // _EVENT_MANAGER_H_
