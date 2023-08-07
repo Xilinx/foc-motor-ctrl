@@ -333,6 +333,10 @@ def change_mode(attr, old, new):
         torque_Ki_input.disabled = True
         flux_Kp_input.disabled = True
         flux_Ki_input.disabled = True
+        speed_setpoint_input.disabled = False
+        torque_setpoint_input.disabled = False
+        open_loop_vd_input.disabled = False
+        open_loop_vq_input.disabled = False
     elif mode == "Speed":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeSpeed)
         speed_setpoint = mc.getSpeedSetpoint()
@@ -343,6 +347,10 @@ def change_mode(attr, old, new):
         torque_Ki_input.disabled = False
         flux_Kp_input.disabled = False
         flux_Ki_input.disabled = False
+        speed_setpoint_input.disabled = False
+        torque_setpoint_input.disabled = True
+        open_loop_vd_input.disabled = True
+        open_loop_vq_input.disabled = True
     elif mode == "Torque":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeTorque)
         torque_setpoint = mc.getTorqueSetpoint()
@@ -353,6 +361,10 @@ def change_mode(attr, old, new):
         torque_Ki_input.disabled = False
         flux_Kp_input.disabled = False
         flux_Ki_input.disabled = False
+        speed_setpoint_input.disabled = True
+        torque_setpoint_input.disabled = False
+        open_loop_vd_input.disabled = True
+        open_loop_vq_input.disabled = True
     elif mode == "Open Loop":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeOpenLoop)
         speed_Kp_input.disabled = True
@@ -361,6 +373,10 @@ def change_mode(attr, old, new):
         torque_Ki_input.disabled = True
         flux_Kp_input.disabled = True
         flux_Ki_input.disabled = True
+        speed_setpoint_input.disabled = True
+        torque_setpoint_input.disabled = True
+        open_loop_vd_input.disabled = False
+        open_loop_vq_input.disabled = False
 
 current_mode = mc.getOperationMode()
 if current_mode == mcontrol.MotorOpMode.kModeSpeed:
