@@ -5,10 +5,13 @@
 
 #include <unistd.h>
 #include <cassert>
+#include <sys/eventfd.h>
 #include "event_manager.h"
 
+#define MAX_EVENTS	10
+
 EventManager::EventManager(std::initializer_list<EventControl *> drivers) :
-		mMonitorRunning(true)
+		mMonitorRunning(true), mExit_fd(eventfd(0,0))
 {
 	/*
 	 * Initialize driver map for each event
@@ -29,6 +32,11 @@ EventManager::EventManager(std::initializer_list<EventControl *> drivers) :
 		perror("Failed to create epoll file descriptor");
 		assert(false);
 		return;
+	}
+
+	// Add descriptor for the Exit Event
+	if (addDescriptor(mExit_fd) != 0) {
+		assert(false);
 	}
 
 	// Start the monitoring thread
@@ -167,31 +175,35 @@ int EventManager::deactivateEvent(FaultId event)
 
 EventManager::~EventManager()
 {
+	const uint64_t exit_signal = 1;
+
 	// Stop the monitoring thread
 	mMonitorRunning = false;
 
-	// Cleanup: Remove all descriptors from the epoll set and close them
-	for (int fd : mDescList) {
-		removeDescriptor(fd);
-		close(fd);
-	}
+	// Send exit signal to break the epoll wait
+	eventfd_write(mExit_fd, exit_signal);
 
+	// Wait for the thread to complete and join
 	if (mThread.joinable()) {
 		mThread.join();
 	}
 
-	// Close the epoll file descriptor
+	// Cleanup: Remove all descriptors from the epoll set
+	for (int fd : mDescList) {
+		removeDescriptor(fd);
+	}
+
+	// Close the file descriptors
+	close(mExit_fd);
 	close(mEpoll_fd);
 }
 
 void EventManager::monitorThread()
 {
-	const int MAX_EVENTS = 10; // TODO: move to more sutiable
-				   // location and adjust the number
-
 	while (mMonitorRunning) {
 		std::array<struct epoll_event, MAX_EVENTS> events;
-		int num_events = epoll_wait(mEpoll_fd, events.data(), MAX_EVENTS, -1);
+		int num_events = epoll_wait(mEpoll_fd, events.data(),
+								MAX_EVENTS, -1);
 		if (num_events < 0) {
 			// epoll_wait error. could be exception
 			assert(false);
@@ -200,6 +212,21 @@ void EventManager::monitorThread()
 
 		for (int i = 0; i < num_events; ++i) {
 			int fd = events[i].data.fd;
+			uint64_t dump_it;
+
+			if (fd == mExit_fd) {
+				eventfd_read(fd, &dump_it);
+				/*
+				 * To exit assume the event was triggered after setting
+				   mMonitorRunning = false;
+				 */
+				assert (mMonitorRunning == false);
+				break; // Skipping rest of the events, if they also happened.
+			}
+
+			// Read the fd to ack the interrupt
+			read(fd, &dump_it, sizeof(dump_it));
+
 			// Find the events associated with this file descriptor
 			auto it = mRegisteredEvents.find(fd);
 			if (it != mRegisteredEvents.end()) {
@@ -249,7 +276,7 @@ int EventManager::addDescriptor(int fd)
 		if (errno == EEXIST) {
 			// The descriptor is already monitored.
 			assert(std::find(mDescList.begin(), mDescList.end(), fd) !=
-							mDescList.end());
+									mDescList.end());
 		} else {
 			perror("Failed to add file descriptor to epoll");
 			status = -1;

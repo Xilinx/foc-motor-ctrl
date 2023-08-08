@@ -64,6 +64,7 @@ private:
 	std::thread mThread;
 	bool mMonitorRunning;
 	int mEpoll_fd;
+	int mExit_fd;
 
 	/*
 	 * Data structures for holding status of events
@@ -71,7 +72,7 @@ private:
 
 	/*
 	 * Using Unordered_map vs std::map in favor of better lookup performance'
-	 * TODO: consider using Array. But will restrict to assume the FaultId is
+	 * Using Array is also an alternate. But will restrict to assume the FaultId is
 	 * is used as index & sequential starting from 0.
 	 */
 	std::unordered_map<FaultId,bool> mEventStatus;
