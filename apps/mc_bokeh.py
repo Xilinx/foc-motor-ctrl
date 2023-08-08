@@ -41,7 +41,7 @@ mc = mcontrol.MotorControl.getMotorControlInstance(1)
 time = 0
 plot_update_interval = 0
 num_points_per_update = 1
-speed_setpoint_min = 0
+speed_setpoint_min = 250
 speed_setpoint_max = 10000
 torque_setpoint_min = -2.5
 torque_setpoint_max = 2.5
@@ -399,13 +399,13 @@ mode_dropdown.on_change('value', change_mode)
 # Speed setpoint
 def update_speed_setpoint(attr, old, new):
     global speed_setpoint
-    if float(new) >= speed_setpoint_min and float(new) <= speed_setpoint_max:
+    if abs(float(new)) >= speed_setpoint_min and abs(float(new)) <= speed_setpoint_max:
         speed_setpoint = float(new)
         mc.setSpeed(speed_setpoint)
         error_message.text = ""
     else:
         speed_setpoint_input.value = str(speed_setpoint)
-        error_message.text = "Error: Invalid input. Speed setpoint must be between " + str(speed_setpoint_min) + " and " + str(speed_setpoint_max) + "."
+        error_message.text = "Error: Invalid input. Speed setpoint must be between " + str(speed_setpoint_min) + " and " + str(speed_setpoint_max) + " or -" + str(speed_setpoint_min) + " and -" + str(speed_setpoint_max) + "."
 
 speed_setpoint_title = Paragraph(text="Speed Setpoint:", width=110, align="center")
 speed_setpoint_input = TextInput(value=str(speed_setpoint), width=180)
