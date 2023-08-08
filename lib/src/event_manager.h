@@ -56,6 +56,7 @@ private:
 	 */
 	int addDescriptor(int fd);
 	int removeDescriptor(int fd);
+	std::vector<std::pair<EventCallback, FaultId>> popOccurredEvents(int fd);
 
 	/*
 	 * Monitoring Thread
@@ -82,6 +83,7 @@ private:
 	 * and Event operations and storage.
 	 */
 	std::mutex mLock;
+	std::mutex mStatusLock;
 	std::map<FaultId, EventControl *> mEventController;
 	std::map<int,std::vector <FaultId>> mRegisteredEvents;
 	std::vector<int> mDescList;

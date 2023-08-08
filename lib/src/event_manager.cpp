@@ -46,6 +46,7 @@ EventManager::EventManager(std::initializer_list<EventControl *> drivers) :
 bool EventManager::getStatus(FaultId event) const
 {
 	bool status = false;
+	// No need to lock just for status reading
 	if (auto fault = mEventStatus.find(event); fault != mEventStatus.end())
 		status = fault->second;
 	return status;
@@ -117,6 +118,7 @@ int EventManager::resetAllEvents(void)
 int EventManager::resetEvent(FaultId e)
 {
 	int status = 0;
+	mStatusLock.lock();
 	auto driver = mEventController[e];
 	if (driver)
 	{
@@ -124,6 +126,7 @@ int EventManager::resetEvent(FaultId e)
 		driver->clearEvent(e);
 	}
 	mEventStatus[e]=false;
+	mStatusLock.unlock();
 	return status;
 }
 
@@ -227,29 +230,11 @@ void EventManager::monitorThread()
 			// Read the fd to ack the interrupt
 			read(fd, &dump_it, sizeof(dump_it));
 
-			// Find the events associated with this file descriptor
-			auto it = mRegisteredEvents.find(fd);
-			if (it != mRegisteredEvents.end()) {
-				const std::vector<FaultId>& events = it->second;
-				/*
-				 * Call the registered callbacks for each
-				 * event associated with this FD
-				 */
-				for (FaultId event : events) {
-					auto driver = mEventController[event];
-					if (driver && driver->getEventStatus(event)) {
-						mEventStatus[event] = true;
-						auto cb = mCallBacks[event];
-						/*
-						 * TODO: make sure form epoo_wait
-						 * to here, the event was not
-						 * deactivated or activated.
-						 */
-						deactivateEvent(event);
-						if(cb)
-							cb(event);
-					}
-				}
+			//Get list of callbacks for active and hot events
+			auto callback_list = popOccurredEvents(fd);
+
+			for (auto cb : callback_list) {
+				cb.first(cb.second);
 			}
 		}
 	}
@@ -301,6 +286,73 @@ int EventManager::removeDescriptor(int fd)
 	}
 
 	return 0;
+}
+
+/*
+ * ONLY CALLED from the monitorThread context.
+ * Record and remove the events occurred for the fd from the data structures.
+ * Returns list of callback for the occurred events
+ */
+std::vector<std::pair<EventManager::EventCallback, FaultId>>
+EventManager::popOccurredEvents(int fd)
+{
+	std::vector<std::pair<EventCallback, FaultId>> cb_ready_list;
+
+	/*
+	 * Make sure the events are not being activated, reset or
+	 * deactivated during the event processing.
+	 * Take both mLock and mStatusLock to ensure it.
+	 */
+	mLock.lock();
+	mStatusLock.lock();
+	// Find the events associated with this file descriptor
+	auto it = mRegisteredEvents.find(fd);
+	if (it != mRegisteredEvents.end()) {
+		auto &events = it->second;
+		/*
+		 * parse the event vector and if the event
+		 * has occurred:
+		 * - Disable the event
+		 * - Update the status
+		 * - record its callback
+		 * - Remove the event from the Registered database
+		 */
+		for (auto event_it = events.begin(); event_it != events.end();) {
+			auto event = *event_it;
+			auto driver = mEventController[event];
+			if (driver && driver->getEventStatus(event)) {
+
+				// disable the enable
+				driver->disableEvent(event);
+
+				// Update the status
+				mEventStatus[event] = true;
+
+				// Record & remove the callback if any
+				auto cb_it = mCallBacks.find(event);
+				if (cb_it != mCallBacks.end()) {
+					if(cb_it->second) {
+						//record the callback
+						cb_ready_list.push_back(
+							{cb_it->second, event}
+							);
+					}
+					// erase callback entry
+					mCallBacks.erase(cb_it);
+				}
+				events.erase(event_it);
+				if(events.empty()) {
+					removeDescriptor(fd);
+				}
+			} else {
+				event_it++;
+			}
+		}
+	}
+	mStatusLock.unlock();
+	mLock.unlock();
+
+	return cb_ready_list;
 }
 
 void EventManager::setUpperThreshold(FaultId event, double val)
