@@ -76,14 +76,16 @@ PYBIND11_MODULE(PY_MODULE_NAME, m) {
         .value("kDCLink", ElectricalData::kDCLink)
         .value("kElectricalDataMax", ElectricalData::kElectricalDataMax);
 
-    py::enum_<FaultType>(m, "FaultType")
-        .value("kPhaseA_OC", FaultType::kPhaseA_OC)
-        .value("kPhaseB_OC", FaultType::kPhaseB_OC)
-        .value("kPhaseC_OC", FaultType::kPhaseC_OC)
-        .value("kDCLink_OC", FaultType::kDCLink_OC)
-        .value("kDCLink_OV", FaultType::kDCLink_OV)
-        .value("kDCLink_UV", FaultType::kDCLink_UV)
-        .value("kFalutTypeMax", FaultType::kFalutTypeMax);
+    py::enum_<FaultId>(m, "FaultId")
+        .value("kPhaseA_OC", FaultId::kPhaseA_OC)
+        .value("kPhaseB_OC", FaultId::kPhaseB_OC)
+        .value("kPhaseC_OC", FaultId::kPhaseC_OC)
+        .value("kDCLink_OC", FaultId::kDCLink_OC)
+        .value("kDCLink_OV", FaultId::kDCLink_OV)
+        .value("kDCLink_UV", FaultId::kDCLink_UV)
+        .value("kPhaseImbalance", FaultId::kPhaseImbalance)
+        .value("kAvgPowerFault", FaultId::kAvgPowerFault)
+        .value("kFalutIdMax", FaultId::kFaultIdMax);
 
     py::enum_<FaultCategory>(m, "FaultCategory")
         .value("kFaultCategoryMax", FaultCategory::kFaultCategoryMax);

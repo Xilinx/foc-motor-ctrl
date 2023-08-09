@@ -27,7 +27,7 @@ UioDrv::UioDrv(std::string name)
 
 int UioDrv::regWrite(int offset, int value)
 {
-    if(mVirtualAddr == 0)
+    if (mVirtualAddr == 0)
     {
         return -1;
     }
@@ -38,12 +38,23 @@ int UioDrv::regWrite(int offset, int value)
 
 uint32_t UioDrv::regRead(int offset)
 {
-    if(mVirtualAddr == 0)
+    if (mVirtualAddr == 0)
     {
         return -1;
     }
     uint64_t regAddr = mVirtualAddr + offset;
     return *(volatile int *)(regAddr);
+}
+
+int UioDrv::findUioDevicenode(string &name)
+{
+    if (UioDrv::mUioDevNode.empty())
+    {
+        std::cerr << "Uio dev node not found" << std::endl;
+        return -1;
+    }
+    name = "/dev/" + UioDrv::mUioDevNode;
+    return 0;
 }
 
 int UioDrv::findDeviceId(std::string kUioDriverName)
@@ -122,9 +133,9 @@ int UioDrv::mapDevice()
         mapping fails with size > 0x100
         */
     mVirtualAddr = (uint64_t)mmap(NULL, PHYSIZE,
-                                 PROT_READ | PROT_WRITE, MAP_SHARED,
-                                 mFileHandle,
-                                 0 * getpagesize()); /* use map0 */
+                                  PROT_READ | PROT_WRITE, MAP_SHARED,
+                                  mFileHandle,
+                                  0 * getpagesize()); /* use map0 */
 
     if (mVirtualAddr == (uint64_t)MAP_FAILED)
     {
@@ -148,7 +159,6 @@ int UioDrv::releaseDevice()
     }
     return 0;
 }
-
 
 UioDrv::~UioDrv()
 {

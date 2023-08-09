@@ -12,6 +12,7 @@
 #include "svpwm.h"
 #include "default_config.h"
 #include "mc_driver.h"
+#include "event_manager.h"
 
 /* TODO: implement following
 #include "logging.hpp"
@@ -47,7 +48,7 @@ public:
 	int getSpeedSetValue() override;
 	double getCurrent(ElectricalData type) override;
 	double getVoltage(ElectricalData type) override;
-	bool getFaultStatus(FaultType type) override;
+	bool getFaultStatus(FaultId type) override;
 	FocData getFocCalc() override;
 	MotorOpMode getOperationMode() override;
 	GainData GetGain(GainType gainController) override;
@@ -92,6 +93,7 @@ private:
 	Adchub mAdcHub;
 	Sensor *mpSensor;
 	MC_Uio mMcUio;
+	EventManager mEvents;
 
 	/*
 	 * Shadow
@@ -136,7 +138,8 @@ MotorControl *MotorControl::getMotorControlInstance(int sessionId,
 }
 
 MotorControlImpl::MotorControlImpl(int sessionId, string configPath):
-	mSessionId(sessionId), mConfigPath(configPath)
+	mSessionId(sessionId), mConfigPath(configPath),
+	mEvents({&mAdcHub, &mMcUio})
 {
 	parseConfig();
 
@@ -192,9 +195,9 @@ double MotorControlImpl::getVoltage(ElectricalData type)
 	return mAdcHub.getVoltage(type);
 }
 
-bool MotorControlImpl::getFaultStatus(FaultType type)
+bool MotorControlImpl::getFaultStatus(FaultId type)
 {
-	return mAdcHub.getFaultStatus(type);
+	return mAdcHub.getEventStatus(type);
 }
 
 FocData MotorControlImpl::getFocCalc()

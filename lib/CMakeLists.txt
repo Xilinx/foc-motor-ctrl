@@ -32,6 +32,7 @@ target_sources(${FMC_LIB_NAME} PRIVATE
     src/foc.cpp
     src/pwm.cpp
     src/svpwm.cpp
+    src/event_manager.cpp
     src/adchub.cpp
     src/mc_driver.cpp
     src/sensors/sensor.cpp

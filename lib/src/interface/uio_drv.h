@@ -24,6 +24,7 @@ public:
 	UioDrv(std::string name);
 	int regWrite(int offset, int value);
 	uint32_t regRead(int offset);
+	int findUioDevicenode(std::string &name);
 	~UioDrv();
 };
 

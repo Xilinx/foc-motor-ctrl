@@ -1,8 +1,12 @@
-#include "adchub.h"
 /*
  * Copyright (C) 2023 Advanced Micro Devices, Inc.
  * SPDX-License-Identifier: MIT
  */
+
+#include <cassert>
+#include "adchub.h"
+#include "fcntl.h"
+#include "unistd.h"
 
 const std::string Adchub::kAdcHubDriverName = "xilinx_adc_hub";
 
@@ -19,9 +23,25 @@ enum AdcChannels
 	channelMax
 };
 
-Adchub::Adchub()
+Adchub::Adchub(): EventControl( /* List of supported Faults */
+		{ FaultId::kPhaseA_OC,
+		  FaultId::kPhaseB_OC,
+		  FaultId::kPhaseC_OC,
+		  FaultId::kDCLink_OC,
+		  FaultId::kDCLink_OV,
+		  FaultId::kDCLink_UV,
+		})
 {
+	std::string devId, fdPath;
+	fd = -1;
+
 	mAdchub_IIO_Handle = new IIO_Driver(kAdcHubDriverName);
+	mAdchub_IIO_Handle->getDeviceId(devId);
+	fdPath = "/dev/" + devId;
+	fd = open(fdPath.c_str(), O_RDONLY);
+	if (fd < 0) {
+		perror("open");
+	}
 }
 
 double Adchub::getCurrent(ElectricalData phase)
@@ -58,35 +78,6 @@ double Adchub::getVoltage(ElectricalData phase)
 		return -1;
 	}
 	return 0;
-}
-
-bool Adchub::getFaultStatus(FaultType fault)
-{
-	int data;
-	switch (fault)
-	{
-	case FaultType::kPhaseA_OC:
-		data = mAdchub_IIO_Handle->readChannel(current1_ac, "over_range_fault_status");
-		break;
-	case FaultType::kPhaseB_OC:
-		data = mAdchub_IIO_Handle->readChannel(current3_ac, "over_range_fault_status");
-		break;
-	case FaultType::kPhaseC_OC:
-		data = mAdchub_IIO_Handle->readChannel(current5_ac, "over_range_fault_status");
-		break;
-	case FaultType::kDCLink_OC:
-		data = mAdchub_IIO_Handle->readChannel(current7_dc, "over_range_fault_status");
-		break;
-	case FaultType::kDCLink_OV:
-		data = mAdchub_IIO_Handle->readChannel(voltage6_dc, "over_range_fault_status");
-		break;
-	case FaultType::kDCLink_UV:
-		data = mAdchub_IIO_Handle->readChannel(voltage6_dc, "under_range_fault_status");
-		break;
-	default:
-		return false;
-	}
-	return (data) ? true : false;
 }
 
 int Adchub::clearFaults()
@@ -302,7 +293,190 @@ int Adchub::disable_undervoltage_protection(ElectricalData phase)
 	return 0;
 }
 
+int Adchub::getChannelId(FaultId event)
+{
+	AdcChannels channel_id = channelMax;
+
+	switch (event) {
+	case FaultId::kPhaseA_OC:
+		channel_id = current1_ac;
+		break;
+	case FaultId::kPhaseB_OC:
+		channel_id = current3_ac;
+		break;
+	case FaultId::kPhaseC_OC:
+		channel_id = current5_ac;
+		break;
+	case FaultId::kDCLink_OC:
+		channel_id = current7_dc;
+		break;
+	case FaultId::kDCLink_OV:
+	case FaultId::kDCLink_UV:
+		channel_id = voltage6_dc;
+		break;
+	default:
+		// Should never come here.
+		assert(false);
+	}
+
+	return (channel_id == channelMax)? -1 : static_cast<int>(channel_id);
+}
+
+bool Adchub::getEventStatus(FaultId event)
+{
+	assert(isSupportedEvent(event));
+
+	bool status = false;
+	int channel_id = getChannelId(event);
+	std::vector<std::string> attr;
+
+	switch (event) {
+	case FaultId::kPhaseA_OC:
+	case FaultId::kPhaseB_OC:
+	case FaultId::kPhaseC_OC:
+		attr.push_back("over_range_fault_status");
+		attr.push_back("under_range_fault_status");
+		break;
+	case FaultId::kDCLink_OC:
+	case FaultId::kDCLink_OV:
+		attr.push_back("over_range_fault_status");
+		break;
+	case FaultId::kDCLink_UV:
+		attr.push_back("under_range_fault_status");
+		break;
+	default:
+		break;
+	}
+
+	if (channel_id != -1) {
+		for (auto a : attr) {
+			status = status ||
+				 mAdchub_IIO_Handle->readChannel(channel_id,
+								 a.c_str());
+		}
+	}
+
+	return status;
+}
+
+void Adchub::clearEvent(FaultId event)
+{
+	assert(isSupportedEvent(event));
+
+	int channel_id = getChannelId(event);
+
+	if (channel_id != -1) {
+		mAdchub_IIO_Handle->writeChannel(channel_id,
+						 "fault_clear", "1");
+	}
+}
+
+void Adchub::setUpperThreshold(FaultId event, double val)
+{
+	assert(isSupportedEvent(event));
+	int channel_id = getChannelId(event);
+	std::string attrName = "thresh_rising_value";
+
+	if (channel_id != -1) {
+		mAdchub_IIO_Handle->writeeventattr(channel_id,
+						   attrName.c_str(),
+						   std::to_string(val).c_str());
+	}
+}
+
+void Adchub::setLowerThreshold(FaultId event, double val)
+{
+	assert(isSupportedEvent(event));
+	int channel_id = getChannelId(event);
+	std::string attrName = "thresh_falling_value";
+
+	if (channel_id != -1) {
+		mAdchub_IIO_Handle->writeeventattr(channel_id,
+						   attrName.c_str(),
+						   std::to_string(val).c_str());
+	}
+}
+
+double Adchub::getUpperThreshold(FaultId event)
+{
+	assert(isSupportedEvent(event));
+
+	double threshold = 0;
+	int channel_id = getChannelId(event);
+	std::string attrName = "thresh_rising_value";
+
+	if (channel_id != -1) {
+		threshold = mAdchub_IIO_Handle->readeventattr(channel_id, attrName);
+	}
+	return threshold;
+}
+
+double Adchub::getLowerThreshold(FaultId event)
+{
+	assert(isSupportedEvent(event));
+
+	double threshold = 0;
+	int channel_id = getChannelId(event);
+	std::string attrName = "thresh_falling_value";
+
+	if (channel_id != -1) {
+		threshold = mAdchub_IIO_Handle->readeventattr(channel_id, attrName);
+	}
+	return threshold;
+}
+
+int Adchub::getEventFd(FaultId event)
+{
+	assert(isSupportedEvent(event));
+	return fd;
+}
+
+void Adchub::eventEnableDisable(FaultId event, bool enable)
+{
+	int channel_id = getChannelId(event);
+	std::vector<std::string> attr;
+
+	switch (event) {
+	case FaultId::kPhaseA_OC:
+	case FaultId::kPhaseB_OC:
+	case FaultId::kPhaseC_OC:
+		attr.push_back("thresh_rising_en");
+		attr.push_back("thresh_falling_en");
+		break;
+	case FaultId::kDCLink_OC:
+	case FaultId::kDCLink_OV:
+		attr.push_back("thresh_rising_en");
+		break;
+	case FaultId::kDCLink_UV:
+		attr.push_back("thresh_falling_en");
+		break;
+	default:
+		break;
+	}
+
+	if (channel_id != -1) {
+		for (auto a : attr) {
+			mAdchub_IIO_Handle->writeeventattr(channel_id,
+							   a.c_str(),
+							   std::to_string(enable).c_str());
+		}
+	}
+}
+
+void Adchub::enableEvent(FaultId event)
+{
+	assert(isSupportedEvent(event));
+	eventEnableDisable(event, true);
+}
+
+void Adchub::disableEvent(FaultId event)
+{
+	assert(isSupportedEvent(event));
+	eventEnableDisable(event, false);
+}
+
 Adchub::~Adchub()
 {
+	close (fd);
 	delete mAdchub_IIO_Handle;
 }
