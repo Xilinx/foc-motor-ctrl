@@ -42,6 +42,7 @@ Adchub::Adchub(): EventControl( /* List of supported Faults */
 	if (fd < 0) {
 		perror("open");
 	}
+	//TODO: disable all the events
 }
 
 double Adchub::getCurrent(ElectricalData phase)
@@ -77,13 +78,6 @@ double Adchub::getVoltage(ElectricalData phase)
 	default:
 		return -1;
 	}
-	return 0;
-}
-
-int Adchub::clearFaults()
-{
-	for (int index = 0; index < channelMax; index++)
-		mAdchub_IIO_Handle->writeChannel(index, "fault_clear", "1");
 	return 0;
 }
 
@@ -160,82 +154,6 @@ int Adchub::setVoltageFiltertap(ElectricalData phase, int filtertap)
 	return 0;
 }
 
-int Adchub::set_voltage_threshold_falling_limit(ElectricalData phase, double threshold)
-{
-	std::string attrName = "thresh_falling_value";
-	switch (phase)
-	{
-	case ElectricalData::kPhaseA:
-		return mAdchub_IIO_Handle->writeeventattr(voltage0_ac, attrName.c_str(), std::to_string(threshold).c_str());
-	case ElectricalData::kPhaseB:
-		return mAdchub_IIO_Handle->writeeventattr(voltage2_ac, attrName.c_str(), std::to_string(threshold).c_str());
-	case ElectricalData::kPhaseC:
-		return mAdchub_IIO_Handle->writeeventattr(voltage4_ac, attrName.c_str(), std::to_string(threshold).c_str());
-	case ElectricalData::kDCLink:
-		return mAdchub_IIO_Handle->writeeventattr(voltage6_dc, attrName.c_str(), std::to_string(threshold).c_str());
-	default:
-		return -1;
-	}
-	return 0;
-}
-
-int Adchub::set_voltage_threshold_rising_limit(ElectricalData phase, double threshold)
-{
-	std::string attrName = "thresh_rising_value";
-	switch (phase)
-	{
-	case ElectricalData::kPhaseA:
-		return mAdchub_IIO_Handle->writeeventattr(voltage0_ac, attrName.c_str(), std::to_string(threshold).c_str());
-	case ElectricalData::kPhaseB:
-		return mAdchub_IIO_Handle->writeeventattr(voltage2_ac, attrName.c_str(), std::to_string(threshold).c_str());
-	case ElectricalData::kPhaseC:
-		return mAdchub_IIO_Handle->writeeventattr(voltage4_ac, attrName.c_str(), std::to_string(threshold).c_str());
-	case ElectricalData::kDCLink:
-		return mAdchub_IIO_Handle->writeeventattr(voltage6_dc, attrName.c_str(), std::to_string(threshold).c_str());
-	default:
-		return -1;
-	}
-	return 0;
-}
-
-int Adchub::set_current_threshold_falling_limit(ElectricalData phase, double threshold)
-{
-	std::string attrName = "thresh_falling_value";
-	switch (phase)
-	{
-	case ElectricalData::kPhaseA:
-		return mAdchub_IIO_Handle->writeeventattr(current1_ac, attrName.c_str(), std::to_string(threshold).c_str());
-	case ElectricalData::kPhaseB:
-		return mAdchub_IIO_Handle->writeeventattr(current3_ac, attrName.c_str(), std::to_string(threshold).c_str());
-	case ElectricalData::kPhaseC:
-		return mAdchub_IIO_Handle->writeeventattr(current5_ac, attrName.c_str(), std::to_string(threshold).c_str());
-	case ElectricalData::kDCLink:
-		return mAdchub_IIO_Handle->writeeventattr(current7_dc, attrName.c_str(), std::to_string(threshold).c_str());
-	default:
-		return -1;
-	}
-	return 0;
-}
-
-int Adchub::set_current_threshold_rising_limit(ElectricalData phase, double threshold)
-{
-	std::string attrName = "thresh_rising_value";
-	switch (phase)
-	{
-	case ElectricalData::kPhaseA:
-		return mAdchub_IIO_Handle->writeeventattr(current1_ac, attrName.c_str(), std::to_string(threshold).c_str());
-	case ElectricalData::kPhaseB:
-		return mAdchub_IIO_Handle->writeeventattr(current3_ac, attrName.c_str(), std::to_string(threshold).c_str());
-	case ElectricalData::kPhaseC:
-		return mAdchub_IIO_Handle->writeeventattr(current5_ac, attrName.c_str(), std::to_string(threshold).c_str());
-	case ElectricalData::kDCLink:
-		return mAdchub_IIO_Handle->writeeventattr(current7_dc, attrName.c_str(), std::to_string(threshold).c_str());
-	default:
-		return -1;
-	}
-	return 0;
-}
-
 int Adchub::calibrateCurrentChannel(ElectricalData phase)
 {
 	std::string attrName = "calibrate";
@@ -268,25 +186,6 @@ int Adchub::calibrateVoltageChannel(ElectricalData phase)
 		return mAdchub_IIO_Handle->writeChannel(voltage4_ac, attrName.c_str(), "1");
 	case ElectricalData::kDCLink:
 		return mAdchub_IIO_Handle->writeChannel(voltage6_dc, attrName.c_str(), "1");
-	default:
-		return -1;
-	}
-	return 0;
-}
-
-int Adchub::disable_undervoltage_protection(ElectricalData phase)
-{
-	std::string attrName = "thresh_falling_en";
-	switch (phase)
-	{
-	case ElectricalData::kPhaseA:
-		return mAdchub_IIO_Handle->writeeventattr(voltage0_ac, attrName.c_str(), "0");
-	case ElectricalData::kPhaseB:
-		return mAdchub_IIO_Handle->writeeventattr(voltage2_ac, attrName.c_str(), "0");
-	case ElectricalData::kPhaseC:
-		return mAdchub_IIO_Handle->writeeventattr(voltage4_ac, attrName.c_str(), "0");
-	case ElectricalData::kDCLink:
-		return mAdchub_IIO_Handle->writeeventattr(voltage6_dc, attrName.c_str(), "0");
 	default:
 		return -1;
 	}

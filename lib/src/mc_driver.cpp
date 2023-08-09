@@ -34,6 +34,7 @@ MC_Uio::MC_Uio() : EventControl(/* List of supported Faults */
 	if (fd < 0) {
 		perror("open");
 	}
+	//TODO: disable all the events
 }
 
 MC_Uio::~MC_Uio()
