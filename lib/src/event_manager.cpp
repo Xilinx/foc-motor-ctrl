@@ -144,7 +144,11 @@ int EventManager::deactivateAllEvents(void)
 int EventManager::deactivateEvent(FaultId event)
 {
 	auto driver = mEventController[event];
-	assert(driver);
+
+	if (!driver) {
+		assert(false);
+		return -1;
+	}
 
 	mLock.lock();
 	auto it = mCallBacks.find(event);
@@ -159,12 +163,12 @@ int EventManager::deactivateEvent(FaultId event)
 		auto events_it = std::find(events.begin(), events.end(), event);
 		if (events_it != events.end()) {
 			events.erase(events_it);
-			break; // Assuming unique entry for the event
-		}
 
-		if(events.empty()) {
-			// if FD has no event, removeDescriptor
-			removeDescriptor(entry.first);
+			if(events.empty()) {
+				// if FD has no event, removeDescriptor
+				removeDescriptor(entry.first);
+			}
+			break; // Assuming unique entry for the event
 		}
 	}
 
@@ -215,10 +219,10 @@ void EventManager::monitorThread()
 
 		for (int i = 0; i < num_events; ++i) {
 			int fd = events[i].data.fd;
-			uint64_t dump_it;
+			uint64_t dump_it[2]; // event id + timestamp for iio event
 
 			if (fd == mExit_fd) {
-				eventfd_read(fd, &dump_it);
+				eventfd_read(fd, dump_it);
 				/*
 				 * To exit assume the event was triggered after setting
 				   mMonitorRunning = false;
@@ -228,7 +232,7 @@ void EventManager::monitorThread()
 			}
 
 			// Read the fd to ack the interrupt
-			read(fd, &dump_it, sizeof(dump_it));
+			read(fd, dump_it, sizeof(dump_it));
 
 			//Get list of callbacks for active and hot events
 			auto callback_list = popOccurredEvents(fd);
