@@ -5,8 +5,6 @@
 
 #include <cassert>
 #include "adchub.h"
-#include "fcntl.h"
-#include "unistd.h"
 
 const std::string Adchub::kAdcHubDriverName = "xilinx_adc_hub";
 
@@ -32,16 +30,8 @@ Adchub::Adchub(): EventControl( /* List of supported Faults */
 		  FaultId::kDCLink_UV,
 		})
 {
-	std::string devId, fdPath;
-	fd = -1;
-
 	mAdchub_IIO_Handle = new IIO_Driver(kAdcHubDriverName);
-	mAdchub_IIO_Handle->getDeviceId(devId);
-	fdPath = "/dev/" + devId;
-	fd = open(fdPath.c_str(), O_RDONLY);
-	if (fd < 0) {
-		perror("open");
-	}
+
 	//TODO: disable all the events
 }
 
@@ -327,7 +317,7 @@ double Adchub::getLowerThreshold(FaultId event)
 int Adchub::getEventFd(FaultId event)
 {
 	assert(isSupportedEvent(event));
-	return fd;
+	return mAdchub_IIO_Handle->getEventFd();
 }
 
 void Adchub::eventEnableDisable(FaultId event, bool enable)
@@ -376,6 +366,5 @@ void Adchub::disableEvent(FaultId event)
 
 Adchub::~Adchub()
 {
-	close (fd);
 	delete mAdchub_IIO_Handle;
 }

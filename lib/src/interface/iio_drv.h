@@ -21,7 +21,7 @@ public:
 	int writeDeviceattr(const std::string &attrName, const std::string &value);
 	int writeeventattr(const unsigned int index, const std::string &attrName, const std::string &value);
 	double readeventattr(const unsigned int index, const std::string &attrName);
-	void getDeviceId(std::string &deviceId);
+	int getEventFd(void);
 
 private:
 	std::string devId;
@@ -29,6 +29,7 @@ private:
 	struct iio_device *dev;
 	unsigned int channelCount;
 	std::vector<iio_channel *> channels;
+	int event_fd;
 };
 
 #endif //_IIO_DRV_H_

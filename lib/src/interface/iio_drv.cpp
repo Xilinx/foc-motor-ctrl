@@ -2,12 +2,18 @@
  * Copyright (C) 2023 Advanced Micro Devices, Inc.
  * SPDX-License-Identifier: MIT
  */
-#include "iio_drv.h"
 #include <iostream>
 #include <fstream>
+#include <fcntl.h>
+#include <unistd.h>
+#include <linux/iio/events.h>
+#include <sys/ioctl.h>
+#include "iio_drv.h"
+
 #define BASE 10
 
-IIO_Driver::IIO_Driver(const std::string &name)
+IIO_Driver::IIO_Driver(const std::string &name):
+	event_fd(-1)
 {
 
 	ctx = iio_create_local_context();
@@ -37,6 +43,9 @@ IIO_Driver::~IIO_Driver()
 	if (ctx != NULL)
 	{
 		iio_context_destroy(ctx);
+	}
+	if (event_fd != -1) {
+		close(event_fd);
 	}
 }
 
@@ -120,7 +129,24 @@ double IIO_Driver::readeventattr(const unsigned int index, const std::string &at
 	return data;
 }
 
-void IIO_Driver::getDeviceId(std::string &deviceId)
+int IIO_Driver::getEventFd()
 {
-	deviceId = devId;
+	if(event_fd == -1) {
+		std::string filepath = "/dev/" + devId;
+		int fd = open(filepath.c_str(), O_RDONLY);
+		if (fd < 0) {
+			perror("Failed to open iio device");
+			return -1;
+		}
+
+		if(ioctl(fd, IIO_GET_EVENT_FD_IOCTL, &event_fd) == -1 ||
+							event_fd == -1) {
+			perror("Failed to get iio event fd");
+			return -1;
+		}
+
+		if (close(fd) == -1)
+			perror("Failed to close character device file");
+	}
+	return event_fd;
 }
