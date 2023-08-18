@@ -25,6 +25,16 @@ Quick Start
 
    Setting up the Board and Application deployment <docs/app_deployment.md>
 
+*******************************
+Repository
+*******************************
+
+.. toctree::
+  :maxdepth: 1
+  
+  Software Repository <https://github.com/Xilinx/foc-motor-ctrl>
+
+
 ..
    License
    Licensed under the Apache License, Version 2.0 (the "License"); you may not
