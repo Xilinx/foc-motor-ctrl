@@ -36,6 +36,9 @@ x = deque([nan] * sample_size)
 
 # Get a MotorControl instance with session ID 1 and default config path
 mc = mcontrol.MotorControl.getMotorControlInstance(1)
+if mc is None:
+    print("Error: Unable to get MotorControl instance.\nPlease check your motor setup and restart the server.")
+    exit()
 
 # Initialize parameters
 time = 0
