@@ -272,6 +272,10 @@ void MotorControlImpl::setOperationMode(MotorOpMode mode)
 {
 	if(mode != mCurrentMode)
 	{
+		if(mode != MotorOpMode::kModeOff) {
+			// Transition to OFF mode before changing mode
+			transitionMode(MotorOpMode::kModeOff);
+		}
 		transitionMode(mode);
 	}
 }
