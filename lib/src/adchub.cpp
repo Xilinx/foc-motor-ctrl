@@ -32,7 +32,41 @@ Adchub::Adchub(): EventControl( /* List of supported Faults */
 {
 	mAdchub_IIO_Handle = new IIO_Driver(kAdcHubDriverName);
 
-	//TODO: disable all the events
+	/*
+	 * Disable and clear all the events. Also reset the fault
+	 * thresholds.
+	 * Note: Although it is simple to use event APIs to clear this,
+	 * we are not using them and using channels directly. This is
+	 * to enforce reset of the channels which not be exposed through
+	 * the event control (e.g voltage{0,2,4}_ac)
+	 */
+
+	for (int channel_id=voltage0_ac; channel_id < channelMax; channel_id++) {
+
+		/*
+		 * Disable any enabled events/faults
+		 */
+		mAdchub_IIO_Handle->writeeventattr(channel_id,
+						"thresh_rising_en", "0");
+		mAdchub_IIO_Handle->writeeventattr(channel_id,
+						"thresh_falling_en", "0");
+
+		/*
+		 * Clear status of any previously triggered events/faults
+		 * These also remove the gate latch in the hw
+		 */
+		mAdchub_IIO_Handle->writeChannel(channel_id,
+						 "fault_clear", "1");
+
+		/*
+		 * Reset thresholds for all events/faults
+		 */
+		mAdchub_IIO_Handle->writeeventattr(channel_id,
+						"thresh_rising_value", "0");
+		mAdchub_IIO_Handle->writeeventattr(channel_id,
+						"thresh_falling_value", "0");
+	}
+
 }
 
 double Adchub::getCurrent(ElectricalData phase)

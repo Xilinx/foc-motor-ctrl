@@ -34,7 +34,16 @@ MC_Uio::MC_Uio() : EventControl(/* List of supported Faults */
 	if (fd < 0) {
 		perror("open");
 	}
-	//TODO: disable all the events
+
+	/*
+	 * Disable previous enabled events.
+	 */
+	FaultId ev_list[] = {FaultId::kPhaseImbalance}; // List of all the events in the hw
+	for (auto ev: ev_list) {
+		disableEvent(ev);
+		clearEvent(ev);
+		setUpperThreshold(ev, 0);
+	}
 }
 
 MC_Uio::~MC_Uio()
