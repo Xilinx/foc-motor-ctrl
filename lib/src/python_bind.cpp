@@ -35,8 +35,7 @@ PYBIND11_MODULE(PY_MODULE_NAME, m) {
         .def("setOperationMode", &MotorControl::setOperationMode)
         .def("setVfParamVq", &MotorControl::setVfParamVq)
         .def("setVfParamVd", &MotorControl::setVfParamVd)
-        .def("clearFaults", py::overload_cast<>(&MotorControl::clearFaults))
-        .def("clearFaults", py::overload_cast<FaultCategory>(&MotorControl::clearFaults));
+        .def("clearFaults", &MotorControl::clearFaults);
 
     py::class_<FocData>(m, "FocData")
         .def(py::init<>())
@@ -86,7 +85,4 @@ PYBIND11_MODULE(PY_MODULE_NAME, m) {
         .value("kPhaseImbalance", FaultId::kPhaseImbalance)
         .value("kAvgPowerFault", FaultId::kAvgPowerFault)
         .value("kFalutIdMax", FaultId::kFaultIdMax);
-
-    py::enum_<FaultCategory>(m, "FaultCategory")
-        .value("kFaultCategoryMax", FaultCategory::kFaultCategoryMax);
 }

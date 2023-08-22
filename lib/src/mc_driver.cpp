@@ -34,6 +34,16 @@ MC_Uio::MC_Uio() : EventControl(/* List of supported Faults */
 	if (fd < 0) {
 		perror("open");
 	}
+
+	/*
+	 * Disable previous enabled events.
+	 */
+	FaultId ev_list[] = {FaultId::kPhaseImbalance}; // List of all the events in the hw
+	for (auto ev: ev_list) {
+		disableEvent(ev);
+		clearEvent(ev);
+		setUpperThreshold(ev, 0);
+	}
 }
 
 MC_Uio::~MC_Uio()
@@ -98,20 +108,8 @@ void MC_Uio::setUpperThreshold(FaultId event, double val)
 	mUioHandle->regWrite(PHASE_CURRENT_BALANCE_FAULT_VALUE, ival);
 }
 
-void MC_Uio::setLowerThreshold(FaultId event, double val)
-{
-	assert(isSupportedEvent(event));
-	// Set the threshold value
-}
-
 double MC_Uio::getUpperThreshold(FaultId event)
 {
 	assert(isSupportedEvent(event));
 	return mUioHandle->regRead(PHASE_CURRENT_BALANCE_FAULT_VALUE) / 65536.0;
-}
-
-double MC_Uio::getLowerThreshold(FaultId event)
-{
-	assert(isSupportedEvent(event));
-	// Get the threshold value
 }

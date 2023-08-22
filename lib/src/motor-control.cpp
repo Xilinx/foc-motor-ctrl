@@ -14,17 +14,12 @@
 #include "mc_driver.h"
 #include "event_manager.h"
 
-/* TODO: implement following
-#include "logging.hpp"
-*/
-
 /** TODO List:
- *   - Move fucntion definitions out of the class
- *   - Use smart pointers if make sense
  *   - populate InitConfig structure
  *	- If possible group the drivers specific init as sub strutures defined
  *	in respective drivers
- *   - Check Naming convention and use '_' after the specifier if required.
+ *   - Implement logging facility.
+ *   - Implement exceptions for the runtime errors.
  */
 
 #define ANGLE2CPR(x)    (((x) * CPR )/360)
@@ -48,7 +43,7 @@ public:
 	int getSpeedSetValue() override;
 	double getCurrent(ElectricalData type) override;
 	double getVoltage(ElectricalData type) override;
-	bool getFaultStatus(FaultId type) override;
+	bool getFaultStatus(FaultId id) override;
 	FocData getFocCalc() override;
 	MotorOpMode getOperationMode() override;
 	GainData GetGain(GainType gainController) override;
@@ -64,7 +59,6 @@ public:
 	void setVfParamVd(double vd) override;
 
 	void clearFaults() override;
-	void clearFaults(FaultCategory category) override;
 
 	/*
 	 * Implementation specific members
@@ -78,13 +72,6 @@ private:
 	MotorOpMode mCurrentMode;
 
 	/*
-	 * Persistent Settings
-	 */
-	struct {
-		int rampRate;
-	}mConfigData;
-
-	/*
 	 * Class handlers
 	 */
 	Foc mFoc;
@@ -96,7 +83,8 @@ private:
 	EventManager mEvents;
 
 	/*
-	 * Shadow
+	 * Shadow Vq and Vd
+	 * TODO: Find the right place
 	 */
 	double mVq;
 	double mVd;
@@ -169,6 +157,7 @@ int MotorControlImpl::getPosition()
 
 int MotorControlImpl::getTorque()
 {
+	//TODO: NOT IMPLEMENTED
 	/*
 	 * To Implement only after Torque sensor is available.
 	 */
@@ -195,9 +184,9 @@ double MotorControlImpl::getVoltage(ElectricalData type)
 	return mAdcHub.getVoltage(type);
 }
 
-bool MotorControlImpl::getFaultStatus(FaultId type)
+bool MotorControlImpl::getFaultStatus(FaultId id)
 {
-	return mAdcHub.getEventStatus(type);
+	return mEvents.getStatus(id);
 }
 
 FocData MotorControlImpl::getFocCalc()
@@ -239,6 +228,8 @@ void MotorControlImpl::SetTorque(double torque)
 
 void MotorControlImpl::SetPosition(int position)
 {
+	//TODO: NOT IMPLEMENTED
+	static_cast<void>(position);
 	/*
 	 * Not availabe untill position control
 	 */
@@ -251,13 +242,9 @@ void MotorControlImpl::SetGain(GainType gainController, GainData value)
 
 void MotorControlImpl::clearFaults()
 {
-	transitionMode(MotorOpMode::kModeOff);
-	mAdcHub.clearFaults();
-}
-
-void MotorControlImpl::clearFaults(FaultCategory category)
-{
-
+	setOperationMode(MotorOpMode::kModeOff);
+	mEvents.resetAllEvents();
+	mEvents.activateAllEvents();
 }
 
 int MotorControlImpl::getSessionId ()
@@ -374,19 +361,22 @@ void MotorControlImpl::initMotor(bool full_init)
 	mAdcHub.setCurrentScale(ElectricalData::kDCLink, ADCHUB_DC_CUR_SCALE);
 
 	/*
-	 * set the thresholds for the fault
+	 * Set the thresholds for all the events
 	 */
-	for (auto phase : all_Edata) {
-		mAdcHub.set_voltage_threshold_falling_limit(phase, ADCHUB_VOL_PHASE_FALLING_THRES);
-		mAdcHub.set_voltage_threshold_rising_limit(phase, ADCHUB_VOL_PHASE_RISING_THRES);
-		mAdcHub.set_current_threshold_falling_limit(phase, ADCHUB_CUR_PHASE_FALLING_THRES);
-		mAdcHub.set_current_threshold_rising_limit(phase, ADCHUB_CUR_PHASE_RISING_THRES);
-	}
-	// Update the thresholds for DCLink. It requires different settings
-	mAdcHub.set_current_threshold_falling_limit(ElectricalData::kDCLink,
-													ADCHUB_DCLINK_FALLING_THRES);
-	mAdcHub.set_current_threshold_rising_limit(ElectricalData::kDCLink,
-													ADCHUB_DCLINK_RISING_THRES);
+
+	mEvents.setUpperThreshold(FaultId::kPhaseA_OC, ADCHUB_CUR_PHASE_RISING_THRES);
+	mEvents.setUpperThreshold(FaultId::kPhaseB_OC, ADCHUB_CUR_PHASE_RISING_THRES);
+	mEvents.setUpperThreshold(FaultId::kPhaseC_OC, ADCHUB_CUR_PHASE_RISING_THRES);
+	mEvents.setLowerThreshold(FaultId::kPhaseA_OC, ADCHUB_CUR_PHASE_FALLING_THRES);
+	mEvents.setLowerThreshold(FaultId::kPhaseB_OC, ADCHUB_CUR_PHASE_FALLING_THRES);
+	mEvents.setLowerThreshold(FaultId::kPhaseC_OC, ADCHUB_CUR_PHASE_FALLING_THRES);
+
+	mEvents.setUpperThreshold(FaultId::kDCLink_OC, ADCHUB_DCLINK_RISING_THRES);
+	mEvents.setLowerThreshold(FaultId::kDCLink_OC, ADCHUB_DCLINK_FALLING_THRES);
+	mEvents.setUpperThreshold(FaultId::kDCLink_OV, ADCHUB_VOL_PHASE_RISING_THRES);
+	mEvents.setLowerThreshold(FaultId::kDCLink_UV, ADCHUB_VOL_PHASE_FALLING_THRES);
+
+	mEvents.setUpperThreshold(FaultId::kPhaseImbalance, PHASE_IMBALANCE_RISING_THRES);
 
 	for (auto phase : all_Edata) {
 
@@ -396,11 +386,12 @@ void MotorControlImpl::initMotor(bool full_init)
 
 	mAdcHub.setCurrentFiltertap(ElectricalData::kDCLink, DCLINK_FILTERTAP);
 
-	mAdcHub.clearFaults();
+	clearFaults();
 
-	for (auto phase : all_Edata) {
-		mAdcHub.disable_undervoltage_protection(phase);
-	}
+	/*
+	 * Deactivate Undervoltage DCLink fault for temporarily
+	 */
+	mEvents.deactivateEvent(FaultId::kDCLink_UV);
 
 	mFoc.setGain(GainType::kTorque, TOR_KP, TOR_KI);
 	mFoc.setGain(GainType::kFlux, FLUX_KP, FLUX_KI);
@@ -433,5 +424,8 @@ void MotorControlImpl::initMotor(bool full_init)
 				- THETAE90DEG) : (positionalCpr - THETAE90DEG + CPR);
 		mFoc.setAngleOffset(cprAligned);
 		transitionMode(MotorOpMode::kModeOff);
-    }
+	}
+
+	mEvents.activateEvent(FaultId::kDCLink_UV);
+
 }

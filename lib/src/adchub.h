@@ -25,16 +25,6 @@ public:
 	int calibrateVoltageChannel(ElectricalData phase);
 
 	/*
-	 * Following APIs are deprecated in favor of Fault Handling
-	 */
-	int clearFaults();
-	int set_voltage_threshold_falling_limit(ElectricalData phase, double threshold);
-	int set_voltage_threshold_rising_limit(ElectricalData phase, double threshold);
-	int set_current_threshold_falling_limit(ElectricalData phase, double threshold);
-	int set_current_threshold_rising_limit(ElectricalData phase, double threshold);
-	int disable_undervoltage_protection(ElectricalData phase);
-
-	/*
 	 * Fault handling Event control APIs
 	 */
 	bool getEventStatus(FaultId event) override;
@@ -51,7 +41,6 @@ private:
 	static const std::string kAdcHubDriverName;
 	IIO_Driver *mAdchub_IIO_Handle;
 
-	int fd;
 	int getChannelId(FaultId event);
 	void eventEnableDisable(FaultId event, bool enable);
 };

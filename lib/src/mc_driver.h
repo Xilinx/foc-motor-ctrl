@@ -31,9 +31,8 @@ public:
 	void disableEvent(FaultId event) override;
 	void clearEvent(FaultId event) override;
 	void setUpperThreshold(FaultId event, double val) override;
-	void setLowerThreshold(FaultId event, double val) override;
 	double getUpperThreshold(FaultId event) override;
-	double getLowerThreshold(FaultId event) override;
+
 };
 
 #endif

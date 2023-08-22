@@ -87,11 +87,6 @@ enum class FaultId {
 	kFaultIdMax
 };
 
-enum class FaultCategory {
-	// TODO: Add 2 classes of the fault
-	kFaultCategoryMax
-};
-
 class MotorControl {
 public:
 	/*
@@ -121,7 +116,6 @@ public:
 	virtual void setVfParamVd(double vd) = 0;
 
 	virtual void clearFaults() = 0;
-	virtual void clearFaults(FaultCategory category) = 0;
 
 	virtual ~MotorControl();
 	/*
