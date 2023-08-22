@@ -4,6 +4,7 @@
  */
 
 #include <unistd.h>
+#include <cassert>
 #include "motor-control/motor-control.hpp"
 #include "sensors/sensor.h"
 #include "foc.h"
@@ -90,8 +91,10 @@ private:
 	double mVd;
 
 	void parseConfig();
-	void transitionMode(MotorOpMode target);
-	void initMotor(bool full_init);
+	void initMotor(bool);
+	Foc::OpMode getFocOpMode(MotorOpMode);
+	int transitionMode(Foc::OpMode);
+	bool isSupportedMode(MotorOpMode);
 };
 
 // Initialize the static member variable of the MotorControl class
@@ -127,6 +130,7 @@ MotorControl *MotorControl::getMotorControlInstance(int sessionId,
 
 MotorControlImpl::MotorControlImpl(int sessionId, string configPath):
 	mSessionId(sessionId), mConfigPath(configPath),
+	mCurrentMode(MotorOpMode::kModeMax),
 	mEvents({&mAdcHub, &mMcUio})
 {
 	parseConfig();
@@ -136,7 +140,7 @@ MotorControlImpl::MotorControlImpl(int sessionId, string configPath):
 
 	initMotor(true);
 
-	transitionMode(MotorOpMode::kModeOff);
+	setOperationMode(MotorOpMode::kModeOff);
 }
 
 MotorControlImpl::~MotorControlImpl()
@@ -268,59 +272,101 @@ GainData MotorControlImpl::GetGain(GainType gainController)
 	return mFoc.getGain(gainController);
 }
 
-void MotorControlImpl::setOperationMode(MotorOpMode mode)
+bool MotorControlImpl::isSupportedMode(MotorOpMode mode)
 {
-	if(mode != mCurrentMode)
-	{
-		if(mode != MotorOpMode::kModeOff) {
-			// Transition to OFF mode before changing mode
-			transitionMode(MotorOpMode::kModeOff);
-		}
-		transitionMode(mode);
-	}
-}
-
-void MotorControlImpl::transitionMode(MotorOpMode target)
-{
-	// TODO: Transition to target mode
-	/*
-	 * Check if the transition is possible
-	 */
-	switch(target) {
+	bool supported = false;
+	switch(mode) {
 		case MotorOpMode::kModeOff:
-			//TODO: disable GD using mc ip ~
-			mMcUio.setGateDrive(false);
-			mFoc.stopMotor();
-			break;
 		case MotorOpMode::kModeSpeed:
 		case MotorOpMode::kModeTorque:
 		case MotorOpMode::kModeSpeedFW:
-			mMcUio.setGateDrive(true);
-			mFoc.setOperationMode(target);
-			break;
 		case MotorOpMode::kModeOpenLoop:
-			//TODO: incorrect use of MotorOpMode. Foc should have its own enum and diff func name
-			mFoc.setOperationMode(static_cast<MotorOpMode>(5));
-			//TODO: eanble GD
-			mMcUio.setGateDrive(true);
-			break;
-		case MotorOpMode::kModeFixedAngle:
-			mMcUio.setGateDrive(true);
-			mFoc.setOperationMode(target);
+			supported = true;
 			break;
 		default:
-			return;
+			supported = false;
 	}
-	mCurrentMode = target;
+	return supported;
+}
+
+Foc::OpMode MotorControlImpl::getFocOpMode(MotorOpMode mode)
+{
+	Foc::OpMode target = Foc::OpMode::kModeMax;
+
+	switch(mode) {
+		case MotorOpMode::kModeOff:
+			target = Foc::OpMode::kModeStop;
+			break;
+		case MotorOpMode::kModeSpeed:
+			target = Foc::OpMode::kModeSpeed;
+			break;
+		case MotorOpMode::kModeTorque:
+			target = Foc::OpMode::kModeTorque;
+			break;
+		case MotorOpMode::kModeSpeedFW:
+			target = Foc::OpMode::kModeFlux;
+			break;
+		case MotorOpMode::kModeOpenLoop:
+			target = Foc::OpMode::kModeManualTF;
+			break;
+		default:
+			break;
+	}
+
+	return target;
+}
+
+void MotorControlImpl::setOperationMode(MotorOpMode mode)
+{
+	assert(isSupportedMode(mode));
+
+	if(mode != mCurrentMode)
+	{
+		auto foc_mode = getFocOpMode(mode);
+
+		assert(foc_mode != Foc::OpMode::kModeMax);
+
+		if(mode != MotorOpMode::kModeOff) {
+			// Transition to OFF mode before changing mode
+			transitionMode(Foc::OpMode::kModeStop);
+		}
+
+		if (transitionMode(foc_mode) == 0)
+			mCurrentMode = mode;
+	}
+}
+
+int MotorControlImpl::transitionMode(Foc::OpMode target)
+{
+	bool run_motor = false;
+	switch(target) {
+		case Foc::OpMode::kModeStop:
+			run_motor = false;
+			break;
+		case Foc::OpMode::kModeSpeed:
+		case Foc::OpMode::kModeTorque:
+		case Foc::OpMode::kModeFlux:
+		case Foc::OpMode::kModeManualTFFixedSpeed:
+		case Foc::OpMode::kModeManualTF:
+		case Foc::OpMode::kModeManualT:
+		case Foc::OpMode::kModeManualF:
+		case Foc::OpMode::kModeManualTFFixedAngle:
+			run_motor = true;
+			break;
+		default:
+			return -1;
+	}
+
+	mMcUio.setGateDrive(run_motor);
+	mFoc.setMode(target);
+
+	return 0;
 }
 
 void MotorControlImpl::initMotor(bool full_init)
 {
 
-	//TODO: Instead of using the values from the default config
-	//initialize the private member structure with the default config
-	//if the config file is not present.
-	mFoc.stopMotor();
+	transitionMode(Foc::OpMode::kModeStop);
 
 	mSvPwm.setSampleII(SVP_SAMPLE_II);
 	mSvPwm.setDcLink(SVP_VOLTAGE);
@@ -411,23 +457,23 @@ void MotorControlImpl::initMotor(bool full_init)
 
 	mFoc.setVfParam(VF_VQ, VF_VD, VF_FIXED_SPEED);
 
-	transitionMode(MotorOpMode::kModeOff);
+	transitionMode(Foc::OpMode::kModeStop);
 	mMcUio.setGateDrive(true);
 
 	if(full_init) {
 
-		transitionMode(MotorOpMode::kModeOpenLoop);
+		transitionMode(Foc::OpMode::kModeManualTF);	//Setting OpenLoop Mode
 		usleep(CALIBRATION_WAIT_US);
-		transitionMode(MotorOpMode::kModeOff);
+		transitionMode(Foc::OpMode::kModeStop);
 		mFoc.setAngleOffset(0);
 		mFoc.setFixedAngleCmd(0);
-		transitionMode(MotorOpMode::kModeFixedAngle);
+		transitionMode(Foc::OpMode::kModeManualTFFixedAngle);
 		usleep(CALIBRATION_WAIT_US);
 		int positionalCpr = ANGLE2CPR(mpSensor->getPosition());
 		int cprAligned = ((positionalCpr - THETAE90DEG) > 0) ? (positionalCpr
 				- THETAE90DEG) : (positionalCpr - THETAE90DEG + CPR);
 		mFoc.setAngleOffset(cprAligned);
-		transitionMode(MotorOpMode::kModeOff);
+		transitionMode(Foc::OpMode::kModeStop);
 	}
 
 	mEvents.activateEvent(FaultId::kDCLink_UV);

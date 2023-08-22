@@ -167,14 +167,6 @@ int Foc::setVfParam(double vq, double vd, int fixedSpeed)
 	return 0;
 }
 
-/*
- * TODO: StopMotor is redundant and can be removed
- */
-int Foc::stopMotor()
-{
-	return setOperationMode(MotorOpMode::kModeOff);
-}
-
 double Foc::getTorqueSetValue()
 {
 	return mTargetTorque;
@@ -185,12 +177,12 @@ double Foc::getSpeedSetValue()
 	return mTargetSpeed;
 }
 
-int Foc::setOperationMode(MotorOpMode mode)
+int Foc::setMode(OpMode mode)
 {
 	std::lock_guard<std::mutex> Slock(mSpeedMutex);
 	std::lock_guard<std::mutex> Tlock(mTorMutex);
 
-	if (mode != MotorOpMode::kModeSpeed) {
+	if (mode != OpMode::kModeSpeed) {
 		// not speed mode
 		mDoSpeedRamp = false;
 		if (mSpeedThread.joinable()) {
@@ -198,7 +190,7 @@ int Foc::setOperationMode(MotorOpMode mode)
 		}
 	}
 
-	if (mode != MotorOpMode::kModeTorque) {
+	if (mode != OpMode::kModeTorque) {
 		// not torque mode
 		mDoTorRamp = false;
 		if (mTorThread.joinable()) {
@@ -209,20 +201,20 @@ int Foc::setOperationMode(MotorOpMode mode)
 	mFoc_IIO_Handle->writeDeviceattr("control_mode", std::to_string(static_cast<int>(mode)).c_str());
 
 	switch(mode) {
-		case MotorOpMode::kModeOff:
+		case OpMode::kModeStop:
 			// Reset the SP values to default reset
 			mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(RST_SPEED).c_str());
 			mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(RST_TORQUE).c_str());
 			mFoc_IIO_Handle->writeDeviceattr("flux_sp", "0");
 			break;
-		case MotorOpMode::kModeSpeed:
+		case OpMode::kModeSpeed:
 			// start ramping
 			if (!mDoSpeedRamp) {
 				mDoSpeedRamp = true;
 				mSpeedThread = std::thread(&Foc::rampSpeed, this);
 			}
 			break;
-		case MotorOpMode::kModeTorque:
+		case OpMode::kModeTorque:
 			// start ramping
 			if (!mDoTorRamp) {
 				mDoTorRamp = true;
