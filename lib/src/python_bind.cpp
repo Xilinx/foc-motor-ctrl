@@ -4,6 +4,10 @@
  */
 #include <pybind11/pybind11.h>
 #include "motor-control/motor-control.hpp"
+#include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
+#include <map>
+#include <vector>
 
 #ifndef PY_MODULE_NAME
 #define PY_MODULE_NAME	py_motor_control
@@ -35,7 +39,8 @@ PYBIND11_MODULE(PY_MODULE_NAME, m) {
         .def("setOperationMode", &MotorControl::setOperationMode)
         .def("setVfParamVq", &MotorControl::setVfParamVq)
         .def("setVfParamVd", &MotorControl::setVfParamVd)
-        .def("clearFaults", &MotorControl::clearFaults);
+        .def("clearFaults", &MotorControl::clearFaults)
+        .def("getMotorParams", &MotorControl::getMotorParams);
 
     py::class_<FocData>(m, "FocData")
         .def(py::init<>())
@@ -85,4 +90,27 @@ PYBIND11_MODULE(PY_MODULE_NAME, m) {
         .value("kPhaseImbalance", FaultId::kPhaseImbalance)
         .value("kAvgPowerFault", FaultId::kAvgPowerFault)
         .value("kFalutIdMax", FaultId::kFaultIdMax);
+
+    py::enum_<MotorParam>(m, "MotorParam")
+        .value("kVoltagePhaseA", MotorParam::kVoltagePhaseA)
+        .value("kCurrentPhaseA", MotorParam::kCurrentPhaseA)
+        .value("kVoltagePhaseB", MotorParam::kVoltagePhaseB)
+        .value("kCurrentPhaseB", MotorParam::kCurrentPhaseB)
+        .value("kVoltagePhaseC", MotorParam::kVoltagePhaseC)
+        .value("kCurrentPhaseC", MotorParam::kCurrentPhaseC)
+        .value("kVoltageDCLink", MotorParam::kVoltageDCLink)
+        .value("kCurrentDCLink", MotorParam::kCurrentDCLink)
+        .value("kId", MotorParam::kId)
+        .value("kIq", MotorParam::kIq)
+        .value("kIalpha", MotorParam::kIalpha)
+        .value("kIbeta", MotorParam::kIbeta)
+        .value("kIhomopolar", MotorParam::kIhomopolar)
+        .value("kSpeedFoc", MotorParam::kSpeedFoc)
+        .value("kTorqueFoc", MotorParam::kTorqueFoc)
+        .value("kFlux", MotorParam::kFlux)
+        .value("kRpmFoc", MotorParam::kRpmFoc)
+        .value("kPositionFoc", MotorParam::kPositionFoc)
+        .value("kRpm", MotorParam::kRpm)
+        .value("kPosition", MotorParam::kPosition)
+        .value("kMotorParamMax", MotorParam::kMotorParamMax);
 }
