@@ -24,7 +24,7 @@ fi
 
 # Run the Bokeh server
 $SUDO ${ENV} \
-        bokeh serve --show --allow-websocket-origin=${IP_ADDR}:5006 --num-procs 0 \
+        bokeh serve --show --allow-websocket-origin=${IP_ADDR}:5006 \
         ${DASHBOARD_PATH} &
 
 # Print the information for the host machine.
