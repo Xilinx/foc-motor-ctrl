@@ -14,6 +14,14 @@
 #define PWM_PHASE_SHIFT		0
 #define PWM_SAMPLE_II		1
 
+/*
+ * TODO: revert when fixed
+ * Due to bug in the hw, Speed & torque cannot be zero; as it results in fault.
+ * use the working values are default reset values
+ */
+#define RST_SPEED		250
+#define RST_TORQUE		0.44
+
 #define SPEED_RRATE			250
 #define TORQUE_RRATE		0.0441589355468
 

@@ -14,14 +14,6 @@
 
 #define RAMP_INTERVAL_MS	500
 
-/*
- * TODO: revert when fixed
- * Due to bug in the hw, Speed & torque cannot be zero; as it results in fault.
- * use the working values are default reset values
- */
-#define RST_SPEED	300
-#define RST_TORQUE	0.44
-
 const std::string Foc::kFocDriverName = "hls_foc_periodic";
 enum FocChannel
 {

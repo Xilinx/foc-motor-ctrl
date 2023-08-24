@@ -327,8 +327,28 @@ void MotorControlImpl::setOperationMode(MotorOpMode mode)
 		assert(foc_mode != Foc::OpMode::kModeMax);
 
 		if(mode != MotorOpMode::kModeOff) {
-			// Transition to OFF mode before changing mode
+			/*
+			 * Transition to OFF mode before changing mode
+			 */
 			transitionMode(Foc::OpMode::kModeStop);
+			/*
+			 * After OFF mode, make sure the spinning motor has
+			 * ramped down atleast close to the RESET value (+100).
+			 * Max wait period is 5 seconds. The check is every
+			 * 100ms.
+			 */
+			int loop_timeout_ms = 5000;
+			int loop_sleep_ms = 100;
+			while (std::abs(getSpeed()) > RST_SPEED + 100) {
+				auto sleep_time =
+					std::chrono::milliseconds(loop_sleep_ms);
+				std::this_thread::sleep_for(sleep_time);
+				loop_timeout_ms -= loop_sleep_ms;
+				if (loop_timeout_ms < 0) {
+					assert(false && "Motor Off loop timeout");
+					break;
+				}
+			}
 		}
 
 		if (transitionMode(foc_mode) == 0)
