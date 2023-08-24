@@ -5,6 +5,7 @@
 
 #include <unistd.h>
 #include <cassert>
+#include <iostream>
 #include "motor-control/motor-control.hpp"
 #include "sensors/sensor.h"
 #include "foc.h"
@@ -66,6 +67,7 @@ public:
 	 */
 
 	int getSessionId ();
+	bool mInitDone;
 
 private:
 	int mSessionId;
@@ -91,7 +93,7 @@ private:
 	double mVd;
 
 	void parseConfig();
-	void initMotor(bool);
+	int initMotor(bool);
 	Foc::OpMode getFocOpMode(MotorOpMode);
 	int transitionMode(Foc::OpMode);
 	bool isSupportedMode(MotorOpMode);
@@ -123,7 +125,11 @@ MotorControl *MotorControl::getMotorControlInstance(int sessionId,
 		}
 	} else {
 		mspInstance = new MotorControlImpl(sessionId, configPath);
-		ptr = mspInstance;
+		if (dynamic_cast<MotorControlImpl *>(mspInstance)->mInitDone) {
+			ptr = mspInstance;
+		} else {
+			delete mspInstance;
+		}
 	}
 	return ptr;
 }
@@ -138,7 +144,9 @@ MotorControlImpl::MotorControlImpl(int sessionId, string configPath):
 	// init all the driving classes
 	mpSensor = Sensor::getSensorInstance();
 
-	initMotor(true);
+	mInitDone = false;
+	if (initMotor(true) == 0)
+		mInitDone = true;
 
 	setOperationMode(MotorOpMode::kModeOff);
 }
@@ -249,6 +257,8 @@ void MotorControlImpl::clearFaults()
 	setOperationMode(MotorOpMode::kModeOff);
 	mEvents.resetAllEvents();
 	mEvents.activateAllEvents();
+
+	//TODO: Check if the faults still exists and report
 }
 
 int MotorControlImpl::getSessionId ()
@@ -345,7 +355,8 @@ void MotorControlImpl::setOperationMode(MotorOpMode mode)
 				std::this_thread::sleep_for(sleep_time);
 				loop_timeout_ms -= loop_sleep_ms;
 				if (loop_timeout_ms < 0) {
-					assert(false && "Motor Off loop timeout");
+					//assert(false && "Motor Off loop timeout");
+					std::cerr << "Motor didn't stop. Loop timed out. Something Wrong!!";
 					break;
 				}
 			}
@@ -383,7 +394,7 @@ int MotorControlImpl::transitionMode(Foc::OpMode target)
 	return 0;
 }
 
-void MotorControlImpl::initMotor(bool full_init)
+int MotorControlImpl::initMotor(bool full_init)
 {
 
 	transitionMode(Foc::OpMode::kModeStop);
@@ -458,10 +469,7 @@ void MotorControlImpl::initMotor(bool full_init)
 
 	clearFaults();
 
-	/*
-	 * Deactivate Undervoltage DCLink fault for temporarily
-	 */
-	mEvents.deactivateEvent(FaultId::kDCLink_UV);
+	usleep(CALIBRATION_WAIT_US);
 
 	mFoc.setGain(GainType::kTorque, TOR_KP, TOR_KI);
 	mFoc.setGain(GainType::kFlux, FLUX_KP, FLUX_KI);
@@ -480,6 +488,12 @@ void MotorControlImpl::initMotor(bool full_init)
 	transitionMode(Foc::OpMode::kModeStop);
 	mMcUio.setGateDrive(true);
 
+	usleep(CALIBRATION_WAIT_US);
+
+	if(getFaultStatus(FaultId::kDCLink_UV)) {
+		return -1;
+	}
+
 	if(full_init) {
 
 		transitionMode(Foc::OpMode::kModeManualTF);	//Setting OpenLoop Mode
@@ -496,6 +510,20 @@ void MotorControlImpl::initMotor(bool full_init)
 		transitionMode(Foc::OpMode::kModeStop);
 	}
 
-	mEvents.activateEvent(FaultId::kDCLink_UV);
+	FaultId criticalFaults[] = {
+				    FaultId::kPhaseA_OC,
+                                    FaultId::kPhaseB_OC,
+                                    FaultId::kPhaseC_OC,
+                                    FaultId::kDCLink_OC,
+                                    FaultId::kDCLink_OV,
+                                    FaultId::kDCLink_UV,
+				};
 
+	for (auto ev: criticalFaults) {
+		if(getFaultStatus(ev)) {
+			return -1;
+		}
+	}
+
+	return 0;
 }
