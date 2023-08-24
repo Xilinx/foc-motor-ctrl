@@ -141,7 +141,8 @@ live_analysis_options = [
     "PhA Voltage",
     "PhB Voltage",
     "PhC Voltage",
-    "Speed"
+    "Speed",
+    "Position"
 ]
 live_analysis_axis_labels = {
     "PhA Current": "Phase A Current (mA)",
@@ -154,7 +155,8 @@ live_analysis_axis_labels = {
     "PhA Voltage": "Phase A Voltage (V)",
     "PhB Voltage": "Phase B Voltage (V)",
     "PhC Voltage": "Phase C Voltage (V)",
-    "Speed": "Speed (rpm)"
+    "Speed": "Speed (rpm)",
+    "Position": "Position (degrees)"
 }
 live_analysis_x_selection = live_analysis_options[0]
 live_analysis_y_selection = live_analysis_options[1]
