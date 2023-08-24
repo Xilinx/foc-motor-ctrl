@@ -101,6 +101,11 @@ electrical_plot.add_layout(electrical_plot.legend[0], 'right')
 for i in range(num_electrical_data):
     electrical_ds_list[i] = electrical_lines[i].data_source
 
+# Hide voltage lines by default
+electrical_lines[3].visible = False
+electrical_lines[4].visible = False
+electrical_lines[5].visible = False
+
 # Mechanical Plot
 mechanical_data_titles = [
     'Motor Speed',
