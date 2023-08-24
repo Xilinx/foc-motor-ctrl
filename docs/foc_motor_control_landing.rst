@@ -25,13 +25,22 @@ Quick Start
 
    Setting up the Board and Application deployment <docs/app_deployment.md>
 
+******************
+Architecture
+******************
+
+.. toctree::
+   :maxdepth: 1
+
+   Hardware Architecture <docs/hw_description.md>
+
 *******************************
 Repository
 *******************************
 
 .. toctree::
   :maxdepth: 1
-  
+
   Software Repository <https://github.com/Xilinx/foc-motor-ctrl>
 
 
