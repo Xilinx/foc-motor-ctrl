@@ -42,6 +42,8 @@ if mc is None:
     exit()
 # Initialize parameters
 time = 0
+sample_size_min = 2
+sample_size_max = 3000
 speed_setpoint_min = 250
 speed_setpoint_max = 10000
 torque_setpoint_min = -2.5
@@ -292,23 +294,43 @@ def update_fault_status():
 fault_status_callback_interval = 1000 #milliseconds
 fault_status_callback = curdoc().add_periodic_callback(update_fault_status, fault_status_callback_interval)
 
+def get_min_interval(samples):
+    if samples <= 500:
+        return 1
+    elif samples <= 1000:
+        return 2
+    elif samples <= 2000:
+        return 3
+    elif samples <= 2500:
+        return 4
+    else:
+        return 5
+
 # sample interval
 def update_interval(attr, old, new):
-    global interval
-    interval = max(float(new), 1)
+    global interval, sample_size
+    interval = max(float(new), get_min_interval(sample_size))
     interval_input.value = str(interval)
+
     global callback
     curdoc().remove_periodic_callback(callback)
     callback = curdoc().add_periodic_callback(update, interval * 1000)
 
-interval_title = Paragraph(text="Sample Interval (Seconds):", width=200, align="center")
+interval_title = Paragraph(text="Refresh Interval (Seconds):", width=170, align="center")
 interval_input = TextInput(value=str(interval), width=80)
 interval_input.on_change('value', update_interval)
 
 # sample size
 def update_sample_size(attr, old, new):
-    global sample_size, x
-    sample_size = int(new)
+    global sample_size, x, interval
+    if int(new) >= sample_size_min and int(new) <= sample_size_max:
+        sample_size = int(new)
+        plot_error_message.text = ""
+        interval = max(interval, get_min_interval(sample_size))
+        interval_input.value = str(interval)
+    else:
+        sample_size_input.value = str(sample_size)
+        plot_error_message.text = "Error: Invalid input. Sample size must be between " + str(sample_size_min) + " and " + str(sample_size_max) + "."
 
     while len(live_analysis_x_data_list) > sample_size:
         x.pop()
@@ -328,7 +350,7 @@ def update_sample_size(attr, old, new):
         for data in mechanical_data_list:
             data.append(0)
 
-sample_size_title = Paragraph(text="Plot Window Length (Samples):", width=200, align="center")
+sample_size_title = Paragraph(text="Sample Size (Samples):", width=170, align="center")
 sample_size_input = TextInput(value=str(sample_size), width=80)
 sample_size_input.on_change('value', update_sample_size)
 
@@ -539,7 +561,10 @@ def clear_faults():
 clear_faults_button = Button(label="Clear Faults", width=100, button_type='primary')
 clear_faults_button.on_click(clear_faults)
 
-# Error message
+# Error message (plotting)
+plot_error_message = Paragraph(text="", style={'color': 'red'}, width=250, align="center")
+
+# Error message (setpoints)
 error_message = Paragraph(text="", style={'color': 'red'}, width=290, align="center")
 
 # List of buffered data that will be requested
@@ -583,6 +608,7 @@ mode_interface = row(mode_dropdown_title, mode_dropdown, margin=(30, 30, 30, 30)
 plot_controls_interface = column(
     row(sample_size_title, sample_size_input),
     row(interval_title, interval_input),
+    plot_error_message,
     margin=(30, 30, 30, 30)
 )
 
