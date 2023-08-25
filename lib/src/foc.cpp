@@ -146,16 +146,10 @@ int Foc::setFixedAngleCmd(int angleCmd)
     return mFoc_IIO_Handle->writeDeviceattr("fixed_angle_cpr", std::to_string(angleCmd).c_str());
 }
 
-int Foc::setFixedSpeed(int fixedSpeed)
-{
-	return mFoc_IIO_Handle->writeDeviceattr("fixed_period_ctrl", std::to_string(fixedSpeed).c_str());
-}
-
-int Foc::setVfParam(double vq, double vd, int fixedSpeed)
+int Foc::setVfParam(double vq, double vd)
 {
 	mFoc_IIO_Handle->writeDeviceattr("vq", std::to_string(vq).c_str());
 	mFoc_IIO_Handle->writeDeviceattr("vd", std::to_string(vd).c_str());
-	mFoc_IIO_Handle->writeDeviceattr("fixed_period_ctrl", std::to_string(fixedSpeed).c_str());
 	return 0;
 }
 

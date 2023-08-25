@@ -128,6 +128,7 @@ MotorControl *MotorControl::getMotorControlInstance(int sessionId,
 		if (dynamic_cast<MotorControlImpl *>(mspInstance)->mInitDone) {
 			ptr = mspInstance;
 		} else {
+			std::cerr << "Failed to create motor control object";
 			delete mspInstance;
 		}
 	}
@@ -219,13 +220,13 @@ double MotorControlImpl::getVfParamVd()
 void MotorControlImpl::setVfParamVd(double vd)
 {
 	mVd = vd;
-	mFoc.setVfParam(mVq, mVd, VF_FIXED_SPEED);
+	mFoc.setVfParam(mVq, mVd);
 }
 
 void MotorControlImpl::setVfParamVq(double vq)
 {
 	mVq = vq;
-	mFoc.setVfParam(mVq, mVd, VF_FIXED_SPEED);
+	mFoc.setVfParam(mVq, mVd);
 }
 
 void MotorControlImpl::SetSpeed(double speed)
@@ -408,8 +409,6 @@ int MotorControlImpl::initMotor(bool full_init)
 	mPwm.setPhaseShift(PWM_PHASE_SHIFT);
 	mPwm.setSampleII(PWM_SAMPLE_II);
 
-	mFoc.setFixedSpeed(VF_FIXED_SPEED); //730 RPM
-
 	mPwm.startPwm();
 	mSvPwm.startSvpwm();
 	mpSensor->start();
@@ -445,19 +444,20 @@ int MotorControlImpl::initMotor(bool full_init)
 	 * Set the thresholds for all the events
 	 */
 
-	mEvents.setUpperThreshold(FaultId::kPhaseA_OC, ADCHUB_CUR_PHASE_RISING_THRES);
-	mEvents.setUpperThreshold(FaultId::kPhaseB_OC, ADCHUB_CUR_PHASE_RISING_THRES);
-	mEvents.setUpperThreshold(FaultId::kPhaseC_OC, ADCHUB_CUR_PHASE_RISING_THRES);
-	mEvents.setLowerThreshold(FaultId::kPhaseA_OC, ADCHUB_CUR_PHASE_FALLING_THRES);
-	mEvents.setLowerThreshold(FaultId::kPhaseB_OC, ADCHUB_CUR_PHASE_FALLING_THRES);
-	mEvents.setLowerThreshold(FaultId::kPhaseC_OC, ADCHUB_CUR_PHASE_FALLING_THRES);
+	mEvents.setUpperThreshold(FaultId::kPhaseA_OC, CUR_PHASE_THRES_HIGH);
+	mEvents.setUpperThreshold(FaultId::kPhaseB_OC, CUR_PHASE_THRES_HIGH);
+	mEvents.setUpperThreshold(FaultId::kPhaseC_OC, CUR_PHASE_THRES_HIGH);
+	mEvents.setLowerThreshold(FaultId::kPhaseA_OC, CUR_PHASE_THRES_LOW);
+	mEvents.setLowerThreshold(FaultId::kPhaseB_OC, CUR_PHASE_THRES_LOW);
+	mEvents.setLowerThreshold(FaultId::kPhaseC_OC, CUR_PHASE_THRES_LOW);
 
-	mEvents.setUpperThreshold(FaultId::kDCLink_OC, ADCHUB_DCLINK_RISING_THRES);
-	mEvents.setLowerThreshold(FaultId::kDCLink_OC, ADCHUB_DCLINK_FALLING_THRES);
-	mEvents.setUpperThreshold(FaultId::kDCLink_OV, ADCHUB_VOL_PHASE_RISING_THRES);
-	mEvents.setLowerThreshold(FaultId::kDCLink_UV, ADCHUB_VOL_PHASE_FALLING_THRES);
+	mEvents.setUpperThreshold(FaultId::kDCLink_OC, CUR_DCLINK_THRES_HIGH);
+	mEvents.setLowerThreshold(FaultId::kDCLink_OC, CUR_DCLINK_THRES_LOW);
 
-	mEvents.setUpperThreshold(FaultId::kPhaseImbalance, PHASE_IMBALANCE_RISING_THRES);
+	mEvents.setUpperThreshold(FaultId::kDCLink_OV, VOL_PHASE_THRES_HIGH);
+	mEvents.setLowerThreshold(FaultId::kDCLink_UV, VOL_PHASE_THRES_LOW);
+
+	mEvents.setUpperThreshold(FaultId::kPhaseImbalance, IMBALANCE_THRES_HIGH);
 
 	for (auto phase : all_Edata) {
 
@@ -483,7 +483,7 @@ int MotorControlImpl::initMotor(bool full_init)
 	mVq = VF_VQ;
 	mVd = VF_VD;
 
-	mFoc.setVfParam(VF_VQ, VF_VD, VF_FIXED_SPEED);
+	mFoc.setVfParam(VF_VQ, VF_VD);
 
 	transitionMode(Foc::OpMode::kModeStop);
 	mMcUio.setGateDrive(true);

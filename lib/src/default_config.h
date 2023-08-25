@@ -5,26 +5,27 @@
 #ifndef _DEFAULT_CONFIG_H_
 #define _DEFAULT_CONFIG_H_
 
-#define SVP_SAMPLE_II		1
+#define SVP_SAMPLE_II			1
 #define SVP_VOLTAGE			24
 #define SVP_MODE			0
 
 #define PWM_FREQ			96800
-#define PWM_DEAD_CYC		2
-#define PWM_PHASE_SHIFT		0
-#define PWM_SAMPLE_II		1
+#define PWM_DEAD_CYC			2
+#define PWM_PHASE_SHIFT			0
+#define PWM_SAMPLE_II			1
 
 /*
  * TODO: revert when fixed
  * Due to bug in the hw, Speed & torque cannot be zero; as it results in fault.
  * use the working values are default reset values
  */
-#define RST_SPEED		250
-#define RST_TORQUE		0.44
+#define RST_SPEED			250			// Reset speed setpoint when motor is Off
+#define RST_TORQUE			0.44			// Reset Torque setpoint when motor is Off
 
-#define SPEED_RRATE			250
-#define TORQUE_RRATE		0.0441589355468
+#define SPEED_RRATE			250			// Speed change steps
+#define TORQUE_RRATE			0.0441589355468		// Torque change steps
 
+// KP(proportional) and KI(integral) Gain parameters
 #define TOR_KP				2.3125
 #define TOR_KI				0.001220703125
 #define FLUX_KP				1.88232421875
@@ -33,32 +34,35 @@
 #define SPEED_KI			0.0000762939453125
 #define FW_KP				0.009918212890625
 #define FW_KI				0.0000762939453125
-#define CPR				1000
 
-#define TOR_SP				0.4416656494140625
-#define SPEED_SP			500
+#define CPR				1000			// Counts per Revolution for auto alignment
 
-#define VF_VQ				4.0
-#define VF_VD				0.0
-#define VF_FIXED_SPEED		3300
+#define TOR_SP				0.4416656494140625	// Initial Torque setpoint value
+#define SPEED_SP			500			// Initial Speed setpoint value.
 
-#define ADCHUB_VOL_SCALE	0.018
-#define ADCHUB_STATOR_CUR_SCALE	0.005
-#define ADCHUB_DC_CUR_SCALE	0.010
+#define VF_VQ				4.0			// Initial manual openloop torque
+#define VF_VD				0.0			// Initial manual openloop flux
 
-#define ADCHUB_VOL_PHASE_FALLING_THRES	0.5
-#define ADCHUB_VOL_PHASE_RISING_THRES	28
-#define ADCHUB_CUR_PHASE_FALLING_THRES	-2.7
-#define ADCHUB_CUR_PHASE_RISING_THRES	2.7
-#define ADCHUB_DCLINK_FALLING_THRES		-0.625
-#define ADCHUB_DCLINK_RISING_THRES		1.0
+//ADCHUB current & voltage scale values
+#define ADCHUB_VOL_SCALE		0.018
+#define ADCHUB_STATOR_CUR_SCALE		0.005
+#define ADCHUB_DC_CUR_SCALE		0.010
 
-#define PHASE_IMBALANCE_RISING_THRES	1
+//Thresholds for fault triggering
+#define CUR_PHASE_THRES_LOW		-2.7			// Phase A, B, C current lower threshold (Amp)
+#define CUR_PHASE_THRES_HIGH		2.7			// Phase A, B, C current upper threshold (Amp)
+#define CUR_DCLINK_THRES_LOW		-0.625			// DCLink current lower threshold (Amp)
+#define CUR_DCLINK_THRES_HIGH		1.0                     // DCLink current upper threshold (Amp)
+#define VOL_PHASE_THRES_LOW		21			// DCLink voltage lower threshold (V)
+#define VOL_PHASE_THRES_HIGH		25.5			// DCLink voltage upper threshold (V)
+#define IMBALANCE_THRES_HIGH		0.5			// Phase Imbalance upper threshold (Amp)
 
-#define ADCHUB_FILTERTAP	32
-#define DCLINK_FILTERTAP	128
+//Filter Tap values
+#define ADCHUB_FILTERTAP		32
+#define DCLINK_FILTERTAP		128
 
-#define CALIBRATION_WAIT_US (500 * 1000) //500ms
+//Delay to be used during calibration and alignment between start and stop of motor
+#define CALIBRATION_WAIT_US		(500 * 1000)		//500ms
 
-#define THETAE90DEG     125
+#define THETAE90DEG			125			//Fixed Angle for alignment
 #endif // _DEFAULT_CONFIG_H_

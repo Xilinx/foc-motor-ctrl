@@ -46,8 +46,7 @@ public:
 	int startFoc();
 	int setAngleOffset(int angleSh);
 	int setFixedAngleCmd(int angleCmd);
-	int setFixedSpeed(int fixedSpeed);
-	int setVfParam(double vq, double vd, int fixedSpeed);
+	int setVfParam(double vq, double vd);
 	double getTorqueSetValue();
 	int setMode(OpMode mode);
 	double getSpeedSetValue();
