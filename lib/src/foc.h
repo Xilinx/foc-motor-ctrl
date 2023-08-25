@@ -9,8 +9,23 @@
 #include <thread>
 #include <mutex>
 
-#include "motor-control/motor-control.hpp"
 #include "interface/iio_drv.h"
+#include "motor-control/motor-control.hpp"
+
+// TODO: move FocChannel enum within the class namespace
+enum FocChannel
+{
+	Id = 0,
+	Iq,
+	I_alpha,
+	I_beta,
+	I_homopolar,
+	speed_pi_out,
+	torque_pi_out,
+	flux,
+	rpm,
+	position
+};
 
 class Foc
 {
@@ -51,6 +66,7 @@ public:
 	int setMode(OpMode mode);
 	double getSpeedSetValue();
 	FocData getChanData();
+	std::map<FocChannel, std::vector<double>> fillBuffer(int samples, std::vector<FocChannel> channels);
 	~Foc();
 
 private:
@@ -70,7 +86,6 @@ private:
 	std::thread mTorThread;
 	std::mutex mTorMutex;
 	void rampTorque(void);
-
 };
 
 #endif // _FOC_HPP_

@@ -4,6 +4,7 @@
  */
 #include <unistd.h>
 #include <chrono>
+#include <iostream>
 #include "foc.h"
 
 /*
@@ -15,17 +16,6 @@
 #define RAMP_INTERVAL_MS	500
 
 const std::string Foc::kFocDriverName = "hls_foc_periodic";
-enum FocChannel
-{
-	Id = 0,
-	Iq,
-	I_alpha,
-	I_beta,
-	I_homopolar,
-	speed_pi_out,
-	torque_pi_out,
-	flux
-};
 
 Foc::Foc():
 	mTargetSpeed(RST_SPEED),
@@ -36,14 +26,14 @@ Foc::Foc():
 	mDoTorRamp(false)
 {
 	mFoc_IIO_Handle = new IIO_Driver(kFocDriverName);
+	// sample buffer data at 100us intervals
+	mFoc_IIO_Handle->writeDeviceattr("sample_interval_us", "100");
 }
 
 Foc::~Foc()
 {
 	delete mFoc_IIO_Handle;
 }
-
-
 
 int Foc::setSpeed(double speedSp)
 {
@@ -143,7 +133,7 @@ int Foc::setAngleOffset(int angleSh)
 
 int Foc::setFixedAngleCmd(int angleCmd)
 {
-    return mFoc_IIO_Handle->writeDeviceattr("fixed_angle_cpr", std::to_string(angleCmd).c_str());
+	return mFoc_IIO_Handle->writeDeviceattr("fixed_angle_cpr", std::to_string(angleCmd).c_str());
 }
 
 int Foc::setVfParam(double vq, double vd)
@@ -187,28 +177,28 @@ int Foc::setMode(OpMode mode)
 	mFoc_IIO_Handle->writeDeviceattr("control_mode", std::to_string(static_cast<int>(mode)).c_str());
 
 	switch(mode) {
-		case OpMode::kModeStop:
-			// Reset the SP values to default reset
-			mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(RST_SPEED).c_str());
-			mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(RST_TORQUE).c_str());
-			mFoc_IIO_Handle->writeDeviceattr("flux_sp", "0");
-			break;
-		case OpMode::kModeSpeed:
-			// start ramping
-			if (!mDoSpeedRamp) {
-				mDoSpeedRamp = true;
-				mSpeedThread = std::thread(&Foc::rampSpeed, this);
-			}
-			break;
-		case OpMode::kModeTorque:
-			// start ramping
-			if (!mDoTorRamp) {
-				mDoTorRamp = true;
-				mTorThread = std::thread(&Foc::rampTorque, this);
-			}
-			break;
-		default:
-			break;
+	case OpMode::kModeStop:
+		// Reset the SP values to default reset
+		mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(RST_SPEED).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(RST_TORQUE).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("flux_sp", "0");
+		break;
+	case OpMode::kModeSpeed:
+		// start ramping
+		if (!mDoSpeedRamp) {
+			mDoSpeedRamp = true;
+			mSpeedThread = std::thread(&Foc::rampSpeed, this);
+		}
+		break;
+	case OpMode::kModeTorque:
+		// start ramping
+		if (!mDoTorRamp) {
+			mDoTorRamp = true;
+			mTorThread = std::thread(&Foc::rampTorque, this);
+		}
+		break;
+	default:
+		break;
 	}
 	return 0;
 }
@@ -263,6 +253,32 @@ void Foc::rampSpeed(void)
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(RAMP_INTERVAL_MS));
 	}
+}
+
+std::map<FocChannel, std::vector<double>> Foc::fillBuffer(int samples, std::vector<FocChannel> channels)
+{
+	std::map<FocChannel, std::vector<double>> focData;
+	std::vector<int> focVector;
+
+	for (auto it : channels)
+	{
+		focVector.push_back(static_cast<int>(it));
+	}
+
+	std::map<int, std::vector<double>> rawDataMap = mFoc_IIO_Handle->getBufferdata(samples, focVector);
+	if (rawDataMap.size() == 0 && focVector.size() != 0)
+	{
+		std::cout << " No data samples obtained from FOC " << std::endl;
+		return focData;
+	}
+
+	for (auto &it : rawDataMap)
+	{
+		FocChannel newKey = static_cast<FocChannel>(it.first);
+		focData[newKey] = it.second;
+	}
+
+	return focData;
 }
 
 void Foc::rampTorque(void)
