@@ -17,12 +17,14 @@ public:
 	int getSpeed() override;
 	int getPosition() override;
 	void start() override;
+	std::map<Qeichannel, std::vector<double>> fillBuffer(int samples, std::vector<Qeichannel> channels) override;
 	~QeiSensor();
 
 private:
 	// private member variables and functions for QEI sensor
 	IIO_Driver *mQei_IIO_Handle;
 	static const std::string kQeiDriverName;
+
 };
 
 #endif // _SENSOR_QEI_HPP_
