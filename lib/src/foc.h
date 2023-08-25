@@ -12,14 +12,32 @@
 #include "motor-control/motor-control.hpp"
 #include "interface/iio_drv.h"
 
-/*
- * TODO: May be useful to have dedicated OpMode for
- * FOC
- */
-
 class Foc
 {
 public:
+	/*
+	 * OperationModes in Foc namespace
+	 */
+	enum class OpMode {
+		// usr modes
+		kModeStop = 0,
+		kModeSpeed,
+		kModeTorque,
+		kModeFlux,
+		// expert modes
+		kModeManualTFFixedSpeed,
+		kModeManualTF,
+		kModeManualT,
+		kModeManualF,
+		kModeManualTFFixedAngle,
+
+		kModeMax
+	};
+
+	/*
+	 * Public Interface for FOC
+	 */
+
 	Foc();
 	int setSpeed(double speedSp);
 	int setTorque(double torqueSp);
@@ -28,11 +46,9 @@ public:
 	int startFoc();
 	int setAngleOffset(int angleSh);
 	int setFixedAngleCmd(int angleCmd);
-	int setFixedSpeed(int fixedSpeed);
-	int setVfParam(double vq, double vd, int fixedSpeed);
-	int stopMotor();
+	int setVfParam(double vq, double vd);
 	double getTorqueSetValue();
-	int setOperationMode(MotorOpMode mode);
+	int setMode(OpMode mode);
 	double getSpeedSetValue();
 	FocData getChanData();
 	~Foc();

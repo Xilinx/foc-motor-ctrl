@@ -28,7 +28,6 @@ enum class MotorOpMode {
 	kModeSpeedFW,
 	kModeOpenLoop,
 	kModePosControl,
-	kModeFixedAngle = 8,
 	kModeMax
 };
 

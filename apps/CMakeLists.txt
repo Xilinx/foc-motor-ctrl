@@ -60,7 +60,7 @@ if(BUILD_DASHBOARD_APP)
 	)
 
 	install(FILES mc_bokeh.py
-		DESTINATION /opt/xilinx/motor-control/dashboard
+		DESTINATION share/foc-motor-ctrl/dashboard
 		RENAME main.py
 	)
 

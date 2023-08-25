@@ -4,10 +4,14 @@
 # SPDX-License-Identifier: MIT
 #
 
+PROJ=foc-motor-ctrl
+FW_NAME=kd240-motor-ctrl-qei
+PREFIX=/opt/xilinx/xlnx-app-kd240-${PROJ}
+LIBPATH=${PREFIX}/lib
+DASHBOARD_PATH=${PREFIX}/share/${PROJ}/dashboard
+
 # Fetch the board IP:
 IP_ADDR=$(ip -4 addr show eth0 | grep -oE "inet ([0-9]{1,3}[\.]){3}[0-9]{1,3}" | cut -d ' ' -f2)
-LIBPATH=/usr/local/lib
-DASHBOARD_PATH=/opt/xilinx/motor-control/dashboard
 
 if [ "$EUID" -ne 0 ]
 	then
@@ -20,6 +24,19 @@ else
 	ENV=
 	export PYTHONPATH=$LIBPATH
 	export LD_LIBRARY_PATH=$LIBPATH
+fi
+
+# check if the fw is loaded
+
+FW_STATUS=$($SUDO xmutil listapps | grep ${FW_NAME} | awk '{print $6}' | cut -d',' -f1)
+
+if [ "$FW_STATUS" -eq 0 ]; then
+	echo "Firmware $FW_NAME is loaded"
+else
+	echo "fw $FW_NAME is not loaded !!"
+	echo "Run following command to load the firmware first"
+	echo "	sudo xmutil loadapp $FW_NAME"
+	exit 1
 fi
 
 # Run the Bokeh server
