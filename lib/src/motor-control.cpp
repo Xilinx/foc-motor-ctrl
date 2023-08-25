@@ -397,119 +397,140 @@ int MotorControlImpl::transitionMode(Foc::OpMode target)
 
 int MotorControlImpl::initMotor(bool full_init)
 {
-
+	// Make sure the motor is off and GateDrive is disabled
 	transitionMode(Foc::OpMode::kModeStop);
 
-	mSvPwm.setSampleII(SVP_SAMPLE_II);
-	mSvPwm.setDcLink(SVP_VOLTAGE);
-	mSvPwm.setMode(SVP_MODE);
-
-	mPwm.setFrequency(PWM_FREQ);
-	mPwm.setDeadCycle(PWM_DEAD_CYC);
-	mPwm.setPhaseShift(PWM_PHASE_SHIFT);
-	mPwm.setSampleII(PWM_SAMPLE_II);
-
-	mPwm.startPwm();
-	mSvPwm.startSvpwm();
-	mpSensor->start();
-	mFoc.startFoc();
-
-	vector <ElectricalData> all_Edata = {ElectricalData::kPhaseA,
+	const ElectricalData all_Edata[] = {ElectricalData::kPhaseA,
 					ElectricalData::kPhaseB,
 					ElectricalData::kPhaseC,
 					ElectricalData::kDCLink,
 					};
-	/*
-	* calibrating offsets for current channel
-	*/
-	mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseA);
-	mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseB);
-	mAdcHub.calibrateCurrentChannel(ElectricalData::kPhaseC);
-	/*
-	* KD240 hardware has non-linearity at value < 500mA, thus not including in
-	* DC offset calc.
-	*/
-	//mAdcHub.calibrateCurrentChannel(ElectricalData::kDCLink);
-
-	/*
-	 * set scaling for Voltage and Current
-	 */
-	for (auto phase : all_Edata) {
-		mAdcHub.setVoltageScale(phase, ADCHUB_VOL_SCALE);
-		mAdcHub.setCurrentScale(phase, ADCHUB_STATOR_CUR_SCALE);
-	}
-	mAdcHub.setCurrentScale(ElectricalData::kDCLink, ADCHUB_DC_CUR_SCALE);
-
-	/*
-	 * Set the thresholds for all the events
-	 */
-
-	mEvents.setUpperThreshold(FaultId::kPhaseA_OC, CUR_PHASE_THRES_HIGH);
-	mEvents.setUpperThreshold(FaultId::kPhaseB_OC, CUR_PHASE_THRES_HIGH);
-	mEvents.setUpperThreshold(FaultId::kPhaseC_OC, CUR_PHASE_THRES_HIGH);
-	mEvents.setLowerThreshold(FaultId::kPhaseA_OC, CUR_PHASE_THRES_LOW);
-	mEvents.setLowerThreshold(FaultId::kPhaseB_OC, CUR_PHASE_THRES_LOW);
-	mEvents.setLowerThreshold(FaultId::kPhaseC_OC, CUR_PHASE_THRES_LOW);
-
-	mEvents.setUpperThreshold(FaultId::kDCLink_OC, CUR_DCLINK_THRES_HIGH);
-	mEvents.setLowerThreshold(FaultId::kDCLink_OC, CUR_DCLINK_THRES_LOW);
-
-	mEvents.setUpperThreshold(FaultId::kDCLink_OV, VOL_PHASE_THRES_HIGH);
-	mEvents.setLowerThreshold(FaultId::kDCLink_UV, VOL_PHASE_THRES_LOW);
-
-	mEvents.setUpperThreshold(FaultId::kPhaseImbalance, IMBALANCE_THRES_HIGH);
-
-	for (auto phase : all_Edata) {
-
-		mAdcHub.setCurrentFiltertap(phase, ADCHUB_FILTERTAP);
-		mAdcHub.setVoltageFiltertap(phase, ADCHUB_FILTERTAP);
-	}
-
-	mAdcHub.setCurrentFiltertap(ElectricalData::kDCLink, DCLINK_FILTERTAP);
-
-	clearFaults();
-
-	usleep(CALIBRATION_WAIT_US);
-
-	mFoc.setGain(GainType::kTorque, TOR_KP, TOR_KI);
-	mFoc.setGain(GainType::kFlux, FLUX_KP, FLUX_KI);
-	mFoc.setGain(GainType::kSpeed, SPEED_KP, SPEED_KI);
-	mFoc.setGain(GainType::kFieldweakening, FW_KP, FW_KI);
-
-	//Note: flux sp is set to zero by motor_stop
-	mFoc.setTorque(TOR_SP);
-	mFoc.setSpeed(SPEED_SP);
-
-	mVq = VF_VQ;
-	mVd = VF_VD;
-
-	mFoc.setVfParam(VF_VQ, VF_VD);
-
-	transitionMode(Foc::OpMode::kModeStop);
-	mMcUio.setGateDrive(true);
-
-	usleep(CALIBRATION_WAIT_US);
-
-	if(getFaultStatus(FaultId::kDCLink_UV)) {
-		return -1;
-	}
 
 	if(full_init) {
+		/*
+		 * Board & IP Configs
+		 */
 
-		transitionMode(Foc::OpMode::kModeManualTF);	//Setting OpenLoop Mode
-		usleep(CALIBRATION_WAIT_US);
-		transitionMode(Foc::OpMode::kModeStop);
-		mFoc.setAngleOffset(0);
-		mFoc.setFixedAngleCmd(0);
-		transitionMode(Foc::OpMode::kModeManualTFFixedAngle);
-		usleep(CALIBRATION_WAIT_US);
-		int positionalCpr = ANGLE2CPR(mpSensor->getPosition());
-		int cprAligned = ((positionalCpr - THETAE90DEG) > 0) ? (positionalCpr
-				- THETAE90DEG) : (positionalCpr - THETAE90DEG + CPR);
-		mFoc.setAngleOffset(cprAligned);
-		transitionMode(Foc::OpMode::kModeStop);
+		mSvPwm.setSampleII(SVP_SAMPLE_II);
+		mSvPwm.setDcLink(SVP_VOLTAGE);
+		mSvPwm.setMode(SVP_MODE);
+
+		mPwm.setFrequency(PWM_FREQ);
+		mPwm.setDeadCycle(PWM_DEAD_CYC);
+		mPwm.setPhaseShift(PWM_PHASE_SHIFT);
+		mPwm.setSampleII(PWM_SAMPLE_II);
+
+		/*
+		 * set scaling for Voltage and Current
+		 */
+		for (auto phase : all_Edata) {
+			mAdcHub.setVoltageScale(phase, ADCHUB_VOL_SCALE);
+			mAdcHub.setCurrentScale(phase, ADCHUB_STATOR_CUR_SCALE);
+		}
+		mAdcHub.setCurrentScale(ElectricalData::kDCLink, ADCHUB_DC_CUR_SCALE);
+
+		/*
+		 * Set Filter Taps
+		 */
+		for (auto phase : all_Edata) {
+
+			mAdcHub.setCurrentFiltertap(phase, ADCHUB_FILTERTAP);
+			mAdcHub.setVoltageFiltertap(phase, ADCHUB_FILTERTAP);
+		}
+		mAdcHub.setCurrentFiltertap(ElectricalData::kDCLink, DCLINK_FILTERTAP);
+
+		/*
+		 * Set the thresholds for all the events
+		 */
+
+		mEvents.setUpperThreshold(FaultId::kPhaseA_OC, CUR_PHASE_THRES_HIGH);
+		mEvents.setUpperThreshold(FaultId::kPhaseB_OC, CUR_PHASE_THRES_HIGH);
+		mEvents.setUpperThreshold(FaultId::kPhaseC_OC, CUR_PHASE_THRES_HIGH);
+		mEvents.setLowerThreshold(FaultId::kPhaseA_OC, CUR_PHASE_THRES_LOW);
+		mEvents.setLowerThreshold(FaultId::kPhaseB_OC, CUR_PHASE_THRES_LOW);
+		mEvents.setLowerThreshold(FaultId::kPhaseC_OC, CUR_PHASE_THRES_LOW);
+
+		mEvents.setUpperThreshold(FaultId::kDCLink_OC, CUR_DCLINK_THRES_HIGH);
+		mEvents.setLowerThreshold(FaultId::kDCLink_OC, CUR_DCLINK_THRES_LOW);
+
+		mEvents.setUpperThreshold(FaultId::kDCLink_OV, VOL_PHASE_THRES_HIGH);
+		mEvents.setLowerThreshold(FaultId::kDCLink_UV, VOL_PHASE_THRES_LOW);
+
+		mEvents.setUpperThreshold(FaultId::kPhaseImbalance, IMBALANCE_THRES_HIGH);
+
+		/*
+		 * Reset, clear and activate all the events
+		 */
+		mEvents.resetAllEvents();
+		mEvents.activateAllEvents();
+
+		/*
+		 * Foc configuration
+		 */
+		mFoc.setGain(GainType::kTorque, TOR_KP, TOR_KI);
+		mFoc.setGain(GainType::kFlux, FLUX_KP, FLUX_KI);
+		mFoc.setGain(GainType::kSpeed, SPEED_KP, SPEED_KI);
+		mFoc.setGain(GainType::kFieldweakening, FW_KP, FW_KI);
+
+		//Note: flux sp is set to zero by motor_stop
+		mFoc.setTorque(TOR_SP);
+		mFoc.setSpeed(SPEED_SP);
+
+		mVq = VF_VQ;
+		mVd = VF_VD;
+
+		mFoc.setVfParam(VF_VQ, VF_VD);
+
+		/*
+		 * Do AP_Start for all the IPs
+		 */
+
+		mPwm.startPwm();
+		mSvPwm.startSvpwm();
+		mpSensor->start();
+		mFoc.startFoc();
+
+		/*
+		* calibrating offsets for current channel
+		* TODO: check if this can be moved before enabling the AP_start
+		*/
+		mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseA);
+		mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseB);
+		mAdcHub.calibrateCurrentChannel(ElectricalData::kPhaseC);
+		/*
+		* KD240 hardware has non-linearity at value < 500mA, thus not including in
+		* DC offset calc.
+		*/
+		//mAdcHub.calibrateCurrentChannel(ElectricalData::kDCLink);
+
+		usleep(CALIBRATION_WAIT_US);	//wait for the calibration and event recording
+
+		if(getFaultStatus(FaultId::kDCLink_UV)) {
+			return -1;
+		}
 	}
 
+	/*
+	 * Auto alignment
+	 */
+	transitionMode(Foc::OpMode::kModeManualTF);	//Setting OpenLoop Mode
+	usleep(CALIBRATION_WAIT_US);
+	transitionMode(Foc::OpMode::kModeStop);
+
+	mFoc.setAngleOffset(0);
+	mFoc.setFixedAngleCmd(0);
+	transitionMode(Foc::OpMode::kModeManualTFFixedAngle);
+	usleep(CALIBRATION_WAIT_US);
+	int positionalCpr = ANGLE2CPR(mpSensor->getPosition());
+	int cprAligned = ((positionalCpr - THETAE90DEG) > 0) ? (positionalCpr
+			- THETAE90DEG) : (positionalCpr - THETAE90DEG + CPR);
+	mFoc.setAngleOffset(cprAligned);
+
+	transitionMode(Foc::OpMode::kModeStop);
+
+	/*
+	 * Check for any critical faults after the alignment
+	 */
 	FaultId criticalFaults[] = {
 				    FaultId::kPhaseA_OC,
                                     FaultId::kPhaseB_OC,
