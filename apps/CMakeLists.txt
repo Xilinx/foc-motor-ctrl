@@ -12,6 +12,10 @@ endif()
 if(BUILD_CANOPEN_APP)
 	set(APP fmc_canopen)
 
+	# Find the required Lely Libraries
+	find_package(PkgConfig REQUIRED)
+	pkg_search_module(LIBLELY_COAPP REQUIRED liblely-coapp)
+
 	# Source files for the canopen app
 	set(SOURCES
 		canopen.cpp
@@ -20,13 +24,19 @@ if(BUILD_CANOPEN_APP)
 	# Create the canopen executable
 	add_executable(${APP} ${SOURCES})
 
-	target_compile_features(${APP} PUBLIC cxx_std_11)
+	target_compile_features(${APP} PUBLIC cxx_std_14)
 
 	# Link libraries for the canopen executable
-	target_link_libraries(${APP} PRIVATE ${FMC_LIB_NAME})
+	target_link_libraries(${APP} PRIVATE ${FMC_LIB_NAME} ${LIBLELY_COAPP_LIBRARIES})
+
+	target_include_directories(${APP} PUBLIC ${LIBLELY_COAPP_INCLUDE_DIRS} ${FMC_LIBRARIES})
 
 	install(TARGETS ${APP}
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	)
+
+	install(FILES foc-mc.eds
+		DESTINATION share/foc-motor-ctrl/
 	)
 endif()
 
