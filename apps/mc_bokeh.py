@@ -369,56 +369,16 @@ def change_mode(attr, old, new):
 
     if mode == "Off":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeOff)
-        speed_Kp_input.disabled = True
-        speed_Ki_input.disabled = True
-        torque_Kp_input.disabled = True
-        torque_Ki_input.disabled = True
-        flux_Kp_input.disabled = True
-        flux_Ki_input.disabled = True
-        speed_setpoint_input.disabled = False
-        torque_setpoint_input.disabled = False
-        open_loop_vd_input.disabled = False
-        open_loop_vq_input.disabled = False
     elif mode == "Speed":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeSpeed)
         speed_setpoint = mc.getSpeedSetpoint()
         speed_setpoint_input.value = str(speed_setpoint)
-        speed_Kp_input.disabled = False
-        speed_Ki_input.disabled = False
-        torque_Kp_input.disabled = False
-        torque_Ki_input.disabled = False
-        flux_Kp_input.disabled = False
-        flux_Ki_input.disabled = False
-        speed_setpoint_input.disabled = False
-        torque_setpoint_input.disabled = True
-        open_loop_vd_input.disabled = True
-        open_loop_vq_input.disabled = True
     elif mode == "Torque":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeTorque)
         torque_setpoint = mc.getTorqueSetpoint()
         torque_setpoint_input.value = str(torque_setpoint)
-        speed_Kp_input.disabled = False
-        speed_Ki_input.disabled = False
-        torque_Kp_input.disabled = False
-        torque_Ki_input.disabled = False
-        flux_Kp_input.disabled = False
-        flux_Ki_input.disabled = False
-        speed_setpoint_input.disabled = True
-        torque_setpoint_input.disabled = False
-        open_loop_vd_input.disabled = True
-        open_loop_vq_input.disabled = True
     elif mode == "Open Loop":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeOpenLoop)
-        speed_Kp_input.disabled = True
-        speed_Ki_input.disabled = True
-        torque_Kp_input.disabled = True
-        torque_Ki_input.disabled = True
-        flux_Kp_input.disabled = True
-        flux_Ki_input.disabled = True
-        speed_setpoint_input.disabled = True
-        torque_setpoint_input.disabled = True
-        open_loop_vd_input.disabled = False
-        open_loop_vq_input.disabled = False
 
 current_mode = mc.getOperationMode()
 if current_mode == mcontrol.MotorOpMode.kModeSpeed:
@@ -507,7 +467,6 @@ def update_speed_Kp(attr, old, new):
 speed_Kp_title = Paragraph(text="Speed Kp:", width=70, align="center")
 speed_Kp_input = TextInput(value=str(speed_gain.kp), width=180)
 speed_Kp_input.on_change('value', update_speed_Kp)
-speed_Kp_input.disabled = True
 
 def update_speed_Ki(attr, old, new):
     global speed_gain
@@ -517,7 +476,6 @@ def update_speed_Ki(attr, old, new):
 speed_Ki_title = Paragraph(text="Speed Ki:", width=70, align="center")
 speed_Ki_input = TextInput(value=str(speed_gain.ki), width=180)
 speed_Ki_input.on_change('value', update_speed_Ki)
-speed_Ki_input.disabled = True
 
 def update_torque_Kp(attr, old, new):
     global torque_gain
@@ -527,7 +485,6 @@ def update_torque_Kp(attr, old, new):
 torque_Kp_title = Paragraph(text="Torque Kp:", width=70, align="center")
 torque_Kp_input = TextInput(value=str(torque_gain.kp), width=180)
 torque_Kp_input.on_change('value', update_torque_Kp)
-torque_Kp_input.disabled = True
 
 def update_torque_Ki(attr, old, new):
     global torque_gain
@@ -537,7 +494,6 @@ def update_torque_Ki(attr, old, new):
 torque_Ki_title = Paragraph(text="Torque Ki:", width=70, align="center")
 torque_Ki_input = TextInput(value=str(torque_gain.ki), width=180)
 torque_Ki_input.on_change('value', update_torque_Ki)
-torque_Ki_input.disabled = True
 
 def update_flux_Kp(attr, old, new):
     global flux_gain
@@ -547,7 +503,6 @@ def update_flux_Kp(attr, old, new):
 flux_Kp_title = Paragraph(text="Flux Kp:", width=70, align="center")
 flux_Kp_input = TextInput(value=str(flux_gain.kp), width=180)
 flux_Kp_input.on_change('value', update_flux_Kp)
-flux_Kp_input.disabled = True
 
 def update_flux_Ki(attr, old, new):
     global flux_gain
@@ -557,7 +512,6 @@ def update_flux_Ki(attr, old, new):
 flux_Ki_title = Paragraph(text="Flux Ki:", width=70, align="center")
 flux_Ki_input = TextInput(value=str(flux_gain.ki), width=180)
 flux_Ki_input.on_change('value', update_flux_Ki)
-flux_Ki_input.disabled = True
 
 # Clear Faults button
 def clear_faults():
