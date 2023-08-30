@@ -53,10 +53,10 @@ open_loop_vd_max = 24
 open_loop_vq_min = 0
 open_loop_vq_max = 24
 
-speed_setpoint = mc.getSpeedSetpoint()
-torque_setpoint = mc.getTorqueSetpoint()
-open_loop_vd = mc.getVfParamVd()
-open_loop_vq = mc.getVfParamVq()
+speed_setpoint = round(mc.getSpeedSetpoint(), 5)
+torque_setpoint = round(mc.getTorqueSetpoint(), 5)
+open_loop_vd = round(mc.getVfParamVd(), 5)
+open_loop_vq = round(mc.getVfParamVq(), 5)
 speed_gain = mc.GetGain(mcontrol.GainType.kSpeed)
 torque_gain = mc.GetGain(mcontrol.GainType.kCurrent)
 flux_gain = mc.GetGain(mcontrol.GainType.kFlux)
@@ -301,6 +301,13 @@ def update_fault_status():
 fault_status_callback_interval = 1000 #milliseconds
 fault_status_callback = curdoc().add_periodic_callback(update_fault_status, fault_status_callback_interval)
 
+def is_numeric(val):
+    try:
+        float(val)
+        return True
+    except ValueError:
+        return False
+
 def get_min_interval(samples):
     if samples <= 500:
         return 1
@@ -316,7 +323,10 @@ def get_min_interval(samples):
 # sample interval
 def update_interval(attr, old, new):
     global interval, sample_size
-    interval = max(float(new), get_min_interval(sample_size))
+    if new == "" or is_numeric(new) == False:
+        interval_input.value = old
+        return
+    interval = max(round(float(new), 5), get_min_interval(sample_size))
     interval_input.value = str(interval)
 
     global callback
@@ -330,7 +340,10 @@ interval_input.on_change('value', update_interval)
 # sample size
 def update_sample_size(attr, old, new):
     global sample_size, x, interval
-    if int(new) >= sample_size_min and int(new) <= sample_size_max:
+    if new == "":
+        sample_size_input.value = old
+        return
+    if is_numeric(new) and int(new) >= sample_size_min and int(new) <= sample_size_max:
         sample_size = int(new)
         plot_error_message.text = ""
         interval = max(interval, get_min_interval(sample_size))
@@ -394,123 +407,139 @@ mode_dropdown_title = Paragraph(text="Mode:", width=40, align="center")
 mode_dropdown = Select(
     value=current_mode_value,
     options=["Off", "Speed", "Torque", "Open Loop"],
-    width=150,
+    width=120,
 )
 mode_dropdown.on_change('value', change_mode)
 
 # Speed setpoint
 def update_speed_setpoint(attr, old, new):
     global speed_setpoint
-    if abs(float(new)) >= speed_setpoint_min and abs(float(new)) <= speed_setpoint_max:
-        speed_setpoint = float(new)
+    if new != "" and is_numeric(new) and abs(float(new)) >= speed_setpoint_min and abs(float(new)) <= speed_setpoint_max:
+        speed_setpoint = round(float(new), 5)
         mc.setSpeed(speed_setpoint)
         error_message.text = ""
+        speed_setpoint_input.value = str(speed_setpoint)
     else:
         speed_setpoint_input.value = str(speed_setpoint)
         error_message.text = "Error: Invalid input. Speed setpoint must be between " + str(speed_setpoint_min) + " and " + str(speed_setpoint_max) + " or -" + str(speed_setpoint_min) + " and -" + str(speed_setpoint_max) + "."
 
 speed_setpoint_title = Paragraph(text="Speed Setpoint:", width=110, align="center")
-speed_setpoint_input = TextInput(value=str(speed_setpoint), width=180)
+speed_setpoint_input = TextInput(value=str(speed_setpoint), width=80)
 speed_setpoint_input.on_change('value', update_speed_setpoint)
 
 # Torque setpoint
 def update_torque_setpoint(attr, old, new):
     global torque_setpoint
-    if float(new) >= torque_setpoint_min and float(new) <= torque_setpoint_max:
-        torque_setpoint = float(new)
+    if new != "" and is_numeric(new) and float(new) >= torque_setpoint_min and float(new) <= torque_setpoint_max:
+        torque_setpoint = round(float(new), 5)
         mc.setTorque(torque_setpoint)
         error_message.text = ""
+        torque_setpoint_input.value = str(torque_setpoint)
     else:
         torque_setpoint_input.value = str(torque_setpoint)
         error_message.text = "Error: Invalid input. Torque setpoint must be between " + str(torque_setpoint_min) + " and " + str(torque_setpoint_max) + "."
 
 torque_setpoint_title = Paragraph(text="Torque Setpoint:", width=110, align="center")
-torque_setpoint_input = TextInput(value=str(torque_setpoint), width=180)
+torque_setpoint_input = TextInput(value=str(torque_setpoint), width=80)
 torque_setpoint_input.on_change('value', update_torque_setpoint)
 
 # Open loop - Vd
 def update_open_loop_vd(attr, old, new):
     global open_loop_vd
-    if float(new) >= open_loop_vd_min and float(new) <= open_loop_vd_max:
-        open_loop_vd = float(new)
+    if new != "" and is_numeric(new) and float(new) >= open_loop_vd_min and float(new) <= open_loop_vd_max:
+        open_loop_vd = round(float(new), 5)
         mc.setVfParamVd(open_loop_vd)
         error_message.text = ""
+        open_loop_vd_input.value = str(open_loop_vd)
     else:
         open_loop_vd_input.value = str(open_loop_vd)
         error_message.text = "Error: Invalid input. Open Loop - Vd must be between " + str(open_loop_vd_min) + " and " + str(open_loop_vd_max) + "."
 
 open_loop_vd_title = Paragraph(text="Open Loop - Vd:", width=110, align="center")
-open_loop_vd_input = TextInput(value=str(open_loop_vd), width=180)
+open_loop_vd_input = TextInput(value=str(open_loop_vd), width=80)
 open_loop_vd_input.on_change('value', update_open_loop_vd)
 
 # Open loop - Vq
 def update_open_loop_vq(attr, old, new):
     global open_loop_vq
-    if float(new) >= open_loop_vq_min and float(new) <= open_loop_vq_max:
-        open_loop_vq = float(new)
+    if new != "" and is_numeric(new) and float(new) >= open_loop_vq_min and float(new) <= open_loop_vq_max:
+        open_loop_vq = round(float(new), 5)
         mc.setVfParamVq(open_loop_vq)
         error_message.text = ""
+        open_loop_vq_input.value = str(open_loop_vq)
     else:
         open_loop_vq_input.value = str(open_loop_vq)
         error_message.text = "Error: Invalid input. Open Loop - Vq must be between " + str(open_loop_vq_min) + " and " + str(open_loop_vq_max) + "."
 
 open_loop_vq_title = Paragraph(text="Open Loop - Vq:", width=110, align="center")
-open_loop_vq_input = TextInput(value=str(open_loop_vq), width=180)
+open_loop_vq_input = TextInput(value=str(open_loop_vq), width=80)
 open_loop_vq_input.on_change('value', update_open_loop_vq)
 
 # Gain parameters
 def update_speed_Kp(attr, old, new):
     global speed_gain
-    speed_gain.kp = float(new)
-    mc.setGain(mcontrol.GainType.kSpeed, speed_gain)
+    if new != "" and is_numeric(new):
+        speed_gain.kp = round(float(new), 5)
+        mc.setGain(mcontrol.GainType.kSpeed, speed_gain)
+    speed_Kp_input.value = str(round(speed_gain.kp, 5))
 
 speed_Kp_title = Paragraph(text="Speed Kp:", width=70, align="center")
-speed_Kp_input = TextInput(value=str(speed_gain.kp), width=180)
+speed_Kp_input = TextInput(value=str(round(speed_gain.kp, 5)), width=80)
 speed_Kp_input.on_change('value', update_speed_Kp)
 
 def update_speed_Ki(attr, old, new):
     global speed_gain
-    speed_gain.ki = float(new)
-    mc.setGain(mcontrol.GainType.kSpeed, speed_gain)
+    if new != "" and is_numeric(new):
+        speed_gain.ki = round(float(new), 5)
+        mc.setGain(mcontrol.GainType.kSpeed, speed_gain)
+    speed_Ki_input.value = str(round(speed_gain.ki, 5))
 
 speed_Ki_title = Paragraph(text="Speed Ki:", width=70, align="center")
-speed_Ki_input = TextInput(value=str(speed_gain.ki), width=180)
+speed_Ki_input = TextInput(value=str(round(speed_gain.ki, 5)), width=80)
 speed_Ki_input.on_change('value', update_speed_Ki)
 
 def update_torque_Kp(attr, old, new):
     global torque_gain
-    torque_gain.kp = float(new)
-    mc.setGain(mcontrol.GainType.kCurrent, torque_gain)
+    if new != "" and is_numeric(new):
+        torque_gain.kp = round(float(new), 5)
+        mc.setGain(mcontrol.GainType.kCurrent, torque_gain)
+    torque_Kp_input.value = str(round(torque_gain.kp, 5))
 
 torque_Kp_title = Paragraph(text="Torque Kp:", width=70, align="center")
-torque_Kp_input = TextInput(value=str(torque_gain.kp), width=180)
+torque_Kp_input = TextInput(value=str(round(torque_gain.kp, 5)), width=80)
 torque_Kp_input.on_change('value', update_torque_Kp)
 
 def update_torque_Ki(attr, old, new):
     global torque_gain
-    torque_gain.ki = float(new)
-    mc.setGain(mcontrol.GainType.kCurrent, torque_gain)
+    if new != "" and is_numeric(new):
+        torque_gain.ki = round(float(new), 5)
+        mc.setGain(mcontrol.GainType.kCurrent, torque_gain)
+    torque_Ki_input.value = str(round(torque_gain.ki, 5))
 
 torque_Ki_title = Paragraph(text="Torque Ki:", width=70, align="center")
-torque_Ki_input = TextInput(value=str(torque_gain.ki), width=180)
+torque_Ki_input = TextInput(value=str(round(torque_gain.ki, 5)), width=80)
 torque_Ki_input.on_change('value', update_torque_Ki)
 
 def update_flux_Kp(attr, old, new):
     global flux_gain
-    flux_gain.kp = float(new)
-    mc.setGain(mcontrol.GainType.kFlux, flux_gain)
+    if new != "" and is_numeric(new):
+        flux_gain.kp = round(float(new), 5)
+        mc.setGain(mcontrol.GainType.kFlux, flux_gain)
+    flux_Kp_input.value = str(round(flux_gain.kp, 5))
 
 flux_Kp_title = Paragraph(text="Flux Kp:", width=70, align="center")
-flux_Kp_input = TextInput(value=str(flux_gain.kp), width=180)
+flux_Kp_input = TextInput(value=str(round(flux_gain.kp, 5)), width=80)
 flux_Kp_input.on_change('value', update_flux_Kp)
 
 def update_flux_Ki(attr, old, new):
     global flux_gain
-    flux_gain.ki = float(new)
-    mc.setGain(mcontrol.GainType.kFlux, flux_gain)
+    if new != "" and is_numeric(new):
+        flux_gain.ki = round(float(new), 5)
+        mc.setGain(mcontrol.GainType.kFlux, flux_gain)
+    flux_Ki_input.value = str(round(flux_gain.ki, 5))
 
 flux_Ki_title = Paragraph(text="Flux Ki:", width=70, align="center")
-flux_Ki_input = TextInput(value=str(flux_gain.ki), width=180)
+flux_Ki_input = TextInput(value=str(round(flux_gain.ki, 5)), width=80)
 flux_Ki_input.on_change('value', update_flux_Ki)
 
 # Clear Faults button
