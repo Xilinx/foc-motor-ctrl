@@ -27,9 +27,9 @@
 
 // KP(proportional) and KI(integral) Gain parameters
 #define TOR_KP				9.0
-#define TOR_KI				0.01
+#define TOR_KI				0.001
 #define FLUX_KP				8.0
-#define FLUX_KI				0.01
+#define FLUX_KI				0.001
 #define SPEED_KP			0.005
 #define SPEED_KI			0.0001
 #define FW_KP				0.009918212890625
@@ -37,7 +37,7 @@
 
 #define CPR				1000			// Counts per Revolution for auto alignment
 
-#define TOR_SP				0.9	// Initial Torque setpoint value
+#define TOR_SP				0.3	// Initial Torque setpoint value
 #define SPEED_SP			1000			// Initial Speed setpoint value.
 
 #define VF_VQ				4.0			// Initial manual openloop torque
