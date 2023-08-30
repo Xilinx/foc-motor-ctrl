@@ -438,7 +438,8 @@ int MotorControlImpl::initMotor(bool full_init)
 			mAdcHub.setVoltageFiltertap(phase, ADCHUB_FILTERTAP);
 		}
 		mAdcHub.setCurrentFiltertap(ElectricalData::kDCLink, DCLINK_FILTERTAP);
-
+		mAdcHub.setVoltageFiltertap(ElectricalData::kDCLink, DCLINK_FILTERTAP);
+		
 		/*
 		 * Set the thresholds for all the events
 		 */
