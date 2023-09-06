@@ -5,21 +5,9 @@
 
 #include <cassert>
 #include "adchub.h"
+#include <iostream>
 
 const std::string Adchub::kAdcHubDriverName = "xilinx_adc_hub";
-
-enum AdcChannels
-{
-	voltage0_ac = 0,
-	current1_ac,
-	voltage2_ac,
-	current3_ac,
-	voltage4_ac,
-	current5_ac,
-	voltage6_dc,
-	current7_dc,
-	channelMax
-};
 
 Adchub::Adchub(): EventControl( /* List of supported Faults */
 		{ FaultId::kPhaseA_OC,
@@ -47,9 +35,9 @@ Adchub::Adchub(): EventControl( /* List of supported Faults */
 		 * Disable any enabled events/faults
 		 */
 		mAdchub_IIO_Handle->writeeventattr(channel_id,
-						"thresh_rising_en", "0");
+						   "thresh_rising_en", "0");
 		mAdchub_IIO_Handle->writeeventattr(channel_id,
-						"thresh_falling_en", "0");
+						   "thresh_falling_en", "0");
 
 		/*
 		 * Clear status of any previously triggered events/faults
@@ -62,11 +50,12 @@ Adchub::Adchub(): EventControl( /* List of supported Faults */
 		 * Reset thresholds for all events/faults
 		 */
 		mAdchub_IIO_Handle->writeeventattr(channel_id,
-						"thresh_rising_value", "0");
+						   "thresh_rising_value", "0");
 		mAdchub_IIO_Handle->writeeventattr(channel_id,
-						"thresh_falling_value", "0");
+						   "thresh_falling_value", "0");
 	}
-
+	// sample buffer data at 100us intervals
+	mAdchub_IIO_Handle->writeDeviceattr("sample_interval_us", "100");
 }
 
 double Adchub::getCurrent(ElectricalData phase)
@@ -214,6 +203,34 @@ int Adchub::calibrateVoltageChannel(ElectricalData phase)
 		return -1;
 	}
 	return 0;
+}
+
+std::map<AdcChannels, std::vector<double>> Adchub::fillBuffer(int samples, std::vector<AdcChannels> channels)
+{
+	std::map<AdcChannels, std::vector<double>> hubdata;
+	std::vector<int> hubVector;
+	// Remap incomming list to Adchub Channel list
+
+	for (auto it : channels)
+	{
+		hubVector.push_back(static_cast<int>(it));
+	}
+
+	std::map<int, std::vector<double>> rawDataMap = mAdchub_IIO_Handle->getBufferdata(samples, hubVector);
+	if (rawDataMap.size() == 0 && hubVector.size() != 0)
+	{
+		std::cout << " No data samples obtained from Adchub " << std::endl;
+		return hubdata;
+	}
+
+	// Typecast channel index to enum in the dictonary
+	for (auto &it : rawDataMap)
+	{
+		AdcChannels newKey = static_cast<AdcChannels>(it.first);
+		hubdata[newKey] = it.second;
+	}
+
+	return hubdata;
 }
 
 int Adchub::getChannelId(FaultId event)

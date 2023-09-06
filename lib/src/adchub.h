@@ -6,9 +6,22 @@
 #ifndef _ADC_HUB_H
 #define _ADC_HUB_H
 
-#include "../include/motor-control/motor-control.hpp"
 #include "event_control.h"
 #include "interface/iio_drv.h"
+
+// TODO: move AdcChannels Enum within the class namespace
+enum AdcChannels
+{
+	voltage0_ac = 0,
+	current1_ac,
+	voltage2_ac,
+	current3_ac,
+	voltage4_ac,
+	current5_ac,
+	voltage6_dc,
+	current7_dc,
+	channelMax
+};
 
 class Adchub : public EventControl
 {
@@ -36,6 +49,11 @@ public:
 	void setLowerThreshold(FaultId event, double val) override;
 	double getUpperThreshold(FaultId event) override;
 	double getLowerThreshold(FaultId event) override;
+
+	/*
+	 * Buffer handling APIs
+	 */
+	std::map<AdcChannels, std::vector<double>> fillBuffer(int samples, std::vector<AdcChannels> channels);
 
 private:
 	static const std::string kAdcHubDriverName;

@@ -42,6 +42,9 @@ IIO_Driver::~IIO_Driver()
 {
 	if (ctx != NULL)
 	{
+		if (rxBuf)
+			IIO_Driver::closeBufferObj();
+
 		iio_context_destroy(ctx);
 	}
 	if (event_fd != -1) {
@@ -140,7 +143,7 @@ int IIO_Driver::getEventFd()
 		}
 
 		if(ioctl(fd, IIO_GET_EVENT_FD_IOCTL, &event_fd) == -1 ||
-							event_fd == -1) {
+			event_fd == -1) {
 			perror("Failed to get iio event fd");
 			return -1;
 		}
@@ -149,4 +152,127 @@ int IIO_Driver::getEventFd()
 			perror("Failed to close character device file");
 	}
 	return event_fd;
+}
+
+ssize_t IIO_Driver::populateMap(const struct iio_channel *chn, void *src, size_t bytes, void *data)
+{
+	int cIndex = iio_channel_get_index(chn);
+	std::map<int, std::vector<double>> *mapPtr = static_cast<std::map<int, std::vector<double>> *>(data);
+
+	if (bytes == sizeof(int64_t))
+	{
+		double tmp = ((int64_t *)src)[0];
+		(*mapPtr)[cIndex].push_back(tmp);
+	}
+	else if (bytes == sizeof(int32_t))
+	{
+		double tmp = ((int32_t *)src)[0] / 65536.0;
+		(*mapPtr)[cIndex].push_back(tmp);
+	}
+
+	return bytes;
+}
+
+void IIO_Driver::closeBufferObj()
+{
+	// delete buffer object
+	if (rxBuf) {
+		iio_buffer_cancel(rxBuf);
+		iio_buffer_destroy(rxBuf);
+		rxBuf = NULL;
+	}
+	// disable active channels
+	for (auto it : this->activeChannels)
+	{
+		if (iio_channel_is_enabled(channels[it]))
+			iio_channel_disable(channels[it]);
+	}
+}
+
+bool IIO_Driver::compareActiveChannels(std::vector<int> &requestedChannels)
+{
+	bool isChanged = false;
+
+	for (auto it : requestedChannels)
+	{
+		if (!iio_channel_is_enabled(channels[it]))
+			iio_channel_enable(channels[it]);
+		if (std::find(this->activeChannels.begin(), this->activeChannels.end(), it) == this->activeChannels.end())
+		{
+			this->activeChannels.push_back(it);
+			isChanged = true;
+		}
+	}
+
+	for (auto it : this->activeChannels)
+	{
+		if (std::find(requestedChannels.begin(), requestedChannels.end(), it) == requestedChannels.end())
+		{
+			if (iio_channel_is_enabled(channels[it]))
+				iio_channel_disable(channels[it]);
+			this->activeChannels.erase(std::find(activeChannels.begin(), activeChannels.end(), it));
+			isChanged = true;
+		}
+	}
+
+	return isChanged;
+}
+
+// api to create buffer
+int IIO_Driver::createBuffer(int numSamples, std::vector<int> &channelList)
+{
+	int ret = 0;
+
+	IIO_Driver::compareActiveChannels(channelList);
+	if (rxBuf)
+	{
+		iio_buffer_cancel(rxBuf);
+		iio_buffer_destroy(rxBuf);
+		rxBuf = NULL;
+	}
+	// create buffer object
+	rxBuf = iio_device_create_buffer(dev, numSamples, false);
+	if (rxBuf == NULL)
+	{
+		std::cout << "failed to create buffer" << std::endl;
+		ret = -1;
+	}
+	return ret;
+}
+
+std::map<int, std::vector<double>> IIO_Driver::getBufferdata(int numSamples, std::vector<int> channelList)
+{
+	std::map<int, std::vector<double>> channelDataMap;
+	char errmessage[1024];
+	int ret;
+
+	if (channelList.size() == 0) {
+		closeBufferObj();
+		this->activeChannels.clear();
+		return channelDataMap;
+	}
+
+	// creates buffer only on a new or modified request
+	ret = IIO_Driver::createBuffer(numSamples, channelList);
+	if (ret < 0) {
+		return channelDataMap;
+	}
+
+	ssize_t nbytes_rx = iio_buffer_refill(rxBuf);
+	if (nbytes_rx < 0)
+	{
+		iio_strerror(-(int)nbytes_rx, errmessage, sizeof(errmessage));
+		std::cout << "Error refilling buf: " << errmessage << std::endl;
+		closeBufferObj();
+		return channelDataMap;
+	}
+
+	nbytes_rx /= iio_buffer_step(rxBuf);
+	if (nbytes_rx >= numSamples)
+		iio_buffer_foreach_sample(rxBuf, populateMap, &channelDataMap);
+	else
+		std::cout << "not enough buffer to read sample data" << std::endl;
+
+	closeBufferObj();
+	return channelDataMap;
 }

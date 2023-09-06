@@ -5,6 +5,7 @@
 
 #include "qei.h"
 #include "smo.h"
+#include "sensor.h"
 
 Sensor *Sensor::getSensorInstance()
 {
@@ -20,4 +21,9 @@ bool Sensor::isQeiPresent()
 {
 	//TODO: Find if the Qei is present
 	return true;
+}
+
+std::map<Qeichannel, std::vector<double>> Sensor::fillBuffer(int samples, std::vector<Qeichannel> channels)
+{
+	return std::map<Qeichannel, std::vector<double>>();
 }

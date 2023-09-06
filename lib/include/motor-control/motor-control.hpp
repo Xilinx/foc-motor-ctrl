@@ -18,6 +18,8 @@
  */
 
 #include <string>
+#include <map>
+#include <vector>
 
 #define DEFAULT_CONFIG_PATH	"/etc/motor-control/config"
 
@@ -86,6 +88,30 @@ enum class FaultId {
 	kFaultIdMax
 };
 
+enum class MotorParam {
+	kVoltagePhaseA = 0,
+	kCurrentPhaseA,
+	kVoltagePhaseB,
+	kCurrentPhaseB,
+	kVoltagePhaseC,
+	kCurrentPhaseC,
+	kVoltageDCLink,
+	kCurrentDCLink,
+	kId,
+	kIq,
+	kIalpha,
+	kIbeta,
+	kIhomopolar,
+	kSpeedFoc,
+	kTorqueFoc,
+	kFlux,
+	kRpmFoc,
+	kPositionFoc,
+	kRpm,
+	kPosition,
+	kMotorParamMax
+};
+
 class MotorControl {
 public:
 	/*
@@ -115,6 +141,9 @@ public:
 	virtual void setVfParamVd(double vd) = 0;
 
 	virtual void clearFaults() = 0;
+
+	virtual std::map<MotorParam, std::vector<double>> getMotorParams(int numSamples, std::vector<MotorParam> list) = 0;
+
 
 	virtual ~MotorControl();
 	/*
