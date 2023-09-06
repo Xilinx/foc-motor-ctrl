@@ -128,7 +128,7 @@ MotorControl *MotorControl::getMotorControlInstance(int sessionId,
 		if (dynamic_cast<MotorControlImpl *>(mspInstance)->mInitDone) {
 			ptr = mspInstance;
 		} else {
-			std::cerr << "Failed to create motor control object";
+			std::cerr << "Failed to create motor control object" << std::endl;
 			delete mspInstance;
 		}
 	}
@@ -357,7 +357,7 @@ void MotorControlImpl::setOperationMode(MotorOpMode mode)
 				loop_timeout_ms -= loop_sleep_ms;
 				if (loop_timeout_ms < 0) {
 					//assert(false && "Motor Off loop timeout");
-					std::cerr << "Motor didn't stop. Loop timed out. Something Wrong!!";
+					std::cerr << "Motor didn't stop. Loop timed out. Something Wrong!!" << std::endl;
 					break;
 				}
 			}
@@ -439,7 +439,7 @@ int MotorControlImpl::initMotor(bool full_init)
 		}
 		mAdcHub.setCurrentFiltertap(ElectricalData::kDCLink, DCLINK_FILTERTAP);
 		mAdcHub.setVoltageFiltertap(ElectricalData::kDCLink, DCLINK_FILTERTAP);
-		
+
 		/*
 		 * Set the thresholds for all the events
 		 */
@@ -507,6 +507,8 @@ int MotorControlImpl::initMotor(bool full_init)
 		usleep(CALIBRATION_WAIT_US);	//wait for the calibration and event recording
 
 		if(getFaultStatus(FaultId::kDCLink_UV)) {
+			std::cerr << "Failed to detect DCLink voltage. Make sure Motor is powered up"
+				  << std::endl << "ERROR: Initialization Failed" << std::endl;
 			return -1;
 		}
 	}
@@ -543,6 +545,8 @@ int MotorControlImpl::initMotor(bool full_init)
 
 	for (auto ev: criticalFaults) {
 		if(getFaultStatus(ev)) {
+			std::cerr << "ERROR: Critical Fault detected. Initialization Failed"
+				  << std::endl;
 			return -1;
 		}
 	}
