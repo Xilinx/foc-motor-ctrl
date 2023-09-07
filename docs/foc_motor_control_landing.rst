@@ -25,6 +25,17 @@ Quick Start
 
    Setting up the Board and Application deployment <docs/app_deployment.md>
 
+***************************
+Tutorials
+***************************
+
+.. toctree::
+   :maxdepth: 1
+
+   Building the Design components <https://xilinx.github.io/kria-apps-docs/kd240/building_the_design.html>
+   Building the Hardware Design using Vivado <https://xilinx.github.io/kria-apps-docs/kd240/build_vivado_design.html>
+   Generating Custom Firmware <https://xilinx.github.io/kria-apps-docs/kd240/generating_custom_firmware.html>
+
 ******************
 Architecture
 ******************
@@ -43,6 +54,14 @@ Repository
 
   Software Repository <https://github.com/Xilinx/foc-motor-ctrl>
 
+*******************************
+Other
+*******************************
+
+.. toctree::
+  :maxdepth: 1
+
+  Known Issues <docs/known_issues.md>
 
 ..
    License
