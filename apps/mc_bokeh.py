@@ -29,18 +29,21 @@ css_style = Div(text="""
 </style>
 """)
 
-sample_size = 60
-sample_size_actual = 60
-interval = 0.5
+sample_size = 500
+interval = 2
 x = deque([nan] * sample_size)
+for i in range(sample_size):
+    x[i] = i+1
 
 # Get a MotorControl instance with session ID 1 and default config path
 mc = mcontrol.MotorControl.getMotorControlInstance(1)
-
+if mc is None:
+    print("Error: Unable to get MotorControl instance.\nPlease check your motor setup and restart the server.")
+    exit()
 # Initialize parameters
 time = 0
-plot_update_interval = 0
-num_points_per_update = 1
+sample_size_min = 2
+sample_size_max = 3000
 speed_setpoint_min = 250
 speed_setpoint_max = 10000
 torque_setpoint_min = -2.5
@@ -50,10 +53,10 @@ open_loop_vd_max = 24
 open_loop_vq_min = 0
 open_loop_vq_max = 24
 
-speed_setpoint = mc.getSpeedSetpoint()
-torque_setpoint = mc.getTorqueSetpoint()
-open_loop_vd = mc.getVfParamVd()
-open_loop_vq = mc.getVfParamVq()
+speed_setpoint = round(mc.getSpeedSetpoint(), 5)
+torque_setpoint = round(mc.getTorqueSetpoint(), 5)
+open_loop_vd = round(mc.getVfParamVd(), 5)
+open_loop_vq = round(mc.getVfParamVq(), 5)
 speed_gain = mc.GetGain(mcontrol.GainType.kSpeed)
 torque_gain = mc.GetGain(mcontrol.GainType.kCurrent)
 flux_gain = mc.GetGain(mcontrol.GainType.kFlux)
@@ -76,12 +79,11 @@ electrical_data_titles = [
     'Phase C Voltage'
 ]
 num_electrical_data = len(electrical_data_titles)
-electrical_data = [0] * num_electrical_data
-electrical_data_list = [deque([0] * sample_size) for i in range(num_electrical_data)]
+electrical_data_list = [deque([nan] * sample_size) for i in range(num_electrical_data)]
 electrical_plot = figure(plot_width=1000, plot_height=300, title='Electrical Data')
 electrical_lines = [0] * num_electrical_data
 electrical_ds_list = [0] * num_electrical_data
-electrical_plot.xaxis.axis_label = "Time (s)"
+electrical_plot.xaxis.axis_label = "Sample"
 electrical_plot.yaxis.visible = False
 electrical_plot.extra_y_ranges["Current"] = DataRange1d(only_visible=True)
 electrical_plot.add_layout(LinearAxis(y_range_name="Current", axis_label="Current (mA)"), 'left')
@@ -99,18 +101,22 @@ electrical_plot.add_layout(electrical_plot.legend[0], 'right')
 for i in range(num_electrical_data):
     electrical_ds_list[i] = electrical_lines[i].data_source
 
+# Hide voltage lines by default
+electrical_lines[3].visible = False
+electrical_lines[4].visible = False
+electrical_lines[5].visible = False
+
 # Mechanical Plot
 mechanical_data_titles = [
     'Motor Speed',
     'Motor Position'
 ]
 num_mechanical_data = len(mechanical_data_titles)
-mechanical_data = [0] * num_mechanical_data
-mechanical_data_list = [deque([0] * sample_size) for i in range(num_mechanical_data)]
+mechanical_data_list = [deque([nan] * sample_size) for i in range(num_mechanical_data)]
 mechanical_plot = figure(plot_width=1000, plot_height=300, title='Mechanical Data')
 mechanical_lines = [0] * num_mechanical_data
 mechanical_ds_list = [0] * num_mechanical_data
-mechanical_plot.xaxis.axis_label = "Time (s)"
+mechanical_plot.xaxis.axis_label = "Sample"
 mechanical_plot.yaxis.visible = False
 mechanical_plot.extra_y_ranges["Speed"] = DataRange1d(only_visible=True)
 mechanical_plot.add_layout(LinearAxis(y_range_name="Speed", axis_label="Speed (rpm)"), 'left')
@@ -140,7 +146,8 @@ live_analysis_options = [
     "PhA Voltage",
     "PhB Voltage",
     "PhC Voltage",
-    "Speed"
+    "Speed",
+    "Position"
 ]
 live_analysis_axis_labels = {
     "PhA Current": "Phase A Current (mA)",
@@ -153,65 +160,67 @@ live_analysis_axis_labels = {
     "PhA Voltage": "Phase A Voltage (V)",
     "PhB Voltage": "Phase B Voltage (V)",
     "PhC Voltage": "Phase C Voltage (V)",
-    "Speed": "Speed (rpm)"
+    "Speed": "Speed (rpm)",
+    "Position": "Position (degrees)"
 }
 live_analysis_x_selection = live_analysis_options[0]
 live_analysis_y_selection = live_analysis_options[1]
 
-def live_analysis_select_data(self):
+def live_analysis_x_select_data(self):
     global live_analysis_x_data_list
-    global live_analysis_y_data_list
     global live_analysis_x_selection
-    global live_analysis_y_selection
-
-    for i in range(len(live_analysis_x_data_list)):
-        live_analysis_x_data_list.popleft()
-        live_analysis_x_data_list.append(nan)
-        live_analysis_y_data_list.popleft()
-        live_analysis_y_data_list.append(nan)
-
+    global live_analysis_x_buffer_mapping
     live_analysis_x_selection = live_analysis_options[live_analysis_x_options.active]
-    live_analysis_y_selection = live_analysis_options[live_analysis_y_options.active]
     live_analysis_plot.xaxis.axis_label = live_analysis_axis_labels[live_analysis_x_selection]
+    live_analysis_x_buffer_mapping = get_live_analysis_buffer_mapping(live_analysis_x_selection)
+
+def live_analysis_y_select_data(self):
+    global live_analysis_y_data_list
+    global live_analysis_y_selection
+    global live_analysis_y_buffer_mapping
+    live_analysis_y_selection = live_analysis_options[live_analysis_y_options.active]
     live_analysis_plot.yaxis.axis_label = live_analysis_axis_labels[live_analysis_y_selection]
+    live_analysis_y_buffer_mapping = get_live_analysis_buffer_mapping(live_analysis_y_selection)
 
 live_analysis_x_title = Paragraph(text="X-Axis Data:", width=80, align="start")
 live_analysis_x_options = RadioGroup(labels=live_analysis_options, active=0)
-live_analysis_x_options.on_click(live_analysis_select_data)
+live_analysis_x_options.on_click(live_analysis_x_select_data)
 live_analysis_y_title = Paragraph(text="Y-Axis Data:", width=80, align="start")
 live_analysis_y_options = RadioGroup(labels=live_analysis_options, active=1)
-live_analysis_y_options.on_click(live_analysis_select_data)
+live_analysis_y_options.on_click(live_analysis_y_select_data)
 
-def get_live_analysis_data(val):
+def get_live_analysis_buffer_mapping(val):
     if val == "PhA Current":
-        return mc.getCurrent(mcontrol.ElectricalData.kPhaseA)
+        return mcontrol.MotorParam.kCurrentPhaseA
     elif val == "PhB Current":
-        return mc.getCurrent(mcontrol.ElectricalData.kPhaseB)
+        return mcontrol.MotorParam.kCurrentPhaseB
     elif val == "PhC Current":
-        return mc.getCurrent(mcontrol.ElectricalData.kPhaseC)
+        return mcontrol.MotorParam.kCurrentPhaseC
     elif val == "I_d":
-        return mc.getFocCalc().i_d
+        return mcontrol.MotorParam.kId
     elif val == "I_q":
-        return mc.getFocCalc().i_q
+        return mcontrol.MotorParam.kIq
     elif val == "I_alpha":
-        return mc.getFocCalc().i_alpha
+        return mcontrol.MotorParam.kIalpha
     elif val == "I_beta":
-        return mc.getFocCalc().i_beta
+        return mcontrol.MotorParam.kIbeta
     elif val == "PhA Voltage":
-        return mc.getVoltage(mcontrol.ElectricalData.kPhaseA)
+        return mcontrol.MotorParam.kVoltagePhaseA
     elif val == "PhB Voltage":
-        return mc.getVoltage(mcontrol.ElectricalData.kPhaseB)
+        return mcontrol.MotorParam.kVoltagePhaseB
     elif val == "PhC Voltage":
-        return mc.getVoltage(mcontrol.ElectricalData.kPhaseC)
+        return mcontrol.MotorParam.kVoltagePhaseC
     elif val == "Speed":
-        return mc.getSpeed()
+        return mcontrol.MotorParam.kRpm
+    elif val == "Position":
+        return mcontrol.MotorParam.kPosition
     else:
         return 0
 
-live_analysis_x_data = 0
-live_analysis_y_data = 0
-live_analysis_x_data_list = deque([0] * sample_size)
-live_analysis_y_data_list = deque([0] * sample_size)
+live_analysis_x_buffer_mapping = get_live_analysis_buffer_mapping(live_analysis_x_selection)
+live_analysis_y_buffer_mapping = get_live_analysis_buffer_mapping(live_analysis_y_selection)
+live_analysis_x_data_list = deque([nan] * sample_size)
+live_analysis_y_data_list = deque([nan] * sample_size)
 
 live_analysis_plot = figure(plot_width=800, plot_height=620, title="Live Analysis")
 live_analysis_source = ColumnDataSource(dict(x=live_analysis_x_data_list, y=live_analysis_y_data_list))
@@ -292,40 +301,76 @@ def update_fault_status():
 fault_status_callback_interval = 1000 #milliseconds
 fault_status_callback = curdoc().add_periodic_callback(update_fault_status, fault_status_callback_interval)
 
+def is_numeric(val):
+    try:
+        float(val)
+        return True
+    except ValueError:
+        return False
+
+def get_min_interval(samples):
+    if samples <= 500:
+        return 1
+    elif samples <= 1000:
+        return 2
+    elif samples <= 2000:
+        return 3
+    elif samples <= 2500:
+        return 4
+    else:
+        return 5
+
 # sample interval
 def update_interval(attr, old, new):
-    global interval
-    interval = max(float(new), 0)
+    global interval, sample_size
+    if new == "" or is_numeric(new) == False:
+        interval_input.value = old
+        return
+    interval = max(round(float(new), 5), get_min_interval(sample_size))
     interval_input.value = str(interval)
+
     global callback
     curdoc().remove_periodic_callback(callback)
     callback = curdoc().add_periodic_callback(update, interval * 1000)
-    global num_points_per_update
-    num_points_per_update = round(0.6/interval)
 
-interval_title = Paragraph(text="Sample Interval (Seconds):", width=200, align="center")
+interval_title = Paragraph(text="Refresh Interval (Seconds):", width=170, align="center")
 interval_input = TextInput(value=str(interval), width=80)
 interval_input.on_change('value', update_interval)
 
 # sample size
 def update_sample_size(attr, old, new):
-    global sample_size, sample_size_actual
-    new_sample_size = int(new)
-    if new_sample_size < sample_size_actual:
-        excess = sample_size_actual - new_sample_size
-        while excess > 0:
-            x.popleft()
-            live_analysis_x_data_list.popleft()
-            live_analysis_y_data_list.popleft()
-            for data in electrical_data_list:
-                data.popleft()
-            for data in mechanical_data_list:
-                data.popleft()
-            excess = excess - 1
-        sample_size_actual = new_sample_size
-    sample_size = new_sample_size
+    global sample_size, x, interval
+    if new == "":
+        sample_size_input.value = old
+        return
+    if is_numeric(new) and int(new) >= sample_size_min and int(new) <= sample_size_max:
+        sample_size = int(new)
+        plot_error_message.text = ""
+        interval = max(interval, get_min_interval(sample_size))
+        interval_input.value = str(interval)
+    else:
+        sample_size_input.value = str(sample_size)
+        plot_error_message.text = "Error: Invalid input. Sample size must be between " + str(sample_size_min) + " and " + str(sample_size_max) + "."
 
-sample_size_title = Paragraph(text="Plot Window Length (Samples):", width=200, align="center")
+    while len(live_analysis_x_data_list) > sample_size:
+        x.pop()
+        live_analysis_x_data_list.popleft()
+        live_analysis_y_data_list.popleft()
+        for data in electrical_data_list:
+            data.popleft()
+        for data in mechanical_data_list:
+            data.popleft()
+
+    while len(live_analysis_x_data_list) < sample_size:
+        x.append(len(x)+1)
+        live_analysis_x_data_list.append(0)
+        live_analysis_y_data_list.append(0)
+        for data in electrical_data_list:
+            data.append(0)
+        for data in mechanical_data_list:
+            data.append(0)
+
+sample_size_title = Paragraph(text="Sample Size (Samples):", width=170, align="center")
 sample_size_input = TextInput(value=str(sample_size), width=80)
 sample_size_input.on_change('value', update_sample_size)
 
@@ -337,56 +382,16 @@ def change_mode(attr, old, new):
 
     if mode == "Off":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeOff)
-        speed_Kp_input.disabled = True
-        speed_Ki_input.disabled = True
-        torque_Kp_input.disabled = True
-        torque_Ki_input.disabled = True
-        flux_Kp_input.disabled = True
-        flux_Ki_input.disabled = True
-        speed_setpoint_input.disabled = False
-        torque_setpoint_input.disabled = False
-        open_loop_vd_input.disabled = False
-        open_loop_vq_input.disabled = False
     elif mode == "Speed":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeSpeed)
         speed_setpoint = mc.getSpeedSetpoint()
         speed_setpoint_input.value = str(speed_setpoint)
-        speed_Kp_input.disabled = False
-        speed_Ki_input.disabled = False
-        torque_Kp_input.disabled = False
-        torque_Ki_input.disabled = False
-        flux_Kp_input.disabled = False
-        flux_Ki_input.disabled = False
-        speed_setpoint_input.disabled = False
-        torque_setpoint_input.disabled = True
-        open_loop_vd_input.disabled = True
-        open_loop_vq_input.disabled = True
     elif mode == "Torque":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeTorque)
         torque_setpoint = mc.getTorqueSetpoint()
         torque_setpoint_input.value = str(torque_setpoint)
-        speed_Kp_input.disabled = False
-        speed_Ki_input.disabled = False
-        torque_Kp_input.disabled = False
-        torque_Ki_input.disabled = False
-        flux_Kp_input.disabled = False
-        flux_Ki_input.disabled = False
-        speed_setpoint_input.disabled = True
-        torque_setpoint_input.disabled = False
-        open_loop_vd_input.disabled = True
-        open_loop_vq_input.disabled = True
     elif mode == "Open Loop":
         mc.setOperationMode(mcontrol.MotorOpMode.kModeOpenLoop)
-        speed_Kp_input.disabled = True
-        speed_Ki_input.disabled = True
-        torque_Kp_input.disabled = True
-        torque_Ki_input.disabled = True
-        flux_Kp_input.disabled = True
-        flux_Ki_input.disabled = True
-        speed_setpoint_input.disabled = True
-        torque_setpoint_input.disabled = True
-        open_loop_vd_input.disabled = False
-        open_loop_vq_input.disabled = False
 
 current_mode = mc.getOperationMode()
 if current_mode == mcontrol.MotorOpMode.kModeSpeed:
@@ -402,130 +407,140 @@ mode_dropdown_title = Paragraph(text="Mode:", width=40, align="center")
 mode_dropdown = Select(
     value=current_mode_value,
     options=["Off", "Speed", "Torque", "Open Loop"],
-    width=150,
+    width=120,
 )
 mode_dropdown.on_change('value', change_mode)
 
 # Speed setpoint
 def update_speed_setpoint(attr, old, new):
     global speed_setpoint
-    if abs(float(new)) >= speed_setpoint_min and abs(float(new)) <= speed_setpoint_max:
-        speed_setpoint = float(new)
+    if new != "" and is_numeric(new) and abs(float(new)) >= speed_setpoint_min and abs(float(new)) <= speed_setpoint_max:
+        speed_setpoint = round(float(new), 5)
         mc.setSpeed(speed_setpoint)
         error_message.text = ""
+        speed_setpoint_input.value = str(speed_setpoint)
     else:
         speed_setpoint_input.value = str(speed_setpoint)
         error_message.text = "Error: Invalid input. Speed setpoint must be between " + str(speed_setpoint_min) + " and " + str(speed_setpoint_max) + " or -" + str(speed_setpoint_min) + " and -" + str(speed_setpoint_max) + "."
 
 speed_setpoint_title = Paragraph(text="Speed Setpoint:", width=110, align="center")
-speed_setpoint_input = TextInput(value=str(speed_setpoint), width=180)
+speed_setpoint_input = TextInput(value=str(speed_setpoint), width=80)
 speed_setpoint_input.on_change('value', update_speed_setpoint)
 
 # Torque setpoint
 def update_torque_setpoint(attr, old, new):
     global torque_setpoint
-    if float(new) >= torque_setpoint_min and float(new) <= torque_setpoint_max:
-        torque_setpoint = float(new)
+    if new != "" and is_numeric(new) and float(new) >= torque_setpoint_min and float(new) <= torque_setpoint_max:
+        torque_setpoint = round(float(new), 5)
         mc.setTorque(torque_setpoint)
         error_message.text = ""
+        torque_setpoint_input.value = str(torque_setpoint)
     else:
         torque_setpoint_input.value = str(torque_setpoint)
         error_message.text = "Error: Invalid input. Torque setpoint must be between " + str(torque_setpoint_min) + " and " + str(torque_setpoint_max) + "."
 
 torque_setpoint_title = Paragraph(text="Torque Setpoint:", width=110, align="center")
-torque_setpoint_input = TextInput(value=str(torque_setpoint), width=180)
+torque_setpoint_input = TextInput(value=str(torque_setpoint), width=80)
 torque_setpoint_input.on_change('value', update_torque_setpoint)
 
 # Open loop - Vd
 def update_open_loop_vd(attr, old, new):
     global open_loop_vd
-    if float(new) >= open_loop_vd_min and float(new) <= open_loop_vd_max:
-        open_loop_vd = float(new)
+    if new != "" and is_numeric(new) and float(new) >= open_loop_vd_min and float(new) <= open_loop_vd_max:
+        open_loop_vd = round(float(new), 5)
         mc.setVfParamVd(open_loop_vd)
         error_message.text = ""
+        open_loop_vd_input.value = str(open_loop_vd)
     else:
         open_loop_vd_input.value = str(open_loop_vd)
         error_message.text = "Error: Invalid input. Open Loop - Vd must be between " + str(open_loop_vd_min) + " and " + str(open_loop_vd_max) + "."
 
 open_loop_vd_title = Paragraph(text="Open Loop - Vd:", width=110, align="center")
-open_loop_vd_input = TextInput(value=str(open_loop_vd), width=180)
+open_loop_vd_input = TextInput(value=str(open_loop_vd), width=80)
 open_loop_vd_input.on_change('value', update_open_loop_vd)
 
 # Open loop - Vq
 def update_open_loop_vq(attr, old, new):
     global open_loop_vq
-    if float(new) >= open_loop_vq_min and float(new) <= open_loop_vq_max:
-        open_loop_vq = float(new)
+    if new != "" and is_numeric(new) and float(new) >= open_loop_vq_min and float(new) <= open_loop_vq_max:
+        open_loop_vq = round(float(new), 5)
         mc.setVfParamVq(open_loop_vq)
         error_message.text = ""
+        open_loop_vq_input.value = str(open_loop_vq)
     else:
         open_loop_vq_input.value = str(open_loop_vq)
         error_message.text = "Error: Invalid input. Open Loop - Vq must be between " + str(open_loop_vq_min) + " and " + str(open_loop_vq_max) + "."
 
 open_loop_vq_title = Paragraph(text="Open Loop - Vq:", width=110, align="center")
-open_loop_vq_input = TextInput(value=str(open_loop_vq), width=180)
+open_loop_vq_input = TextInput(value=str(open_loop_vq), width=80)
 open_loop_vq_input.on_change('value', update_open_loop_vq)
 
 # Gain parameters
 def update_speed_Kp(attr, old, new):
     global speed_gain
-    speed_gain.kp = float(new)
-    mc.setGain(mcontrol.GainType.kSpeed, speed_gain)
+    if new != "" and is_numeric(new):
+        speed_gain.kp = round(float(new), 5)
+        mc.setGain(mcontrol.GainType.kSpeed, speed_gain)
+    speed_Kp_input.value = str(round(speed_gain.kp, 5))
 
 speed_Kp_title = Paragraph(text="Speed Kp:", width=70, align="center")
-speed_Kp_input = TextInput(value=str(speed_gain.kp), width=180)
+speed_Kp_input = TextInput(value=str(round(speed_gain.kp, 5)), width=80)
 speed_Kp_input.on_change('value', update_speed_Kp)
-speed_Kp_input.disabled = True
 
 def update_speed_Ki(attr, old, new):
     global speed_gain
-    speed_gain.ki = float(new)
-    mc.setGain(mcontrol.GainType.kSpeed, speed_gain)
+    if new != "" and is_numeric(new):
+        speed_gain.ki = round(float(new), 5)
+        mc.setGain(mcontrol.GainType.kSpeed, speed_gain)
+    speed_Ki_input.value = str(round(speed_gain.ki, 5))
 
 speed_Ki_title = Paragraph(text="Speed Ki:", width=70, align="center")
-speed_Ki_input = TextInput(value=str(speed_gain.ki), width=180)
+speed_Ki_input = TextInput(value=str(round(speed_gain.ki, 5)), width=80)
 speed_Ki_input.on_change('value', update_speed_Ki)
-speed_Ki_input.disabled = True
 
 def update_torque_Kp(attr, old, new):
     global torque_gain
-    torque_gain.kp = float(new)
-    mc.setGain(mcontrol.GainType.kCurrent, torque_gain)
+    if new != "" and is_numeric(new):
+        torque_gain.kp = round(float(new), 5)
+        mc.setGain(mcontrol.GainType.kCurrent, torque_gain)
+    torque_Kp_input.value = str(round(torque_gain.kp, 5))
 
 torque_Kp_title = Paragraph(text="Torque Kp:", width=70, align="center")
-torque_Kp_input = TextInput(value=str(torque_gain.kp), width=180)
+torque_Kp_input = TextInput(value=str(round(torque_gain.kp, 5)), width=80)
 torque_Kp_input.on_change('value', update_torque_Kp)
-torque_Kp_input.disabled = True
 
 def update_torque_Ki(attr, old, new):
     global torque_gain
-    torque_gain.ki = float(new)
-    mc.setGain(mcontrol.GainType.kCurrent, torque_gain)
+    if new != "" and is_numeric(new):
+        torque_gain.ki = round(float(new), 5)
+        mc.setGain(mcontrol.GainType.kCurrent, torque_gain)
+    torque_Ki_input.value = str(round(torque_gain.ki, 5))
 
 torque_Ki_title = Paragraph(text="Torque Ki:", width=70, align="center")
-torque_Ki_input = TextInput(value=str(torque_gain.ki), width=180)
+torque_Ki_input = TextInput(value=str(round(torque_gain.ki, 5)), width=80)
 torque_Ki_input.on_change('value', update_torque_Ki)
-torque_Ki_input.disabled = True
 
 def update_flux_Kp(attr, old, new):
     global flux_gain
-    flux_gain.kp = float(new)
-    mc.setGain(mcontrol.GainType.kFlux, flux_gain)
+    if new != "" and is_numeric(new):
+        flux_gain.kp = round(float(new), 5)
+        mc.setGain(mcontrol.GainType.kFlux, flux_gain)
+    flux_Kp_input.value = str(round(flux_gain.kp, 5))
 
 flux_Kp_title = Paragraph(text="Flux Kp:", width=70, align="center")
-flux_Kp_input = TextInput(value=str(flux_gain.kp), width=180)
+flux_Kp_input = TextInput(value=str(round(flux_gain.kp, 5)), width=80)
 flux_Kp_input.on_change('value', update_flux_Kp)
-flux_Kp_input.disabled = True
 
 def update_flux_Ki(attr, old, new):
     global flux_gain
-    flux_gain.ki = float(new)
-    mc.setGain(mcontrol.GainType.kFlux, flux_gain)
+    if new != "" and is_numeric(new):
+        flux_gain.ki = round(float(new), 5)
+        mc.setGain(mcontrol.GainType.kFlux, flux_gain)
+    flux_Ki_input.value = str(round(flux_gain.ki, 5))
 
 flux_Ki_title = Paragraph(text="Flux Ki:", width=70, align="center")
-flux_Ki_input = TextInput(value=str(flux_gain.ki), width=180)
+flux_Ki_input = TextInput(value=str(round(flux_gain.ki, 5)), width=80)
 flux_Ki_input.on_change('value', update_flux_Ki)
-flux_Ki_input.disabled = True
 
 # Clear Faults button
 def clear_faults():
@@ -536,61 +551,46 @@ def clear_faults():
 clear_faults_button = Button(label="Clear Faults", width=100, button_type='primary')
 clear_faults_button.on_click(clear_faults)
 
-# Error message
+# Error message (plotting)
+plot_error_message = Paragraph(text="", style={'color': 'red'}, width=250, align="center")
+
+# Error message (setpoints)
 error_message = Paragraph(text="", style={'color': 'red'}, width=290, align="center")
+
+# List of buffered data that will be requested
+buffer_list = [
+    mcontrol.MotorParam.kCurrentPhaseA,
+    mcontrol.MotorParam.kCurrentPhaseB,
+    mcontrol.MotorParam.kCurrentPhaseC,
+    mcontrol.MotorParam.kVoltagePhaseA,
+    mcontrol.MotorParam.kVoltagePhaseB,
+    mcontrol.MotorParam.kVoltagePhaseC,
+    mcontrol.MotorParam.kRpm,
+    mcontrol.MotorParam.kPosition,
+    mcontrol.MotorParam.kId,
+    mcontrol.MotorParam.kIq,
+    mcontrol.MotorParam.kIalpha,
+    mcontrol.MotorParam.kIbeta
+]
 
 @linear()
 def update(step):
-    electrical_data[0] = mc.getCurrent(mcontrol.ElectricalData.kPhaseA)
-    electrical_data[1] = mc.getCurrent(mcontrol.ElectricalData.kPhaseB)
-    electrical_data[2] = mc.getCurrent(mcontrol.ElectricalData.kPhaseC)
-    electrical_data[3] = mc.getVoltage(mcontrol.ElectricalData.kPhaseA)
-    electrical_data[4] = mc.getVoltage(mcontrol.ElectricalData.kPhaseB)
-    electrical_data[5] = mc.getVoltage(mcontrol.ElectricalData.kPhaseC)
+    buffer_data = mc.getMotorParams(sample_size, buffer_list)
 
-    mechanical_data[0] = mc.getSpeed()
-    mechanical_data[1] = mc.getPosition()
-
-    live_analysis_x_data = get_live_analysis_data(live_analysis_x_selection)
-    live_analysis_y_data = get_live_analysis_data(live_analysis_y_selection)
-
-    global time
-    global sample_size_actual
-    global plot_update_interval
-    global num_points_per_update
-
-    if sample_size_actual >= sample_size:
-        x.popleft()
-        live_analysis_x_data_list.popleft()
-        live_analysis_y_data_list.popleft()
-    x.append(time)
-    live_analysis_x_data_list.append(live_analysis_x_data)
-    live_analysis_y_data_list.append(live_analysis_y_data)
-    time = time + interval
-
-    if plot_update_interval == 0:
-        live_analysis_ds.trigger('data', live_analysis_ds, live_analysis_ds)
+    for i in range(sample_size):
+        live_analysis_x_data_list[i] = buffer_data[live_analysis_x_buffer_mapping][i]
+        live_analysis_y_data_list[i] = buffer_data[live_analysis_y_buffer_mapping][i]
+    live_analysis_ds.trigger('data', live_analysis_ds, live_analysis_ds)
 
     for i in range(len(electrical_data_list)):
-        if sample_size_actual >= sample_size:
-            electrical_data_list[i].popleft()
-        electrical_data_list[i].append(electrical_data[i])
-        if plot_update_interval == 0:
-            electrical_ds_list[i].trigger('data', x, electrical_data_list[i])
+        for j in range(sample_size):
+            electrical_data_list[i][j] = buffer_data[buffer_list[i]][j]
+        electrical_ds_list[i].trigger('data', x, electrical_data_list[i])
 
     for i in range(len(mechanical_data_list)):
-        if sample_size_actual >= sample_size:
-            mechanical_data_list[i].popleft()
-        mechanical_data_list[i].append(mechanical_data[i])
-        if plot_update_interval == 0:
-            mechanical_ds_list[i].trigger('data', x, mechanical_data_list[i])
-
-    plot_update_interval += 1
-    if plot_update_interval >= num_points_per_update:
-            plot_update_interval = 0
-
-    if sample_size_actual < sample_size:
-        sample_size_actual = sample_size_actual + 1
+        for j in range(sample_size):
+            mechanical_data_list[i][j] = buffer_data[buffer_list[i+6]][j]
+        mechanical_ds_list[i].trigger('data', x, mechanical_data_list[i])
 
 # margin:  Margin-Top, Margin-Right, Margin-Bottom and Margin-Left
 mode_interface = row(mode_dropdown_title, mode_dropdown, margin=(30, 30, 30, 30))
@@ -598,6 +598,7 @@ mode_interface = row(mode_dropdown_title, mode_dropdown, margin=(30, 30, 30, 30)
 plot_controls_interface = column(
     row(sample_size_title, sample_size_input),
     row(interval_title, interval_input),
+    plot_error_message,
     margin=(30, 30, 30, 30)
 )
 

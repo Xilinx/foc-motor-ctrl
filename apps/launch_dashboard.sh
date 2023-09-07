@@ -39,10 +39,13 @@ else
 	exit 1
 fi
 
+# Suppress high-speed mode warning
+SUPPRESS_ERR="WARNING: High-speed mode not enabled"
+
 # Run the Bokeh server
 $SUDO ${ENV} \
         bokeh serve --show --allow-websocket-origin=${IP_ADDR}:5006 \
-        ${DASHBOARD_PATH} &
+        ${DASHBOARD_PATH} 2> >(grep -v "$SUPPRESS_ERR" >&2) &
 
 # Print the information for the host machine.
 echo "To the access the Application, enter \"$IP_ADDR:5006\" in the host machine's browser."
