@@ -150,21 +150,6 @@ The image below shows a screenshot of the dashboard.
 
 ![Motor-Control-Dashboard](./media/Motor_Control_Dashboard.jpg)
 
-## Known issues
-
-* Application does not allow users to set negative speed set point.
-* QEI reported speed is jumping around. The QEI presently reports an unfiltered
-  value for speed and needs a low-pass filter to eliminate non-significant bit
-  count changes from the raw encoder interface.
-* Application deb package does not automatically install dependencies
-* Handle Q-scaling in FOC driver for read operations (16-bit precision)
-* Motor is not spinning with low rpms below ~250 (depends on motor)
-* Rotor lock over-current protection not functional. If rotor is mechanically
-  locked for a sustained period of time, it can cause damage to the motor due
-  to lack of over-current protection. Therefore do not intentionally lock rotor
-  mechanically.
-* Incorrect RPM is reported with negative torque set point in Torque mode.
-
 ## Next Steps
 
 * Go back to the [KD240 FOC Motor Control application start page](../foc_motor_control_landing)

@@ -54,6 +54,14 @@ Repository
 
   Software Repository <https://github.com/Xilinx/foc-motor-ctrl>
 
+*******************************
+Other
+*******************************
+
+.. toctree::
+  :maxdepth: 1
+
+  Known Issues <docs/known_issues.md>
 
 ..
    License
