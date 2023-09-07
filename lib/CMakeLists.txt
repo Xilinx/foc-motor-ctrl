@@ -35,6 +35,8 @@ target_sources(${FMC_LIB_NAME} PRIVATE
     src/event_manager.cpp
     src/adchub.cpp
     src/mc_driver.cpp
+    src/avgpower.cpp
+    src/softwarefaults.cpp
     src/sensors/sensor.cpp
     src/interface/iio_drv.cpp
     src/interface/uio_drv.cpp
