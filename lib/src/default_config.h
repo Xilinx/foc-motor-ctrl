@@ -56,7 +56,7 @@
 #define VOL_PHASE_THRES_LOW		21			// DCLink voltage lower threshold (V)
 #define VOL_PHASE_THRES_HIGH		28			// DCLink voltage upper threshold (V)
 #define IMBALANCE_THRES_HIGH		0.5			// Phase Imbalance upper threshold (Amp)
-
+#define MAX_RATED_MOTOR_POWER		15.0		// Maximum allowed motor power
 //Filter Tap values
 #define ADCHUB_FILTERTAP		32
 #define DCLINK_FILTERTAP		128
