@@ -265,7 +265,11 @@ for i in range(len(fault_list)):
     if i==3 or i==6: # Show PhaseImbalance and DCLink_UV as yellow (warning)
         fault_colors[i] = "yellow" if mc.getFaultStatus(fault_list[i]) else "green"
     else:
-        fault_colors[i] = "red" if mc.getFaultStatus(fault_list[i]) else "green"
+        if mc.getFaultStatus(fault_list[i]):
+            fault_colors[i] = "red"
+            mode_dropdown.disabled = True
+        else:
+            fault_colors[i] = "green"
 
 fault_status_plot = figure(plot_width=400, plot_height=200, title='Fault Status')
 fault_status_plot.grid.visible = False
@@ -295,7 +299,11 @@ def update_fault_status():
         if i==3 or i==6: # Show PhaseImbalance and DCLink_UV as yellow (warning)
             fault_colors[i] = "yellow" if mc.getFaultStatus(fault_list[i]) else "green"
         else:
-            fault_colors[i] = "red" if mc.getFaultStatus(fault_list[i]) else "green"
+            if mc.getFaultStatus(fault_list[i]):
+                fault_colors[i] = "red"
+                mode_dropdown.disabled = True
+            else:
+                fault_colors[i] = "green"
     fault_status_ds.trigger('data', fault_colors, fault_colors)
 
 fault_status_callback_interval = 1000 #milliseconds
@@ -546,6 +554,7 @@ flux_Ki_input.on_change('value', update_flux_Ki)
 def clear_faults():
     mc.clearFaults()
     mode_dropdown.value = "Off"
+    mode_dropdown.disabled = False
     update_fault_status()
 
 clear_faults_button = Button(label="Clear Faults", width=100, button_type='primary')
