@@ -12,6 +12,7 @@
 #include "adchub.h"
 #include "pwm.h"
 #include "svpwm.h"
+#include "softwarefaults.h"
 #include "default_config.h"
 #include "mc_driver.h"
 #include "event_manager.h"
@@ -83,8 +84,9 @@ private:
 	Pwm mPwm;
 	Svpwm mSvPwm;
 	Adchub mAdcHub;
-	Sensor *mpSensor;
 	MC_Uio mMcUio;
+	Sensor *mpSensor;
+	SoftwareFaults mSfaults;
 	EventManager mEvents;
 
 	/*
@@ -152,7 +154,9 @@ MotorControl *MotorControl::getMotorControlInstance(int sessionId,
 MotorControlImpl::MotorControlImpl(int sessionId, string configPath):
 	mSessionId(sessionId), mConfigPath(configPath),
 	mCurrentMode(MotorOpMode::kModeMax),
-	mEvents({&mAdcHub, &mMcUio})
+	mSfaults(&mAdcHub, &mMcUio),
+	mEvents({&mAdcHub, &mMcUio, &mSfaults})
+
 {
 	parseConfig();
 
@@ -610,6 +614,8 @@ int MotorControlImpl::initMotor(bool full_init)
 		mEvents.setLowerThreshold(FaultId::kDCLink_UV, VOL_PHASE_THRES_LOW);
 
 		mEvents.setUpperThreshold(FaultId::kPhaseImbalance, IMBALANCE_THRES_HIGH);
+		mEvents.setUpperThreshold(FaultId::kAvgPowerFault, MAX_RATED_MOTOR_POWER);
+
 
 		/*
 		 * Reset, clear and activate all the events
