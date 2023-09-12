@@ -25,6 +25,9 @@ any SW based ramp control. Users will see fault protections triggered if immedia
 trying to set open-loop mode control with a Vq voltage > ~10V. If using open-loop
 user is responsible for incrementally stepping up the Vq command to their desired 
 voltage setting.  Typical use-cases of open-loop mode have Vd set to 0V.
+* DC link current reading is limited to reading analog values > ~0.5A due to a 
+limitation in the KD240 HW. Users should not assume DC link current feedback is 
+accurate until it is > ~0.5A.
 
 <!---
 
