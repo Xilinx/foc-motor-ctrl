@@ -48,9 +48,9 @@ speed_setpoint_min = 250
 speed_setpoint_max = 10000
 torque_setpoint_min = -2.5
 torque_setpoint_max = 2.5
-open_loop_vd_min = 0
+open_loop_vd_min = -24
 open_loop_vd_max = 24
-open_loop_vq_min = 0
+open_loop_vq_min = -24
 open_loop_vq_max = 24
 
 speed_setpoint = round(mc.getSpeedSetpoint(), 5)
