@@ -10,20 +10,24 @@
  </tr>
 </table>
 
-# Known issues
+# Known issues & limitations
 
-* Application does not allow users to set negative speed set point.
-* QEI reported speed is jumping around. The QEI presently reports an unfiltered
-  value for speed and needs a low-pass filter to eliminate non-significant bit
-  count changes from the raw encoder interface.
-* Application deb package does not automatically install dependencies
-* Handle Q-scaling in FOC driver for read operations (16-bit precision)
-* Motor is not spinning with low rpms below ~250 (depends on motor)
-* Rotor lock over-current protection not functional. If rotor is mechanically
-  locked for a sustained period of time, it can cause damage to the motor due
-  to lack of over-current protection. Therefore do not intentionally lock rotor
-  mechanically.
-* Incorrect RPM is reported with negative torque set point in Torque mode.
+* QEI reported speed is showing glitches. QEI library computation of the speed 
+has a known issue and will be addressed with a QEI library update. 
+* Motor lower speed mode control capability is apprxomately 250 rpms. 
+* Default motor tuning values are provided for the KD240 Motor Accessory Kit 
+based the Anaheim motor with the plastic disk visual load. This load disk 
+primarily acts as an inertial load and thus if users are connecting other loads
+to their motor they should plan on conducting their own tuning process and 
+defining custom tuning defaults based on their load testing.
+* Open-loop control mode is intended as a test mode and thus does not implement
+any SW based ramp control. Users will see fault protections triggered if immediately
+trying to set open-loop mode control with a Vq voltage > ~10V. If using open-loop
+user is responsible for incrementally stepping up the Vq command to their desired 
+voltage setting.  Typical use-cases of open-loop mode have Vd set to 0V.
+* DC link current reading is limited to reading analog values > ~0.5A due to a 
+limitation in the KD240 HW. Users should not assume DC link current feedback is 
+accurate until it is > ~0.5A.
 
 <!---
 
