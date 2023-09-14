@@ -33,7 +33,7 @@ This guide is targeted for Ubuntu® 22.04 and AMD 2023.1 toolchain.
 
 * USB-A to micro-B Cable (Included with KD240 Drives Starter Kit)
 
-* 16GB MicroSD Card (Included with KD240 Drives Starter Kit)
+* MicroSD Card (32GB card is included with KD240 Drives Starter Kit)
 
 * CAT6 Ethernet Cable
 
@@ -59,11 +59,11 @@ This guide is targeted for Ubuntu® 22.04 and AMD 2023.1 toolchain.
 
 ![KD240-Setup](./media/Connect_24V_to_J29.jpg)
 
-* Connect encoder header pins to J42 QEI connector
+* Connect encoder header pins to J42 QEI connector. Ensure J44 is in the "SE" selection.
 
 ![KD240-Setup](./media/Connect_EncoderPin_to_J42.jpg)
 
-* Connect motor's AC power jack to J32 3-phase inverter connector
+* Connect motor input to J32 3-phase inverter connector
 
 ![KD240-Setup](./media/Connect_ACpower_to_J32.jpg)
 
@@ -76,7 +76,7 @@ This guide is targeted for Ubuntu® 22.04 and AMD 2023.1 toolchain.
    |  Linux Kernel |  5.15.0-9002           |
    | Boot Firmware | k24-smk-20230912123632 |
    |  Linux Image  | kd03-1-20230911-132    |
-   |   Board       |   KD240 RevB           |
+   |   Board       |   KD240                |
 
    Please refer [Kria Wiki](https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/1641152513/Kria+K26+SOM#Boot-Firmware-Updates)
    to obtain latest linux image and boot firmware
@@ -152,21 +152,22 @@ This guide is targeted for Ubuntu® 22.04 and AMD 2023.1 toolchain.
   closed, opened or refreshed.
 
 * The system is set to OFF mode/state on starting the dashboard,
-  observe LED DS10 is low
-* For help on setting up static IP, see [Setting up a private network](
+  observe the blue LED DS10 is off
+* If the unit is plugged into a network with DHCP an IP will be assigned automatically. If not on a network then  
+  configure a static IP. For help on setting up static IP, see [Setting up a private network](
   https://github.com/Xilinx/vck190-base-trd/blob/2022.1/docs/source/run/run-dashboard.rst#setting-up-a-private-network)
 
-Note: User knowledge and experience is necessary to modulate voltages onto the
-motor windings Vd, Vq. Higher values can cause the BLWR111D-24V-10000 motor to
-spin at rated RPM (10000). Invalid voltages in the motor windings can cause
-system faults. Kindly exercise necessary caution when spinning the motor
-at higher speeds due to rotating or moving parts.
+Note: The open-loop mode of motor operation is a test mode inteneded for user's with 
+motor control knowledge and experience. Incorrect configurations of values of Vd, Vq 
+can cause the motor to spin at speeds higher than its rating and potentially cause 
+excessive motor heating. Use caution when using the open-loop mode.
+Note: Please use caution spinning the motor at higher speeds due to rotating or moving parts.
 
 ## Dashboard
 
 ### Dashboard Features
 
-* The Mode dropdown is used to select the system mode.
+* The Mode dropdown is used to select the control system mode of operation.
 * The Sample Size text box is used indicate how many samples are collected and
   plotted on the graphs for each type of data. The samples are collected at
   100 microsecond intervals. The maximum number of samples is limited to 3000
@@ -176,22 +177,24 @@ at higher speeds due to rotating or moving parts.
   plots will refresh. Note that a minimum refresh interval will be enforced
   based on the current sample size (a larger sample size requires a larger
   refresh interval).
-* The gain text boxes are used to adjust the proportional and integral gains.
+* The gain text boxes are used to adjust the proportional and integral gains of 
+  the corresponding control loop.
 * The Speed Setpoint text box is used to set the speed setpoint when running
   the motor in speed mode. The valid range of speed setpoints is -10000 to
   10000 rpm.
 * The Torque Setpoint text box is used to set the torque setpoint when running
   the motor in torque mode. The valid range of torque setpoints is -2.5 to 2.5
   Newton meters.
-* The Open Loop - Vd text box is used to set the voltage Vd. The valid range
-  for Vd is -24 to 24 volts.
-* The Open Loop - Vq text box is used to set the voltage Vq. The valid range
-  for Vq is -24 to 24 volts.
+* The Open Loop - Vd text box is used to set the  direct voltage (Vd). 
+  The valid range for Vd is -24 to 24 volts. Note: Normally this should be 
+  set to ~0V.
+* The Open Loop - Vq text box is used to set the quadrature voltage (Vq). 
+  The valid range for Vq is -24 to 24 volts.
 * The Fault Status indicators show if any faults have occured. When a critical
-  fault occurs, the corresponding indicator will turn red. For a non-critical
-  fault, the corresponding indicator will turn yellow.
+  fault occurs, the corresponding indicator will turn red. For a warning level
+  faults, the corresponding indicator will turn yellow.
 * The Clear Faults button is used to clear all faults and put the system into
-  off mode.
+  Off mode.
 * The Electrical Data plot shows the currents and voltages for Phase A, B, and
   C. The voltage lines are hidden by default. The visibility of each current
   and voltage line can be toggled by clicking on the legend labels. The current
