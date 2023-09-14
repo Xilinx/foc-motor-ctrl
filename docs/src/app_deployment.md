@@ -75,8 +75,6 @@ This guide is targeted for Ubuntu® 22.04 and AMD 2023.1 toolchain.
    | :-----------: | :-------------------:  |
    |  Linux Kernel |  5.15.0-9002           |
    | Boot Firmware | k24-smk-20230912123632 |
-   |  Linux Image  | kd03-1-20230911-132    |
-   |   Board       |   KD240                |
 
    Please refer [Kria Wiki](https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/1641152513/Kria+K26+SOM#Boot-Firmware-Updates)
    to obtain latest linux image and boot firmware
@@ -117,8 +115,15 @@ This guide is targeted for Ubuntu® 22.04 and AMD 2023.1 toolchain.
 
   * Show the list and status of available application firmware
 
+    After installing the firmware, execute xmutil listapps to verify that it is
+    captured under the listapps function, and to have dfx-mgrd re-scan and
+    register all accelerators in the firmware directory tree.
+
     ```bash
-    sudo xmutil listapps
+    ubuntu@kria:~$ sudo xmutil listapps
+           Accelerator          Accel_type                 Base           Base_type      #slots(PL+AIE)    Active_slot
+
+      kd240-motor-ctrl-qei       XRT_FLAT         kd240-motor-ctrl-qei     XRT_FLAT            (0+0)           -1
     ```
 
   * Load the desired application firmware
@@ -153,13 +158,13 @@ This guide is targeted for Ubuntu® 22.04 and AMD 2023.1 toolchain.
 
 * The system is set to OFF mode/state on starting the dashboard,
   observe the blue LED DS10 is off
-* If the unit is plugged into a network with DHCP an IP will be assigned automatically. If not on a network then  
+* If the unit is plugged into a network with DHCP an IP will be assigned automatically. If not on a network then
   configure a static IP. For help on setting up static IP, see [Setting up a private network](
   https://github.com/Xilinx/vck190-base-trd/blob/2022.1/docs/source/run/run-dashboard.rst#setting-up-a-private-network)
 
-Note: The open-loop mode of motor operation is a test mode inteneded for user's with 
-motor control knowledge and experience. Incorrect configurations of values of Vd, Vq 
-can cause the motor to spin at speeds higher than its rating and potentially cause 
+Note: The open-loop mode of motor operation is a test mode intended for users with
+motor control knowledge and experience. Incorrect configurations of values of Vd, Vq
+can cause the motor to spin at speeds higher than its rating and potentially cause
 excessive motor heating. Use caution when using the open-loop mode.
 Note: Please use caution spinning the motor at higher speeds due to rotating or moving parts.
 
@@ -177,18 +182,18 @@ Note: Please use caution spinning the motor at higher speeds due to rotating or 
   plots will refresh. Note that a minimum refresh interval will be enforced
   based on the current sample size (a larger sample size requires a larger
   refresh interval).
-* The gain text boxes are used to adjust the proportional and integral gains of 
+* The gain text boxes are used to adjust the proportional and integral gains of
   the corresponding control loop.
 * The Speed Setpoint text box is used to set the speed setpoint when running
   the motor in speed mode. The valid range of speed setpoints is -10000 to
   10000 rpm.
 * The Torque Setpoint text box is used to set the torque setpoint when running
   the motor in torque mode. The valid range of torque setpoints is -2.5 to 2.5
-  Newton meters.
-* The Open Loop - Vd text box is used to set the  direct voltage (Vd). 
-  The valid range for Vd is -24 to 24 volts. Note: Normally this should be 
+  amps.
+* The Open Loop - Vd text box is used to set the  direct voltage (Vd).
+  The valid range for Vd is -24 to 24 volts. Note: Normally this should be
   set to ~0V.
-* The Open Loop - Vq text box is used to set the quadrature voltage (Vq). 
+* The Open Loop - Vq text box is used to set the quadrature voltage (Vq).
   The valid range for Vq is -24 to 24 volts.
 * The Fault Status indicators show if any faults have occured. When a critical
   fault occurs, the corresponding indicator will turn red. For a warning level
@@ -214,22 +219,33 @@ are near zero.
 ![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Off.png)
 
 To run the application in Speed mode, select Speed from the Mode dropdown and
-use the Speed Setpoint text box to enter a speed setpoint.
-The image below shows the motor running in speed mode with a constant load.
+use the Speed Setpoint text box to enter a speed setpoint. The image below
+shows the motor running in speed mode with a speed setpoint of 2000 rpm and the
+load disk that is included in the Motor Accessory Kit.
 
 ![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Speed.png)
 
 To run the application in Torque mode, select Torque from the Mode dropdown and
-use the Torque Setpoint text box to enter a torque setpoint.
-The image below shows the motor running in torque mode with a constant load.
+use the Torque Setpoint text box to enter a torque setpoint. The image below
+shows the motor running in torque mode with a torque setpoint of 1 amp and the
+load disk that is included in the Motor Accessory Kit.
 
 ![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Torque.png)
 
 To run the application in Open Loop mode, select Open Loop from the Mode
-dropdown and use the Vd/Vq text boxes to set Vd/Vq.
-The image below shows the motor running in open loop mode with a constant load.
+dropdown and use the Vd/Vq text boxes to set Vd/Vq. The image below shows the
+motor running in open loop mode with Vd set to 0, Vq set to 4 volts, and the
+load disk that is included in the Motor Accessory Kit.
 
 ![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_OpenLoop.png)
+
+The images below show what the dashboard looks like when a larger load is
+applied to the motor. As the load on the motor increases, the currents will
+increase and the I_alpha/I_beta circle will expand.
+
+![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Speed_Loaded.png)
+![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Torque_Loaded.png)
+![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_OpenLoop_Loaded.png)
 
 ## Next Steps
 
