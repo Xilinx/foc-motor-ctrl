@@ -12,22 +12,25 @@
 
 # Known issues & limitations
 
-* QEI reported speed is showing glitches. QEI library computation of the speed 
-has a known issue and will be addressed with a QEI library update. 
-* Motor lower speed mode control capability is apprxomately 250 rpms. 
-* Default motor tuning values are provided for the KD240 Motor Accessory Kit 
-based the Anaheim motor with the plastic disk visual load. This load disk 
+* QEI reported speed is showing glitches. QEI library computation of the speed
+has a known issue and will be addressed with a QEI library update.
+* Motor lower speed mode control capability is approximately 250 rpms.
+* Default motor tuning values are provided for the KD240 Motor Accessory Kit
+based the Anaheim motor with the plastic disk visual load. This load disk
 primarily acts as an inertial load and thus if users are connecting other loads
-to their motor they should plan on conducting their own tuning process and 
+to their motor they should plan on conducting their own tuning process and
 defining custom tuning defaults based on their load testing.
 * Open-loop control mode is intended as a test mode and thus does not implement
 any SW based ramp control. Users will see fault protections triggered if immediately
 trying to set open-loop mode control with a Vq voltage > ~10V. If using open-loop
-user is responsible for incrementally stepping up the Vq command to their desired 
+user is responsible for incrementally stepping up the Vq command to their desired
 voltage setting.  Typical use-cases of open-loop mode have Vd set to 0V.
-* DC link current reading is limited to reading analog values > ~0.5A due to a 
-limitation in the KD240 HW. Users should not assume DC link current feedback is 
+* DC link current reading is limited to reading analog values > ~0.5A due to a
+limitation in the KD240 HW. Users should not assume DC link current feedback is
 accurate until it is > ~0.5A.
+* If the bokeh server is stopped while the motor is running, the motor will not
+stop. The motor should be stopped through the GUI by switching to Off mode
+before stopping the bokeh server.
 
 <!---
 
