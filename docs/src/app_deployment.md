@@ -14,14 +14,18 @@
 
 ## Introduction
 
-This document shows how to set up the board and run the Motor Control
-Application.
+This document shows how to set up the board and run the motor control
+application.
 
-## Hardware Requirements
+This guide is targeted for Ubuntu® 22.04 and AMD 2023.1 toolchain.
 
-* KD240 Drives Starter Kit
+## Pre-requisite
 
-* KD240 Motor Accessory Kit
+### Hardware Requirements
+
+* [KD240 Drives Starter Kit](https://www.xilinx.com/products/som/kria/kd240-drives-starter-kit.html)
+
+* [KD240 Motor Accessory Kit](https://www.xilinx.com/products/som/kria/kd240-motor-accessory-pack.html)
 
 * KD240 Power Supply & Adapter (Included with KD240 Drives Starter Kit)
     * 12V AC Adapter for KD240 Starter Kit and 24V AC Adapter for Motor
@@ -29,70 +33,81 @@ Application.
 
 * USB-A to micro-B Cable (Included with KD240 Drives Starter Kit)
 
-* 16GB MicroSD Card (Included with KD240 Drives Starter Kit)
+* MicroSD Card (32GB card is included with KD240 Drives Starter Kit)
 
 * CAT6 Ethernet Cable
 
 * Host Machine with Display
 
-## Hardware Setup
+### Hardware Setup
 
-![KD240-Setup](./media/KD240_setup.jpg)
+![KD240-Setup](./media/KD240.png)
 
-* Connect USB cable to J4
-* Connect Ethernet cable to J24
-* Connect 12V power supply to J12
-* Connect 24V power supply to J39
-* Connect encoder header pins to J42
-* Connect motor's AC power jack to J32
+* Connect USB cable from host machine to J4 UART/JTAG interface on the board
 
-## Initial Setup
+![KD240-Setup](./media/Connect_USB_to_J4.jpg)
 
-* Booting Linux
+* Connect the Ethernet cable from J24 to your local network with DHCP enabled to install Linux packages.
 
-  Refer to the [KD240_linux_boot.pdf](
-  https://www.xilinx.com/member/forms/download/design-license-xef.html?filename=KD240_linux_boot.pdf)
-  document for instructions on how to flash the QSPI boot firmware and the
-  Ubuntu SD card image and for booting to the Linux prompt.
+![KD240-Setup](./media/Connect_Ethernet_to_J24.jpg)
 
-* Upgrade flash-kernel and other packages on the system
+* Connect 12V power supply to J12 DC jack
 
-  ```bash
-  sudo apt update
-  sudo apt upgrade
-  ```
+![KD240-Setup](./media/Connect_12V_to_J12.jpg)
 
-* Download and extract motor-ctrl app tarball
-  [foc-motor-ctrl-app-kd240-ea-hotfix-1.tar.gz](
-  https://www.xilinx.com/member/forms/download/design-license-xef.html?filename=foc-motor-ctrl-app-kd240-ea.tar.gz)
-    * This contains the firmware and application debian packages
-    * Copy the downloaded tarball to the board e.g. using scp over network or
-      through USB drive
-    * Extract the tarball; there will be three sub-folders for the individual
-      application components
+* Connect 24V power supply to J29 DC link connector
+
+![KD240-Setup](./media/Connect_24V_to_J29.jpg)
+
+* Connect encoder header pins to J42 QEI connector. Ensure J44 is in the "SE" selection.
+
+![KD240-Setup](./media/Connect_EncoderPin_to_J42.jpg)
+
+* Connect motor input to J32 3-phase inverter connector
+
+![KD240-Setup](./media/Connect_ACpower_to_J32.jpg)
+
+### Initial Setup
+
+1. Testing was performed with:
+
+   |   Components  |       Version          |
+   | :-----------: | :-------------------:  |
+   |  Linux Kernel |  5.15.0-9002           |
+   | Boot Firmware | k24-smk-20230912123632 |
+
+   Please refer [Kria Wiki](https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/1641152513/Kria+K26+SOM#Boot-Firmware-Updates)
+   to obtain latest linux image and boot firmware
+
+2. Go through [Booting Kria Starter Kit Linux](https://xilinx.github.io/kria-apps-docs/kd240/linux_boot.html)
+   to complete the minimum setup required to boot Linux before continuing with instructions in this page.
+
+3. Get the latest motor control application and firmware package:
+
+   * Download the firmware
+      * Search package feed for packages compatible with KD240
+
+         ```bash
+         ubuntu@kria:~$ sudo apt search xlnx-firmware-kd240
+         Sorting... Done
+         Full Text Search... Done
+         xlnx-firmware-kd240-bist/jammy,now 0.10-0xlnx1 arm64 [installed]
+         FPGA firmware for Xilinx boards - kd240 bist application
+         xlnx-firmware-kd240-motor-ctrl-qei/jammy,now 0.10-0xlnx1 arm64 [installed]
+         FPGA firmware for Xilinx boards - kd240 motor-ctrl-qei application
+         ```
+
+      * Install firmware binaries
+
+         ```bash
+         sudo apt install xlnx-firmware-kd240-motor-ctrl-qei
+         ```
+
+   * Install motor control application
 
       ```bash
-      tar xfv foc-motor-ctrl-app-kd240-ea-hotfix-1.tar.gz
-      ls foc-motor-ctrl-app-kd240-ea-hotfix-1
-         foc-motor-ctrl xlnx-firmware-kd240-motor-ctrl-qei
+      sudo apt install xlnx-app-kd240-foc-motor-ctrl
       ```
-
-* Install the firmware
-
-  ```bash
-  sudo dpkg -i foc-motor-ctrl-app-kd240-ea-hotfix-1/xlnx-firmware-kd240-motor-ctrl-qei/*.deb
-  ```
-
-* Install the application and its dependencies
-
-  ```bash
-  # Install application runtime dependencies
-  sudo apt install libiio-utils libiio0 python3-pybind11 python3-pip
-  # Essentials to run Bokeh application
-  sudo pip install bokeh==2.4.3
-  # Install application
-  sudo dpkg -i foc-motor-ctrl-app-kd240-ea-hotfix-1/foc-motor-ctrl/*.deb
-  ```
 
 ## Run the motor control application:
 
@@ -100,8 +115,15 @@ Application.
 
   * Show the list and status of available application firmware
 
+    After installing the firmware, execute xmutil listapps to verify that it is
+    captured under the listapps function, and to have dfx-mgrd re-scan and
+    register all accelerators in the firmware directory tree.
+
     ```bash
-    sudo xmutil listapps
+    ubuntu@kria:~$ sudo xmutil listapps
+           Accelerator          Accel_type                 Base           Base_type      #slots(PL+AIE)    Active_slot
+
+      kd240-motor-ctrl-qei       XRT_FLAT         kd240-motor-ctrl-qei     XRT_FLAT            (0+0)           -1
     ```
 
   * Load the desired application firmware
@@ -118,37 +140,112 @@ Application.
 
   ```bash
   # Run the application to launch bokeh server for the dashboard
-  export PATH=/opt/xilinx/motor-control/bin:${PATH}
+  export PATH=${PATH}:/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl/bin
   start_motor_dashboard
   # Enter the sudo password if required and note the ip address of the board
   ```
 
+  Sample screenshot of the terminal on launching the motor dashboard.
+
+  ![Terminal](./media/terminal.png)
+
 ## On the host PC:
 
 * Open &lt;ip&gt;:5006 in a web browser
+
+  Note: Once the server is running, it retains its settings no matter how many times the browser is
+  closed, opened or refreshed.
+
 * The system is set to OFF mode/state on starting the dashboard,
-  observe LED DS10 is low
-* The mode can be changed by using the Mode dropdown
-* Speed setpoint range: [ 0  - 10000 ]
-* Torque setpoint range: [ -2.5 - +2.5 ]
-* Open loop ranges: [ Vd ( 0 - 24V) , Vq ( 0 - 24V) ]
-* When transitioning between modes, use the OFF mode/state [ ex speed → OFF →
-  torque → OFF → openloop ]
-* On system fault, LED DS10 is low. To clear system faults transition to OFF
-  mode and click on the Clear Faults button. Now set the correct parameters and
-  transition to new test mode ( speed | openloop | torque )
-* For help on setting up static IP, see [Setting up a private network](
+  observe the blue LED DS10 is off
+* If the unit is plugged into a network with DHCP an IP will be assigned automatically. If not on a network then
+  configure a static IP. For help on setting up static IP, see [Setting up a private network](
   https://github.com/Xilinx/vck190-base-trd/blob/2022.1/docs/source/run/run-dashboard.rst#setting-up-a-private-network)
 
-Note: User knowledge and experience is necessary to modulate voltages onto the
-motor windings Vd, Vq. Higher values can cause the BLWR111D-24V-10000 motor to
-spin at rated RPM (10000). Invalid voltages in the motor windings can cause
-system faults. Kindly exercise necessary caution when spinning the motor
-at higher speeds due to rotating or moving parts.
+Note: The open-loop mode of motor operation is a test mode intended for users with
+motor control knowledge and experience. Incorrect configurations of values of Vd, Vq
+can cause the motor to spin at speeds higher than its rating and potentially cause
+excessive motor heating. Use caution when using the open-loop mode.
+Note: Please use caution spinning the motor at higher speeds due to rotating or moving parts.
 
-The image below shows a screenshot of the dashboard.
+## Dashboard
 
-![Motor-Control-Dashboard](./media/Motor_Control_Dashboard.jpg)
+### Dashboard Features
+
+* The Mode dropdown is used to select the control system mode of operation.
+* The Sample Size text box is used indicate how many samples are collected and
+  plotted on the graphs for each type of data. The samples are collected at
+  100 microsecond intervals. The maximum number of samples is limited to 3000
+  due to dashboard performance limitations. For a large number of samples,
+  there may be a small delay before a dashboard command takes effect.
+* The Refresh Interval text box is used to indicate how often the dashboard
+  plots will refresh. Note that a minimum refresh interval will be enforced
+  based on the current sample size (a larger sample size requires a larger
+  refresh interval).
+* The gain text boxes are used to adjust the proportional and integral gains of
+  the corresponding control loop.
+* The Speed Setpoint text box is used to set the speed setpoint when running
+  the motor in speed mode. The valid range of speed setpoints is -10000 to
+  10000 rpm.
+* The Torque Setpoint text box is used to set the torque setpoint when running
+  the motor in torque mode. The valid range of torque setpoints is -2.5 to 2.5
+  amps.
+* The Open Loop - Vd text box is used to set the  direct voltage (Vd).
+  The valid range for Vd is -24 to 24 volts. Note: Normally this should be
+  set to ~0V.
+* The Open Loop - Vq text box is used to set the quadrature voltage (Vq).
+  The valid range for Vq is -24 to 24 volts.
+* The Fault Status indicators show if any faults have occured. When a critical
+  fault occurs, the corresponding indicator will turn red. For a warning level
+  faults, the corresponding indicator will turn yellow.
+* The Clear Faults button is used to clear all faults and put the system into
+  Off mode.
+* The Electrical Data plot shows the currents and voltages for Phase A, B, and
+  C. The voltage lines are hidden by default. The visibility of each current
+  and voltage line can be toggled by clicking on the legend labels. The current
+  axis is shown on the left if any current lines are visible and the voltage
+  axis is shown on the right is any voltage lines are visible.
+* The Mechanical Data plot shows the speed and position of the motor. The
+  visibility of each line can be toggled by clicking on the legend labels. The
+  speed axis is shown on the left is speed is visible and the position axis is
+  shown on the right if position is visible.
+* The Live Analysis plot shows the data that is selected for each axis using
+  the buttons on the right.
+
+When the dashboard is first launched, the system will be in Off mode and the
+dashboard will look like the image below. Observe that the electrical readings
+are near zero.
+
+![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Off.png)
+
+To run the application in Speed mode, select Speed from the Mode dropdown and
+use the Speed Setpoint text box to enter a speed setpoint. The image below
+shows the motor running in speed mode with a speed setpoint of 2000 rpm and the
+load disk that is included in the Motor Accessory Kit.
+
+![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Speed.png)
+
+To run the application in Torque mode, select Torque from the Mode dropdown and
+use the Torque Setpoint text box to enter a torque setpoint. The image below
+shows the motor running in torque mode with a torque setpoint of 1 amp and the
+load disk that is included in the Motor Accessory Kit.
+
+![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Torque.png)
+
+To run the application in Open Loop mode, select Open Loop from the Mode
+dropdown and use the Vd/Vq text boxes to set Vd/Vq. The image below shows the
+motor running in open loop mode with Vd set to 0, Vq set to 4 volts, and the
+load disk that is included in the Motor Accessory Kit.
+
+![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_OpenLoop.png)
+
+The images below show what the dashboard looks like when a larger load is
+applied to the motor. As the load on the motor increases, the currents will
+increase and the I_alpha/I_beta circle will expand.
+
+![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Speed_Loaded.png)
+![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Torque_Loaded.png)
+![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_OpenLoop_Loaded.png)
 
 ## Next Steps
 
