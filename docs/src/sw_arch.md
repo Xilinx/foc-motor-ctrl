@@ -75,33 +75,143 @@ IP is a UIO based and the device will instantiate the uio device for this IP.
 The userspace driver for this is implemented inside the motor
 control library in the control block.
 
-For more details of IIO subsystem refer to
-[Analog Devices Wiki](https://wiki.analog.com/software/linux/docs/iio/iio).
+### Device and Channel Attributes
+As explained in [next section](#Userspace-Access-toIIO-Drivers), the attributes
+exposed by each drivers can be accessed through sysfs interface or through
+libraries like libIIO.
 
-For more details on kernel drivers for IIO refer to
-[Kernel Documentation](https://static.lwn.net/kerneldoc/driver-api/iio/core.html).
+Most of the attribute names are self-explanatory. If a channel attribute is named
+`input`, it indicates that the device requires raw data for processing, and the
+final processed data can be read from the 'input' channel attribute. If the `input`
+channel attribute is not present, the raw data itself represents the final value
+from the device.
 
-## Middleware
+Couple of common device attributes accross iio drivers in this application are:
+- `sample_interval_us`: This parameter represents the time period in microseconds.
+It determines the rate at which data is sampled and stored into the buffer.
+Only channel data is captured within the buffer.
+- `ap_ctrl`: This attribute conforms to the standard Xilinx HLS interface for IP,
+enabling the initiation of its operation.
 
-### Userspace IIO Library
-libIIO is the user space library to easily access the kernel IIO subsystem.
-It also provides various methods and command line interfaces, packaged in
-libiio-utils, to access the IIO devices. There are other python wrappers
-around this library, but the motor control library uses native C/C++ library.
+The device attributes applies to entire device for all the channels. The Channel
+attributes are per channel configurations or data. Here are some of the attributes
+exposed by above drivers:
 
-For example, to list all the channels in the FOC driver:
+#### Xilinx ADC-HUB Channels
+List of available channels for the device xilinx_adc_hub
+```bash
+ubuntu@kria:# iio_attr -c xilinx_adc_hub
+dev 'xilinx_adc_hub', channel 'voltage0' (input, index: 0, format: le:S32/32>>0), found 9 channel-specific attributes
+dev 'xilinx_adc_hub', channel 'current1' (input, index: 1, format: le:S32/32>>0), found 9 channel-specific attributes
+dev 'xilinx_adc_hub', channel 'voltage2' (input, index: 2, format: le:S32/32>>0), found 9 channel-specific attributes
+dev 'xilinx_adc_hub', channel 'current3' (input, index: 3, format: le:S32/32>>0), found 9 channel-specific attributes
+dev 'xilinx_adc_hub', channel 'voltage4' (input, index: 4, format: le:S32/32>>0), found 9 channel-specific attributes
+dev 'xilinx_adc_hub', channel 'current5' (input, index: 5, format: le:S32/32>>0), found 9 channel-specific attributes
+dev 'xilinx_adc_hub', channel 'voltage6' (input, index: 6, format: le:U32/32>>0), found 9 channel-specific attributes
+dev 'xilinx_adc_hub', channel 'current7' (input, index: 7, format: le:U32/32>>0), found 9 channel-specific attributes
+dev 'xilinx_adc_hub', channel 'timestamp' (input, index: 16, format: le:S64/64>>0), found 0 channel-specific attributes
+
 ```
-ubuntu@kria:~$ iio_attr -c
-IIO context has 7 devices:
-        iio:device0, ams: found 30 channels
-        iio:device1, ina260-u14: found 6 channels
-        iio:device2, hls_foc_periodic: found 11 channels
-        iio:device3, hls_qei_axi: found 3 channels
-        iio:device4, xilinx_adc_hub: found 9 channels
-        iio:device5, hls_svpwm_duty: found 4 channels
-        iio:device6, hls_pwm_gen: found 4 channels
 
-ubuntu@kria:~$ iio_attr -c  hls_foc_periodic
+Individual Channel Properties for Voltage0 in Xilinx ADC-HUB
+```bash
+ubuntu@kria:# iio_attr -c xilinx_adc_hub voltage0
+dev 'xilinx_adc_hub', channel 'voltage0' (input), attr 'calibrate',
+dev 'xilinx_adc_hub', channel 'voltage0' (input), attr 'fault_clear',
+dev 'xilinx_adc_hub', channel 'voltage0' (input), attr 'input', value '0.865447998'
+dev 'xilinx_adc_hub', channel 'voltage0' (input), attr 'offset', value '0.000000000'
+dev 'xilinx_adc_hub', channel 'voltage0' (input), attr 'over_range_fault_status', value '0'
+dev 'xilinx_adc_hub', channel 'voltage0' (input), attr 'raw', value '47'
+dev 'xilinx_adc_hub', channel 'voltage0' (input), attr 'scale', value '0.018814086'
+dev 'xilinx_adc_hub', channel 'voltage0' (input), attr 'set_filter_tap', value '4'
+dev 'xilinx_adc_hub', channel 'voltage0' (input), attr 'under_range_fault_status', value '0'
+```
+- `calibrate`: One-time calibration at the very start to offset any residual value in the system.
+- `fault_clear`: Clears all faults on the channel
+- `input`: The final voltage value read by the ADC in volts (raw * scale factor).
+- `offset`: Automatically populated after calibration.
+- `over_range_fault_status`: Status indicating if an over-range fault occurred (0 - for no fault).
+- `raw`: The ADC raw value.
+- `scale`: The scaling factor.
+- `set_filter_tap`: Number of filter taps.
+- `under_range_fault_status`: Status indicating if an under-range fault occurred (0 for no fault).
+
+The attributes for the currentX channel would be similar to voltage0, but the readings are in Amperes (Amps).
+
+#### HLS PWM Generator Channels
+List of available channels for the device hls_pwm_gen
+```bash
+ubuntu@kria:# iio_attr -c hls_pwm_gen
+dev 'hls_pwm_gen', channel 'voltage0', id 'Va_duty_ratio' (input, index: 0, format: le:U32/32>>0), found 3 channel-specific attributes
+dev 'hls_pwm_gen', channel 'voltage1', id 'Vb_duty_ratio' (input, index: 1, format: le:U32/32>>0), found 3 channel-specific attributes
+dev 'hls_pwm_gen', channel 'voltage2', id 'Vc_duty_ratio' (input, index: 2, format: le:U32/32>>0), found 3 channel-specific attributes
+dev 'hls_pwm_gen', channel 'timestamp' (input, index: 3, format: le:S64/64>>0), found 0 channel-specific attributes
+```
+
+Individual Channel Properties for Va_duty_ratio in HLS PWM Generator
+```bash
+ubuntu@kria:# iio_attr -c hls_pwm_gen voltage0
+dev 'hls_pwm_gen', channel 'voltage0' (input), id 'Va_duty_ratio', attr 'label', value 'Va_duty_ratio'
+dev 'hls_pwm_gen', channel 'voltage0' (input), id 'Va_duty_ratio', attr 'raw', value '0.000000000'
+dev 'hls_pwm_gen', channel 'voltage0' (input), id 'Va_duty_ratio', attr 'scale', value '1'
+```
+
+- `label`: The label of the channel is 'Va_duty_ratio'.
+- `raw`: The raw value for this channel is '0.000000000', and in this case, it represents the final reading for the channel.
+- `scale`: The scaling factor for this channel is '1'.
+
+The attributes are similar to the other channels from the PWM-GEN driver.
+
+#### HLS SVPWM Duty Channels
+List of available channels for the device hls_svpwm_duty
+```bash
+ubuntu@kria:# iio_attr -c hls_svpwm_duty
+dev 'hls_svpwm_duty', channel 'voltage0', id 'Va_cmd' (input, index: 0, format: le:U32/32>>0), found 3 channel-specific attributes
+dev 'hls_svpwm_duty', channel 'voltage1', id 'Vb_cmd' (input, index: 1, format: le:U32/32>>0), found 3 channel-specific attributes
+dev 'hls_svpwm_duty', channel 'voltage2', id 'Vc_cmd' (input, index: 2, format: le:U32/32>>0), found 3 channel-specific attributes
+dev 'hls_svpwm_duty', channel 'timestamp' (input, index: 3, format: le:S64/64>>0), found 0 channel-specific attributes
+```
+
+Individual Channel Properties for Va_cmd in HLS SVPWM Duty
+```bash
+ubuntu@kria:# iio_attr -c hls_svpwm_duty voltage0
+dev 'hls_svpwm_duty', channel 'voltage0' (input), id 'Va_cmd', attr 'label', value 'Va_cmd'
+dev 'hls_svpwm_duty', channel 'voltage0' (input), id 'Va_cmd', attr 'raw', value '0.000000000'
+dev 'hls_svpwm_duty', channel 'voltage0' (input), id 'Va_cmd', attr 'scale', value '1'
+```
+
+- `label`: The label of the channel is 'Va_cmd'.
+- `raw`: The raw value for this channel is '0.000000000', and in this case, it represents the final reading for the channel.
+- `scale`: The scaling factor for this channel is '1'.
+
+The attributes are similar to the other channels from the SVPWM driver.
+
+#### QEI Channels
+List of available channels for the device hls_qei_axi
+```bash
+ubuntu@kria:# iio_attr -c hls_qei_axi
+dev 'hls_qei_axi', channel 'rot0', id 'rpm' (input, index: 0, format: le:U32/32>>0), found 3 channel-specific attributes
+dev 'hls_qei_axi', channel 'rot1', id 'theta_degree' (input, index: 1, format: le:U32/32>>0), found 3 channel-specific attributes
+dev 'hls_qei_axi', channel 'timestamp' (input, index: 2, format: le:S64/64>>0), found 0 channel-specific attributes
+```
+
+Individual Channel Properties for RPM in QEI
+```bash
+ubuntu@kria:# iio_attr -c hls_qei_axi rot0
+dev 'hls_qei_axi', channel 'rot0' (input), id 'rpm', attr 'label', value 'rpm'
+dev 'hls_qei_axi', channel 'rot0' (input), id 'rpm', attr 'raw', value '0'
+dev 'hls_qei_axi', channel 'rot0' (input), id 'rpm', attr 'scale', value '1'
+```
+- `label`: The label of the channel is 'rpm'.
+- `raw`: The raw value for this channel is '0', and in this case, it represents the final reading for the channel.
+- `scale`: The scaling factor for this channel is '1'.
+
+The attributes are similar to the other channels from the QEI driver.
+
+#### FOC Channels
+List of available channels for the device hls_foc_periodic
+```bash
+ubuntu@kria:# iio_attr -c  hls_foc_periodic
 dev 'hls_foc_periodic', channel 'current0', id 'Id' (input, index: 0, format: le:U32/32>>0), found 3 channel-specific attributes
 dev 'hls_foc_periodic', channel 'current1', id 'Iq' (input, index: 1, format: le:U32/32>>0), found 3 channel-specific attributes
 dev 'hls_foc_periodic', channel 'current2', id 'I_alpha' (input, index: 2, format: le:U32/32>>0), found 3 channel-specific attributes
@@ -113,9 +223,54 @@ dev 'hls_foc_periodic', channel 'intensity7', id 'flux' (input, index: 7, format
 dev 'hls_foc_periodic', channel 'rot8', id 'speed' (input, index: 8, format: le:U32/32>>0), found 3 channel-specific attributes
 dev 'hls_foc_periodic', channel 'angl9' (input, index: 9, format: le:U32/32>>0), found 2 channel-specific attributes
 dev 'hls_foc_periodic', channel 'timestamp' (input, index: 10, format: le:S64/64>>0), found 0 channel-specific attributes
-
 ```
 
+Individual Channel Properties for current0 in FOC
+```bash
+ubuntu@kria:~$ iio_attr -c hls_foc_periodic current0
+dev 'hls_foc_periodic', channel 'current0' (input), id 'Id', attr 'label', value 'Id'
+dev 'hls_foc_periodic', channel 'current0' (input), id 'Id', attr 'raw', value '0.000000000'
+dev 'hls_foc_periodic', channel 'current0' (input), id 'Id', attr 'scale', value '1'
+```
+- `label`: The label of the channel is 'Id'.
+- `raw`: The raw value for this channel is '0.000000000', and in this case, it represents the final reading for the channel.
+- `scale`: The scaling factor for this channel is '1'.
+
+The attributes are similar to the other channels from the FOC driver.
+
+For detailed information on other device attributes, please consult the hardware
+documentation [HW Documentation](./hw_description.md).
+
+For more details of IIO subsystem refer to
+[Analog Devices Wiki](https://wiki.analog.com/software/linux/docs/iio/iio).
+
+For more details on kernel drivers for IIO refer to
+[Kernel Documentation](https://static.lwn.net/kerneldoc/driver-api/iio/core.html).
+
+## Middleware
+
+### Userspace Access to IIO Drivers
+The driver exposes the iio devices through the sysfs interface. The drivers can be
+accessed from the path `/sys/bus/iio/devices/iio\:deviceX`, where X is the numeric
+enumeration of the IIO device.
+
+libIIO is the user space library to easily access the kernel IIO subsystem.
+It also provides various methods and command line interfaces, packaged in
+libiio-utils, to access the IIO devices. There are other python wrappers
+around this library, but the motor control library uses native C/C++ library.
+
+For example, to list all the available iio devices
+```
+ubuntu@kria:~$ iio_attr -c
+IIO context has 7 devices:
+        iio:device0, ams: found 30 channels
+        iio:device1, ina260-u14: found 6 channels
+        iio:device2, hls_foc_periodic: found 11 channels
+        iio:device3, hls_qei_axi: found 3 channels
+        iio:device4, xilinx_adc_hub: found 9 channels
+        iio:device5, hls_svpwm_duty: found 4 channels
+        iio:device6, hls_pwm_gen: found 4 channels
+```
 Refer to the libIIO [Documentation](https://analogdevicesinc.github.io/libiio/v0.23/index.html) for more details.
 
 ### Userspace Access to UIO
