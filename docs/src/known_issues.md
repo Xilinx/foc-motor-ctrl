@@ -14,7 +14,7 @@
 
 * QEI reported speed is showing glitches. QEI library computation of the speed
 has a known issue and will be addressed with a QEI library update.
-* Motor lower speed mode control capability is apprxomately 250 rpms.
+* Motor lower speed mode control capability is approximately 250 rpms.
 * Default motor tuning values are provided for the KD240 Motor Accessory Kit
 based the Anaheim motor with the plastic disk visual load. This load disk
 primarily acts as an inertial load and thus if users are connecting other loads
