@@ -8,9 +8,9 @@ This library provides both C++ interface as well as Python interface.
 
 ## Build Instructions
 
-1. Install Prerequisites:
+1. Install build prerequisites:
 ```bash
-sudo apt install python3-dev python3-pybind11 libiio-dev
+sudo apt install cmake python3-dev python3-pybind11 libiio-dev
 ```
 
 2. Clone the repo into workspace
@@ -23,7 +23,7 @@ cd foc-motor-ctrl
 ```bash
 mkdir -p build
 cd build/
-cmake -DBUILD_TEST=ON ..
+cmake -DCMAKE_INSTALL_PREFIX=/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl -DBUILD_DASHBOARD_APP=ON ..
 ```
 **Project specific configuration options**
 Options                | Possible Values | Default    | Description
@@ -38,7 +38,6 @@ Options                | Possible Values | Default    | Description
 -----------------------|-----------------|------------|-------------
 CMAKE_INSTALL_PREFIX   | install location|`/usr/local`| Provide custom install location.
 
-> Provide the build options to cmake with -D\<option\>=\<val\>. For example `cmake -DCMAKE_INSTALL_PREFIX=~/install -DBUILD_TEST=ON -DBUILD_DASHBOARD_APP=ON ..`
 
 4. Build the libraries, applications and tests.
 ```
@@ -50,28 +49,32 @@ make
 sudo make install
 ```
 
-> Build and Install will be based on the build configuation above. `sudo` is not required for unprevilleged paths.
+> With above configurations, the libraries are installed in `/opt/xilinx/xlnx-app-kd240-foc-motor-ctr/lib`.
 
-## Run test application
+## Run Application
 
-#### Export the library path
-```bash
-export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
-export PYTHONPATH=/usr/local/lib:${PYTHONPATH}
+### Install prerequisites:
 ```
+# Install firmware
+sudo apt install xlnx-firmware-kd240-motor-ctrl-qei
 
-#### Run the C++ test application
-```
-cpp_libtest
+# Install app dependencies
+sudo apt install libiio-utils libiio0 python3-pybind11 python3-bokeh=2.4.3-0ubuntu1
 ```
 
-#### Run the python test application
+#### Run application
 ```
-py_libtest
+export PATH=${PATH}:/opt/xilinx/xlnx-app-kd240-foc-motor-ctr/bin
+start_motor_dashboard
 ```
+
+> The `start_motor_dashboard` script is renamed from `apps/launch_dashboard.sh`
+and is designed to run with `/opt/xilinx/xlnx-app-kd240-foc-motor-ctr` as default
+prefix. The script sets the library path automatically and launches the bokeh
+server with the IP address of the board. Update the script if different prefix
+is being used.
 
 ## License
 
 Copyright (C) 2023, Advanced Micro Devices, Inc.\
 SPDX-License-Identifier: MIT
-
