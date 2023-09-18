@@ -15,6 +15,7 @@ Features
 ================================
 
 * Dashboard with customizable plots
+
   - Three control modes (speed, torque, open loop)
   - Control loop parameter tuning
   - Buffer based data collection
