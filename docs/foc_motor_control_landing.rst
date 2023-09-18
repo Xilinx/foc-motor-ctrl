@@ -14,7 +14,16 @@ Overview
 Features
 ================================
 
-TODO: bullet list of key feature
+* Dashboard with customizable plots
+  - Three control modes (speed, torque, open loop)
+  - Control loop parameter tuning
+  - Buffer based data collection
+  - Fault monitoring
+  - Live analysis plots
+  - Configurable sample window size
+* IIO Linux kernel drivers for hardware IP
+* Vitis Motor Control Libraries based HLS IP
+* C++ & Python library for using entire motor control stack.
 
 *******************************
 Quick Start

@@ -166,14 +166,13 @@ Note: The open-loop mode of motor operation is a test mode intended for users wi
 motor control knowledge and experience. Incorrect configurations of values of Vd, Vq
 can cause the motor to spin at speeds higher than its rating and potentially cause
 excessive motor heating. Use caution when using the open-loop mode.
-Note: Please use caution spinning the motor at higher speeds due to rotating or moving parts.
 
 ## Dashboard
 
 ### Dashboard Features
 
 * The Mode dropdown is used to select the control system mode of operation.
-* The Sample Size text box is used indicate how many samples are collected and
+* The Sample Size text box is used to indicate how many samples are collected and
   plotted on the graphs for each type of data. The samples are collected at
   100 microsecond intervals. The maximum number of samples is limited to 3000
   due to dashboard performance limitations. For a large number of samples,
