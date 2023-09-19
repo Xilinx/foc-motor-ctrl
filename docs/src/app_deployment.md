@@ -67,22 +67,33 @@ This guide is targeted for Ubuntu® 22.04 and AMD 2023.1 toolchain.
 
 ![KD240-Setup](./media/Connect_ACpower_to_J32.jpg)
 
+### Tested Artifacts
+
+Testing was performed with the following artifacts:
+
+#### KD240 platform artifacts
+
+| Component     | Version                         |
+|---------------|---------------------------------|
+| Linux Kernel  | 5.15.0-9002                     |
+| Boot Firmware | BOOT-k24-smk-20230913102125.bin |
+
+Please refer to the [Kria Wiki](https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/1641152513/Kria+K26+SOM#Boot-Firmware-Updates)
+to obtain latest linux image and boot firmware.
+
+#### Application packages
+
+| Package                        | Version      |
+|--------------------------------|--------------|
+| xlnx-firmware-kd240-motor-ctrl | 0.10-0xlnx1  |
+| xlnx-app-kd240-foc-motor-ctrl  | 0.3.1-0xlnx1 |
+
 ### Initial Setup
 
-1. Testing was performed with:
-
-   |   Components  |       Version          |
-   | :-----------: | :-------------------:  |
-   |  Linux Kernel |  5.15.0-9002           |
-   | Boot Firmware | k24-smk-20230912123632 |
-
-   Please refer [Kria Wiki](https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/1641152513/Kria+K26+SOM#Boot-Firmware-Updates)
-   to obtain latest linux image and boot firmware
-
-2. Go through [Booting Kria Starter Kit Linux](https://xilinx.github.io/kria-apps-docs/kd240/linux_boot.html)
+1. Go through [Booting Kria Starter Kit Linux](https://xilinx.github.io/kria-apps-docs/kd240/linux_boot.html)
    to complete the minimum setup required to boot Linux before continuing with instructions in this page.
 
-3. Get the latest motor control application and firmware package:
+2. Get the latest motor control application and firmware package:
 
    * Download the firmware
       * Search package feed for packages compatible with KD240
