@@ -73,10 +73,11 @@ Testing was performed with the following artifacts:
 
 #### KD240 platform artifacts
 
-| Component     | Version                         |
-|---------------|---------------------------------|
-| Linux Kernel  | 5.15.0-9002                     |
-| Boot Firmware | BOOT-k24-smk-20230913102125.bin |
+| Component                      | Version                         |
+|--------------------------------|---------------------------------|
+| Boot Firmware                  | BOOT-k24-smk-20230913102125.bin |
+| Linux Kernel                   | 5.15.0-9002                     |
+| xlnx-firmware-kd240-motor-ctrl | 0.10-0xlnx1                     |
 
 Please refer to the [Kria Wiki](https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/1641152513/Kria+K26+SOM#Boot-Firmware-Updates)
 to obtain latest linux image and boot firmware.
@@ -85,7 +86,6 @@ to obtain latest linux image and boot firmware.
 
 | Package                        | Version      |
 |--------------------------------|--------------|
-| xlnx-firmware-kd240-motor-ctrl | 0.10-0xlnx1  |
 | xlnx-app-kd240-foc-motor-ctrl  | 0.3.1-0xlnx1 |
 
 ### Initial Setup
