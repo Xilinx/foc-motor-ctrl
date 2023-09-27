@@ -11,6 +11,7 @@
 
 #include "interface/iio_drv.h"
 #include "motor-control/motor-control.hpp"
+#include "config_parameters.h"
 
 // TODO: move FocChannel enum within the class namespace
 enum FocChannel
@@ -67,6 +68,8 @@ public:
 	double getSpeedSetValue();
 	FocData getChanData();
 	std::map<FocChannel, std::vector<double>> fillBuffer(int samples, std::vector<FocChannel> channels);
+  	void updateConfig(double paramSpeedRrate, double paramTorqueRrate, double paramRstSpeed=0, double paramRstTorque=0);
+  
 	~Foc();
 
 private:
@@ -86,6 +89,8 @@ private:
 	std::thread mTorThread;
 	std::mutex mTorMutex;
 	void rampTorque(void);
+	double mRstSpeed;
+	double mRstTorque;
 };
 
 #endif // _FOC_HPP_

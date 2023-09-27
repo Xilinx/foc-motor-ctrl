@@ -1,0 +1,77 @@
+# Copyright (C) 2023 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+SVP_SAMPLE_II=1
+SVP_VOLTAGE=24
+SVP_MODE=0
+
+PWM_FREQ=96800
+PWM_DEAD_CYC=2
+PWM_PHASE_SHIFT=0
+PWM_SAMPLE_II=1
+
+# Reset speed setpoint when motor is Off
+RST_SPEED=250
+# Reset Torque setpoint when motor is Off
+RST_TORQUE=0.3
+
+# Speed change steps
+SPEED_RRATE=250
+# Torque change steps
+TORQUE_RRATE=0.05
+
+# KP(proportional) and KI(integral) Gain parameters
+TOR_KP=9.0
+TOR_KI=0.001
+FLUX_KP=8.0
+FLUX_KI=0.001
+SPEED_KP=0.005
+SPEED_KI=0.0001
+FW_KP=0.009918212890625
+FW_KI=0.0000762939453125
+
+# Counts per Revolution for auto alignment
+CPR=1000
+
+# Initial Torque setpoint value
+TOR_SP=0.3
+# Initial Speed setpoint value
+SPEED_SP=1000
+
+# Initial manual openloop torque
+VF_VQ=4.0
+# Initial manual openloop flux
+VF_VD=0.0
+
+# ADCHUB current & voltage scale values
+ADCHUB_VOL_SCALE=0.018
+ADCHUB_STATOR_CUR_SCALE=0.005
+ADCHUB_DC_CUR_SCALE=0.010
+
+## Thresholds for fault triggering
+# Phase A, B, C current lower threshold (Amp)
+CUR_PHASE_THRES_LOW=-2.7
+# Phase A, B, C current upper threshold (Amp)
+CUR_PHASE_THRES_HIGH=2.7
+# DCLink current lower threshold (Amp)
+CUR_DCLINK_THRES_LOW=-0.625
+# DCLink current upper threshold (Amp)
+CUR_DCLINK_THRES_HIGH=2.8
+# DCLink voltage lower threshold (V)
+VOL_PHASE_THRES_LOW=21
+# DCLink voltage upper threshold (V)
+VOL_PHASE_THRES_HIGH=28
+# Phase Imbalance upper threshold (Amp)
+IMBALANCE_THRES_HIGH=0.5
+# Maximum allowed motor power
+MAX_RATED_MOTOR_POWER=15.0
+
+# Filter Tap values
+ADCHUB_FILTERTAP=32
+DCLINK_FILTERTAP=128
+
+# Delay to be used during calibration and alignment between start and stop of motor
+CALIBRATION_WAIT_US=500000
+
+# Fixed Angle for alignment
+THETAE90DEG=125

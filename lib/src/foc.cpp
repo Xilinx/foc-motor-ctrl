@@ -7,22 +7,19 @@
 #include <iostream>
 #include "foc.h"
 
-/*
- * TODO: revert inclusion of default_config.h
- * This temporary, ramp rates and default speed to come through constr or api
- */
-#include "default_config.h"
 
 #define RAMP_INTERVAL_MS	500
 
 const std::string Foc::kFocDriverName = "hls_foc_periodic";
 
 Foc::Foc():
-	mTargetSpeed(RST_SPEED),
-	mSpeedRRate(SPEED_RRATE),
+	mTargetSpeed(0),
+	mRstSpeed(0),
+	mSpeedRRate(0),
 	mDoSpeedRamp(false),
-	mTargetTorque(RST_TORQUE),
-	mTorRRate(TORQUE_RRATE),
+	mTargetTorque(0),
+	mRstTorque(0),
+	mTorRRate(0),
 	mDoTorRamp(false)
 {
 	mFoc_IIO_Handle = new IIO_Driver(kFocDriverName);
@@ -33,6 +30,14 @@ Foc::Foc():
 Foc::~Foc()
 {
 	delete mFoc_IIO_Handle;
+}
+
+void Foc::updateConfig(double paramSpeedRrate, double paramTorqueRrate, double paramRstSpeed, double paramRstTorque)
+{
+        mSpeedRRate = paramSpeedRrate;
+        mTorRRate = paramTorqueRrate;
+        mTargetSpeed = mRstSpeed = paramRstSpeed;
+        mTargetTorque = mRstTorque = paramRstTorque;
 }
 
 int Foc::setSpeed(double speedSp)
@@ -179,8 +184,8 @@ int Foc::setMode(OpMode mode)
 	switch(mode) {
 	case OpMode::kModeStop:
 		// Reset the SP values to default reset
-		mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(RST_SPEED).c_str());
-		mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(RST_TORQUE).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("speed_sp", std::to_string(mRstSpeed).c_str());
+		mFoc_IIO_Handle->writeDeviceattr("torque_sp", std::to_string(mRstTorque).c_str());
 		mFoc_IIO_Handle->writeDeviceattr("flux_sp", "0");
 		break;
 	case OpMode::kModeSpeed:
