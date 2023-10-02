@@ -45,6 +45,7 @@ Tutorials
    Building the Design components <https://xilinx.github.io/kria-apps-docs/kd240/building_the_design.html>
    Building the Hardware Design using Vivado <https://xilinx.github.io/kria-apps-docs/kd240/build_vivado_design.html>
    Generating Custom Firmware <https://xilinx.github.io/kria-apps-docs/kd240/generating_custom_firmware.html>
+   Building the Application <https://github.com/Xilinx/foc-motor-ctrl/blob/main/README.md#build-instructions>
 
 ******************
 Architecture
@@ -54,6 +55,7 @@ Architecture
    :maxdepth: 1
 
    Hardware Architecture <docs/hw_description.md>
+   Software Architecture <docs/sw_arch.md>
 
 *******************************
 Repository
