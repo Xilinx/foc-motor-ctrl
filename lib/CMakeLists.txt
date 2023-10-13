@@ -24,6 +24,15 @@ include_directories(
 	${LIBIIO_INCLUDE_DIRS}
 )
 
+# Add config file path
+set(CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/configs")
+
+# List config file to install
+set(CONFIG_FILE ${CONFIG_DIR}/anaheim.config)
+
+# set DEFAULT_CONFIG variable with the default config name.  
+set(DEFAULT_CONFIG anaheim.config)
+
 # Add library sources
 target_sources(${FMC_LIB_NAME} PRIVATE
     src/motor-control.cpp
@@ -41,6 +50,7 @@ target_sources(${FMC_LIB_NAME} PRIVATE
     src/interface/iio_drv.cpp
     src/interface/uio_drv.cpp
     src/python_bind.cpp
+    src/config_parameters.cpp
 )
 
 # Set include directories for the library
@@ -67,6 +77,12 @@ target_compile_options(${FMC_LIB_NAME} PRIVATE -Wall -Wextra -pedantic)
 
 # Add python module name to the Macro to be used for pybind11 module
 add_compile_definitions(PY_MODULE_NAME=${PY_FMC_LIB})
+
+# Set install destination for config file
+if(EXISTS ${CONFIG_FILE})
+	install(FILES ${CONFIG_FILE} DESTINATION /etc/motor-control)
+  	install(CODE "execute_process(COMMAND ln -s /etc/motor-control/${DEFAULT_CONFIG} /etc/motor-control/config)")
+endif()
 
 # Set install targets for the library
 install(TARGETS ${FMC_LIB_NAME} ${PY_FMC_LIB}
