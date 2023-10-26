@@ -219,7 +219,7 @@ excessive motor heating. Use caution when using the open-loop mode.
   the buttons on the right.
 
 When the dashboard is first launched, the system will be in Off mode, and the
-dashboard will look similar the following image. Observe that the electrical readings
+dashboard will look similar to the following image. Observe that the electrical readings
 are near zero.
 
 ![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Off.png)
