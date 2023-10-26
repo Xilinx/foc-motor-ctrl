@@ -177,7 +177,7 @@ Register: Up to 64 channels supported
 
 ### TSN IP
 
-The LogiCORE™100M/1G TSN Subsystem IP implements IEEE 802.1 Time Sensitive Networking (TSN) standards and provides a low latency bridged endpoint. The bridged endpoint solution consists of a 3-port switch, two ports connects to the network and one port connects to an internal endpoint. In this design, reduced gigabit media independent interface
+The LogiCORE™ 100M/1G TSN Subsystem IP implements IEEE 802.1 Time Sensitive Networking (TSN) standards and provides a low latency bridged endpoint. The bridged endpoint solution consists of a 3-port switch, two ports connects to the network and one port connects to an internal endpoint. In this design, reduced gigabit media independent interface
 (RGMII) interfaces connect to a Marvel physical-side interface (PHY) supporting a maximum bandwidth of 1 Gbps. The TSN IP is configured to support:
 
 * Network Time Synchronization- 1588 Precision Time Protocol (PTP)
