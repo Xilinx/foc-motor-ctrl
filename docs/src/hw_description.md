@@ -18,7 +18,7 @@
 
 ![Hardware Architecture block diagram](./media/hw_arch.png)
 
- At a high-level, the design is comprised as a motor control system, a data monitoring system, a data processing system, and a communication system.
+ At a high-level, the design is comprised of a motor control system, a data monitoring system, a data processing system, and a communication system.
 
 * Motor Control System: These are the blocks that control the motor speed and direction. All but the Gate Driver are High-Level Synthesis (HLS) blocks from the AMD Vitis™ Motor Control Library.
 
