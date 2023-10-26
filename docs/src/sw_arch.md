@@ -258,7 +258,6 @@ dev 'hls_foc_periodic', channel 'current0' (input), id 'Id', attr 'scale', value
 The attributes are similar to the other channels from the FOC driver.
 
 For detailed information on other device attributes, consult the hardware
-documentation ([HW Documentation](./hw_description.md)).
 
 For more details of IIO subsystem, refer to
 [Analog Devices Wiki](https://wiki.analog.com/software/linux/docs/iio/iio).
