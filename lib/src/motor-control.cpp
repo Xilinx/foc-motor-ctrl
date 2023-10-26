@@ -6,6 +6,9 @@
 #include <unistd.h>
 #include <cassert>
 #include <iostream>
+#include <map>
+#include <fstream>
+#include <string>
 #include "motor-control/motor-control.hpp"
 #include "sensors/sensor.h"
 #include "foc.h"
@@ -13,9 +16,9 @@
 #include "pwm.h"
 #include "svpwm.h"
 #include "softwarefaults.h"
-#include "default_config.h"
 #include "mc_driver.h"
 #include "event_manager.h"
+#include "config_parameters.h"
 
 /** TODO List:
  *   - populate InitConfig structure
@@ -25,7 +28,7 @@
  *   - Implement exceptions for the runtime errors.
  */
 
-#define ANGLE2CPR(x)    (((x) * CPR )/360)
+#define ANGLE2CPR(x)    (((x) * mInitConfig[kParamCpr] )/360)
 
 using namespace std;
 
@@ -74,7 +77,6 @@ public:
 
 private:
 	int mSessionId;
-	string mConfigPath;
 	MotorOpMode mCurrentMode;
 
 	/*
@@ -88,6 +90,7 @@ private:
 	Sensor *mpSensor;
 	SoftwareFaults mSfaults;
 	EventManager mEvents;
+	MotorConfigParams mInitConfig;
 
 	/*
 	 * Shadow Vq and Vd
@@ -96,7 +99,6 @@ private:
 	double mVq;
 	double mVd;
 
-	void parseConfig();
 	int initMotor(bool);
 	Foc::OpMode getFocOpMode(MotorOpMode);
 	int transitionMode(Foc::OpMode);
@@ -152,14 +154,15 @@ MotorControl *MotorControl::getMotorControlInstance(int sessionId,
 }
 
 MotorControlImpl::MotorControlImpl(int sessionId, string configPath):
-	mSessionId(sessionId), mConfigPath(configPath),
+	mSessionId(sessionId),
 	mCurrentMode(MotorOpMode::kModeMax),
 	mSfaults(&mAdcHub, &mMcUio),
 	mEvents({&mAdcHub, &mMcUio, &mSfaults})
 
 {
-	parseConfig();
-
+	mInitConfig.overrideConfigs(configPath);
+	mFoc.updateConfig(mInitConfig[kParamSpeedRrate], mInitConfig[kParamTorqueRrate],
+			mInitConfig[kParamRstSpeed], mInitConfig[kParamRstTorque]);
 	// init all the driving classes
 	mpSensor = Sensor::getSensorInstance();
 
@@ -283,12 +286,6 @@ void MotorControlImpl::clearFaults()
 int MotorControlImpl::getSessionId ()
 {
 	return mSessionId;
-}
-
-void MotorControlImpl::parseConfig()
-{
-	// parse the config using mConfigPath
-	// and fillup mCofig structure
 }
 
 MotorOpMode MotorControlImpl::getOperationMode()
@@ -507,7 +504,7 @@ void MotorControlImpl::setOperationMode(MotorOpMode mode)
 			 */
 			int loop_timeout_ms = 5000;
 			int loop_sleep_ms = 100;
-			while (std::abs(getSpeed()) > RST_SPEED + 100) {
+			while (std::abs(getSpeed()) > mInitConfig[kParamRstSpeed] + 100) {
 				auto sleep_time =
 					std::chrono::milliseconds(loop_sleep_ms);
 				std::this_thread::sleep_for(sleep_time);
@@ -566,55 +563,52 @@ int MotorControlImpl::initMotor(bool full_init)
 		/*
 		 * Board & IP Configs
 		 */
+		mSvPwm.setSampleII(mInitConfig[kParamSvpSample_II]);
+		mSvPwm.setDcLink(mInitConfig[kParamSvpVoltage]);
+		mSvPwm.setMode(mInitConfig[kParamSvpMode]);
 
-		mSvPwm.setSampleII(SVP_SAMPLE_II);
-		mSvPwm.setDcLink(SVP_VOLTAGE);
-		mSvPwm.setMode(SVP_MODE);
-
-		mPwm.setFrequency(PWM_FREQ);
-		mPwm.setDeadCycle(PWM_DEAD_CYC);
-		mPwm.setPhaseShift(PWM_PHASE_SHIFT);
-		mPwm.setSampleII(PWM_SAMPLE_II);
+		mPwm.setFrequency(mInitConfig[kParamPwmFreq]);
+		mPwm.setDeadCycle(mInitConfig[kParamPwmDeadCycle]);
+		mPwm.setPhaseShift(mInitConfig[kParamPwmPhaseShift]);
+		mPwm.setSampleII(mInitConfig[kParamPwmSample_II]);
 
 		/*
 		 * set scaling for Voltage and Current
 		 */
 		for (auto phase : all_Edata) {
-			mAdcHub.setVoltageScale(phase, ADCHUB_VOL_SCALE);
-			mAdcHub.setCurrentScale(phase, ADCHUB_STATOR_CUR_SCALE);
+			mAdcHub.setVoltageScale(phase, mInitConfig[kParamAdchubVolScale]);
+			mAdcHub.setCurrentScale(phase, mInitConfig[kParamAdchubStatorCurScale]);
 		}
-		mAdcHub.setCurrentScale(ElectricalData::kDCLink, ADCHUB_DC_CUR_SCALE);
+		mAdcHub.setCurrentScale(ElectricalData::kDCLink, mInitConfig[kParamAdchubDcCurScale]);
 
 		/*
 		 * Set Filter Taps
 		 */
 		for (auto phase : all_Edata) {
-
-			mAdcHub.setCurrentFiltertap(phase, ADCHUB_FILTERTAP);
-			mAdcHub.setVoltageFiltertap(phase, ADCHUB_FILTERTAP);
+			mAdcHub.setCurrentFiltertap(phase, mInitConfig[kParamAdchubFiltertap]);
+			mAdcHub.setVoltageFiltertap(phase, mInitConfig[kParamAdchubFiltertap]);
 		}
-		mAdcHub.setCurrentFiltertap(ElectricalData::kDCLink, DCLINK_FILTERTAP);
-		mAdcHub.setVoltageFiltertap(ElectricalData::kDCLink, DCLINK_FILTERTAP);
+		mAdcHub.setCurrentFiltertap(ElectricalData::kDCLink, mInitConfig[kParamDclinkFiltertap]);
+		mAdcHub.setVoltageFiltertap(ElectricalData::kDCLink, mInitConfig[kParamDclinkFiltertap]);
 
 		/*
 		 * Set the thresholds for all the events
 		 */
+		mEvents.setUpperThreshold(FaultId::kPhaseA_OC, mInitConfig[kParamCurPhaseThresHigh]);
+		mEvents.setUpperThreshold(FaultId::kPhaseB_OC, mInitConfig[kParamCurPhaseThresHigh]);
+		mEvents.setUpperThreshold(FaultId::kPhaseC_OC, mInitConfig[kParamCurPhaseThresHigh]);
+		mEvents.setLowerThreshold(FaultId::kPhaseA_OC, mInitConfig[kParamCurPhaseThresLow]);
+		mEvents.setLowerThreshold(FaultId::kPhaseB_OC, mInitConfig[kParamCurPhaseThresLow]);
+		mEvents.setLowerThreshold(FaultId::kPhaseC_OC, mInitConfig[kParamCurPhaseThresLow]);
 
-		mEvents.setUpperThreshold(FaultId::kPhaseA_OC, CUR_PHASE_THRES_HIGH);
-		mEvents.setUpperThreshold(FaultId::kPhaseB_OC, CUR_PHASE_THRES_HIGH);
-		mEvents.setUpperThreshold(FaultId::kPhaseC_OC, CUR_PHASE_THRES_HIGH);
-		mEvents.setLowerThreshold(FaultId::kPhaseA_OC, CUR_PHASE_THRES_LOW);
-		mEvents.setLowerThreshold(FaultId::kPhaseB_OC, CUR_PHASE_THRES_LOW);
-		mEvents.setLowerThreshold(FaultId::kPhaseC_OC, CUR_PHASE_THRES_LOW);
+		mEvents.setUpperThreshold(FaultId::kDCLink_OC, mInitConfig[kParamCurDclinkThresHigh]);
+		mEvents.setLowerThreshold(FaultId::kDCLink_OC, mInitConfig[kParamCurDclinkThresLow]);
 
-		mEvents.setUpperThreshold(FaultId::kDCLink_OC, CUR_DCLINK_THRES_HIGH);
-		mEvents.setLowerThreshold(FaultId::kDCLink_OC, CUR_DCLINK_THRES_LOW);
+		mEvents.setUpperThreshold(FaultId::kDCLink_OV, mInitConfig[kParamVolPhaseThresHigh]);
+		mEvents.setLowerThreshold(FaultId::kDCLink_UV, mInitConfig[kParamVolPhaseThresLow]);
 
-		mEvents.setUpperThreshold(FaultId::kDCLink_OV, VOL_PHASE_THRES_HIGH);
-		mEvents.setLowerThreshold(FaultId::kDCLink_UV, VOL_PHASE_THRES_LOW);
-
-		mEvents.setUpperThreshold(FaultId::kPhaseImbalance, IMBALANCE_THRES_HIGH);
-		mEvents.setUpperThreshold(FaultId::kAvgPowerFault, MAX_RATED_MOTOR_POWER);
+		mEvents.setUpperThreshold(FaultId::kPhaseImbalance, mInitConfig[kParamImbalanceThresHigh]);
+		mEvents.setUpperThreshold(FaultId::kAvgPowerFault, mInitConfig[kParamMaxRatedMotorPower]);
 
 
 		/*
@@ -626,24 +620,22 @@ int MotorControlImpl::initMotor(bool full_init)
 		/*
 		 * Foc configuration
 		 */
-		mFoc.setGain(GainType::kTorque, TOR_KP, TOR_KI);
-		mFoc.setGain(GainType::kFlux, FLUX_KP, FLUX_KI);
-		mFoc.setGain(GainType::kSpeed, SPEED_KP, SPEED_KI);
-		mFoc.setGain(GainType::kFieldweakening, FW_KP, FW_KI);
+		mFoc.setGain(GainType::kTorque, mInitConfig[kParamTorKp], mInitConfig[kParamTorKi]);
+		mFoc.setGain(GainType::kFlux, mInitConfig[kParamFluxKp], mInitConfig[kParamFluxKi]);
+		mFoc.setGain(GainType::kSpeed, mInitConfig[kParamSpeedKp], mInitConfig[kParamSpeedKi]);
+		mFoc.setGain(GainType::kFieldweakening, mInitConfig[kParamFwKp], mInitConfig[kParamFwKi]);
 
-		//Note: flux sp is set to zero by motor_stop
-		mFoc.setTorque(TOR_SP);
-		mFoc.setSpeed(SPEED_SP);
+		mFoc.setTorque(mInitConfig[kParamTorSp]);
+		mFoc.setSpeed(mInitConfig[kParamSpeedSp]);
 
-		mVq = VF_VQ;
-		mVd = VF_VD;
+		mVq = mInitConfig[kParamVfVq];
+		mVd = mInitConfig[kParamVfVd];
 
-		mFoc.setVfParam(VF_VQ, VF_VD);
+		mFoc.setVfParam(mInitConfig[kParamVfVq], mInitConfig[kParamVfVd]);
 
 		/*
 		 * Do AP_Start for all the IPs
 		 */
-
 		mPwm.startPwm();
 		mSvPwm.startSvpwm();
 		mpSensor->start();
@@ -656,13 +648,13 @@ int MotorControlImpl::initMotor(bool full_init)
 		mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseA);
 		mAdcHub.calibrateCurrentChannel( ElectricalData::kPhaseB);
 		mAdcHub.calibrateCurrentChannel(ElectricalData::kPhaseC);
+
 		/*
 		* KD240 hardware has non-linearity at value < 500mA, thus not including in
 		* DC offset calc.
 		*/
 		//mAdcHub.calibrateCurrentChannel(ElectricalData::kDCLink);
-
-		usleep(CALIBRATION_WAIT_US);	//wait for the calibration and event recording
+		usleep(mInitConfig[kParamCalibrationWaitUs]);	//wait for the calibration and event recording
 
 		if(getFaultStatus(FaultId::kDCLink_UV)) {
 			std::cerr << "Failed to detect DCLink voltage. Make sure Motor is powered up"
@@ -675,16 +667,16 @@ int MotorControlImpl::initMotor(bool full_init)
 	 * Auto alignment
 	 */
 	transitionMode(Foc::OpMode::kModeManualTF);	//Setting OpenLoop Mode
-	usleep(CALIBRATION_WAIT_US);
+	usleep(mInitConfig[kParamCalibrationWaitUs]);
 	transitionMode(Foc::OpMode::kModeStop);
 
 	mFoc.setAngleOffset(0);
 	mFoc.setFixedAngleCmd(0);
 	transitionMode(Foc::OpMode::kModeManualTFFixedAngle);
-	usleep(CALIBRATION_WAIT_US);
+	usleep(mInitConfig[kParamCalibrationWaitUs]);
 	int positionalCpr = ANGLE2CPR(mpSensor->getPosition());
-	int cprAligned = ((positionalCpr - THETAE90DEG) > 0) ? (positionalCpr
-			- THETAE90DEG) : (positionalCpr - THETAE90DEG + CPR);
+	int cprAligned = ((positionalCpr - mInitConfig[kParamThetae90deg]) > 0) ? (positionalCpr
+			- mInitConfig[kParamThetae90deg]) : (positionalCpr - mInitConfig[kParamThetae90deg] + mInitConfig[kParamCpr]);
 	mFoc.setAngleOffset(cprAligned);
 
 	transitionMode(Foc::OpMode::kModeStop);
