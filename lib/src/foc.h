@@ -11,7 +11,6 @@
 
 #include "interface/iio_drv.h"
 #include "motor-control/motor-control.hpp"
-#include "config_parameters.h"
 
 // TODO: move FocChannel enum within the class namespace
 enum FocChannel
