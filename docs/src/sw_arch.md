@@ -141,7 +141,7 @@ dev 'xilinx_adc_hub', channel 'voltage0' (input), attr 'under_range_fault_status
 - `set_filter_tap`: Number of filter taps.
 - `under_range_fault_status`: Status indicating if an under-range fault occurred (0 for no fault).
 
-The attributes for the currentX channel would be similar to Voltage0, but the readings are in amperes (amps).
+The attributes for the currentX channel would be similar to `voltage0`, but the readings are in amperes (amps).
 
 #### HLS PWM Generator Channels
 
