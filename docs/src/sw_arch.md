@@ -292,7 +292,7 @@ IIO context has 7 devices:
         iio:device6, hls_pwm_gen: found 4 channels
 ```
 
-For more details, refer to the libIIO [Documentation](https://analogdevicesinc.github.io/libiio/v0.23/index.html).
+For more details, refer to the [libIIO Documentation](https://analogdevicesinc.github.io/libiio/v0.23/index.html).
 
 ### Userspace Access to UIO
 
