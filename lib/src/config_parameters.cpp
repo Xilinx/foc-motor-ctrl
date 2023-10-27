@@ -99,7 +99,8 @@ const char* MotorConfigParams::paramNames[MConfigParams::kParamMax] = {
 };
 
 
-MotorConfigParams::MotorConfigParams()
+MotorConfigParams::MotorConfigParams():
+	mName("")
 {
 	// Initialize the array with default values
 	for (int i = 0; i < MConfigParams::kParamMax; ++i) {
@@ -136,6 +137,10 @@ void MotorConfigParams::overrideConfigs(const std::string& configFileName)
 			if (pos != std::string::npos) {
 				std::string paramName = line.substr(0, pos);
 				std::string paramValueStr = line.substr(pos + 1);
+				if (paramName == "NAME") {
+					mName = paramValueStr;
+					continue;
+				}
 				double paramValue = std::stod(paramValueStr);
 				for (int i = 0; i < static_cast<int>(MConfigParams::kParamMax); ++i) {
 					if (strcmp(paramNames[i], paramName.c_str()) == 0) {

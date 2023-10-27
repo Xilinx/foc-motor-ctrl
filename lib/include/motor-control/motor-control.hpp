@@ -131,6 +131,7 @@ public:
 	virtual GainData GetGain(GainType gainController) = 0;
 	virtual double getVfParamVq() = 0;
 	virtual double getVfParamVd() = 0;
+	virtual std::string getConfigName() = 0;
 
 	virtual void SetSpeed(double speed) = 0;
 	virtual void SetTorque(double torque) = 0;
