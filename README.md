@@ -9,8 +9,17 @@ This repository provides a field oriented control based motor control library an
 
 1. Install build prerequisites:
 
+- IIO library and python binding
     ```bash
     sudo apt install cmake python3-dev python3-pybind11 libiio-dev
+    ```
+- Lely core libraries
+    ```bash
+    sudo add-apt-repository ppa:lely/ppa
+    sudo apt-get update
+
+    sudo apt-get install liblely-coapp-dev liblely-co-tools python3-dcf-tools
+    sudo apt-get install pkg-config
     ```
 
 2. Clone the repo into workspace:
