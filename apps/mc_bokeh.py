@@ -36,14 +36,13 @@ x = deque([nan] * sample_size)
 for i in range(sample_size):
     x[i] = i+1
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        config_path = sys.argv[1]
-        # Get a MotorControl instance with session ID 1 and config path given through command line
-        mc = mcontrol.MotorControl.getMotorControlInstance(1, config_path)
-    else:
-        # Get a MotorControl instance with session ID 1 and default config path
-        mc = mcontrol.MotorControl.getMotorControlInstance(1)
+if len(sys.argv) > 1:
+    config_path = sys.argv[1]
+    # Get a MotorControl instance with session ID 1 and config path given through command line
+    mc = mcontrol.MotorControl.getMotorControlInstance(1, config_path)
+else:
+    # Get a MotorControl instance with session ID 1 and default config path
+    mc = mcontrol.MotorControl.getMotorControlInstance(1)
 if mc is None:
     print("Error: Unable to get MotorControl instance.\nPlease check your motor setup and restart the server.")
     exit()
