@@ -61,6 +61,7 @@ public:
 
 	// Override the values from a configuration file
 	void overrideConfigs(const std::string& configFileName);
+	std::string mName;
 
 private:
 	static const char* paramNames[MConfigParams::kParamMax];

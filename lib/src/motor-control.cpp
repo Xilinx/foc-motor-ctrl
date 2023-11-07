@@ -55,6 +55,7 @@ public:
 	GainData GetGain(GainType gainController) override;
 	double getVfParamVq() override;
 	double getVfParamVd() override;
+	string getConfigName() override;
 
 	void SetSpeed(double speed) override;
 	void SetTorque(double torque) override;
@@ -236,6 +237,11 @@ double MotorControlImpl::getVfParamVq()
 double MotorControlImpl::getVfParamVd()
 {
 	return mVd;
+}
+
+string MotorControlImpl::getConfigName()
+{
+	return mInitConfig.mName;
 }
 
 void MotorControlImpl::setVfParamVd(double vd)

@@ -40,7 +40,8 @@ PYBIND11_MODULE(PY_MODULE_NAME, m) {
         .def("setVfParamVq", &MotorControl::setVfParamVq)
         .def("setVfParamVd", &MotorControl::setVfParamVd)
         .def("clearFaults", &MotorControl::clearFaults)
-        .def("getMotorParams", &MotorControl::getMotorParams);
+        .def("getMotorParams", &MotorControl::getMotorParams)
+        .def("getConfigName", &MotorControl::getConfigName);
 
     py::class_<FocData>(m, "FocData")
         .def(py::init<>())
