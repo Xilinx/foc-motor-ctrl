@@ -16,15 +16,15 @@ Features
 
 * Dashboard with customizable plots
 
-  - Three control modes (speed, torque, open loop)
+  - Three control modes (speed, torque, and open loop)
   - Control loop parameter tuning
   - Buffer based data collection
   - Fault monitoring
   - Live analysis plots
   - Configurable sample window size
 * IIO Linux kernel drivers for hardware IP
-* Vitis Motor Control Libraries based HLS IP
-* C++ & Python library for using entire motor control stack.
+* AMD Vitis™ Motor Control Libraries based HLS IP
+* C++ and Python library for using entire motor control stack
 
 *******************************
 Quick Start
@@ -33,7 +33,7 @@ Quick Start
 .. toctree::
    :maxdepth: 1
 
-   Setting up the Board and Application deployment <docs/app_deployment.md>
+   Setting Up the Board and Application deployment <docs/app_deployment.md>
 
 ***************************
 Tutorials
@@ -42,8 +42,8 @@ Tutorials
 .. toctree::
    :maxdepth: 1
 
-   Building the Design components <https://xilinx.github.io/kria-apps-docs/kd240/building_the_design.html>
-   Building the Hardware Design using Vivado <https://xilinx.github.io/kria-apps-docs/kd240/build_vivado_design.html>
+   Building the Design Components <https://xilinx.github.io/kria-apps-docs/kd240/building_the_design.html>
+   Building the Hardware Design Using Vivado <https://xilinx.github.io/kria-apps-docs/kd240/build_vivado_design.html>
    Generating Custom Firmware <https://xilinx.github.io/kria-apps-docs/kd240/generating_custom_firmware.html>
    Building the Application <https://github.com/Xilinx/foc-motor-ctrl/blob/main/README.md#build-instructions>
 
