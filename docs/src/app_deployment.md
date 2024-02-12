@@ -37,6 +37,8 @@ This guide is targeted for Ubuntu® 22.04 and the AMD 2023.1 toolchain.
 
 * Host machine with display
 
+* [One Wire Temperature Sensor](https://www.adafruit.com/product/381?gad_source=1&gclid=EAIaIQobChMI2IS22dqmhAMVIxWtBh1legB6EAQYASABEgKwIvD_BwE)
+
 ### Hardware Setup
 
 ![KD240-Setup](./media/KD240.png)
@@ -64,6 +66,12 @@ This guide is targeted for Ubuntu® 22.04 and the AMD 2023.1 toolchain.
 * Connect the motor input to a J32 3-phase inverter connector.
 
   ![KD240-Setup](./media/Connect_ACpower_to_J32.jpg)
+
+* Connect the One Wire Temperature Sensor to J47 Temp Sensor connector. Red connects to 3-5V, Blue/Black 
+connects to ground and Yellow/White is Sense(data)
+
+  ![KD240-Setup](./media/Connect_OneWire_to_J47.jpg)
+
 
 ### Tested Artifacts
 
@@ -114,6 +122,12 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
 
       ```bash
       sudo apt install xlnx-app-kd240-foc-motor-ctrl
+      ```
+
+3. Install lm-sensors package for One Wire Temperature sensor
+
+      ```bash
+      sudo apt install lm-sensors
       ```
 
 ## Run the Motor Control Application
@@ -204,6 +218,125 @@ The following images show what the dashboard looks like when a larger load is ap
 ![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Speed_Loaded.png)
 ![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Torque_Loaded.png)
 ![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_OpenLoop_Loaded.png)
+
+## Run One Wire Temperature Sensor Demo
+
+### Tested Artifacts
+
+Testing was performed with the following artifacts:
+
+#### KD240 platform Artifacts
+
+| Component                      | Version              |
+|--------------------------------|----------------------|
+| Boot Firmware                  | K24-BootFW-01.00.bin |
+| Linux Kernel                   | 5.15.0-1030          |
+| xlnx-firmware-kd240-motor-ctrl | 0.12-0xlnx1          |
+
+* In this demo, the lm-sensors utility probes the One Wire Temperature sensor, reads and displays the captured temperature value on  the serial terminal.
+
+* Ensure to load the motor-ctrl-qei firmware before running the demo
+
+  ```bash
+  sudo xmutil unloadapp
+  sudo xmutil loadapp kd240-motor-ctrl-qei
+  ```
+
+* Run a sanity check to verify if the 1-wire slave sensor has been probed successfully.
+
+  ```bash
+  ubuntu@kria:~$ sudo dmesg | grep 'w1'
+  [  247.023403] w1_master_driver w1_bus_master1: Attaching one wire slave 28.00000f0559bc crc dc
+  ```
+
+* You can also check if the slave entry is added under `/sys/bus/w1/devices` and if master bus also registers this slave.
+
+  ```bash
+  ubuntu@kria:/sys/bus/w1/devices$ ls
+  28-00000f0559bc  w1_bus_master1
+
+  ubuntu@kria:/sys/bus/w1/devices$ cat 28-00000f0559bc/name
+  28-00000f0559bc
+  ubuntu@kria:/sys/bus/w1/devices$ ls 28-00000f0559bc
+  alarms     eeprom_cmd  hwmon  power       temperature
+  conv_time  ext_power   id     resolution  uevent
+  driver     features    name   subsystem   w1_slave
+
+  ubuntu@kria:/sys/bus/w1/devices/w1_bus_master1$ cat w1_master_slave_count
+  1
+  ubuntu@kria:/sys/bus/w1/devices/w1_bus_master1$ cat w1_master_slaves
+  28-00000f0559bc
+  ```
+
+* You can also read the temperature through the filesystem
+
+  ```bash
+  ubuntu@kria:~$ ls /sys/class/hwmon/
+  hwmon0  hwmon1  hwmon2  hwmon3
+
+  ubuntu@kria:~$ cat /sys/class/hwmon/hwmon3/name
+  w1_slave_temp
+
+  ubuntu@kria:~$ cat /sys/class/hwmon/hwmon3/temp1_input
+  20618
+  ```
+
+* The sensor read through the filesystem provides temperature in millidegrees Celsius
+
+* The `lm_sensors` utility's `sensors` command gathers information from the kernel interfaces provided by `hwmon` subsystem, aggregates this raw data, 
+applies scaling and calibration and presents it in a human-readable format.
+
+* Run the 1-wire demo to measure temperature.
+
+  ```bash
+  # Output should be the following
+
+  ubuntu@kria:~$ sensors
+  ina260_u3-isa-0000
+  Adapter: ISA adapter
+  in1:           5.06 V
+  power1:        2.46 W
+  curr1:       487.00 mA
+
+  ams-isa-0000
+  Adapter: ISA adapter
+  in1:           1.21 V
+  in2:           0.00 V
+  in3:         720.00 mV
+  in4:         848.00 mV
+  in5:           1.79 V
+  in6:           1.79 V
+  in7:         852.00 mV
+  in8:         848.00 mV
+  in9:         849.00 mV
+  in10:          1.80 V
+  in11:          1.09 V
+  in12:          1.79 V
+  in13:          1.79 V
+  in14:          1.79 V
+  in15:          1.79 V
+  in16:        850.00 mV
+  in17:          1.80 V
+  in18:        598.00 mV
+  in19:        718.00 mV
+  in20:          1.80 V
+  in21:          1.25 V
+  in22:          0.00 V
+  in23:        846.00 mV
+  in24:        846.00 mV
+  in25:        852.00 mV
+  in26:          1.80 V
+  in27:        601.00 mV
+  temp1:        +25.1°C
+  temp2:        +26.5°C
+  temp3:        +27.1°C
+
+  w1_slave_temp-virtual-0
+  Adapter: Virtual device
+  temp1:        +20.6°C
+  ```
+
+* The output will have multiple sensors and `w1_slave_temp-virtual` is the desired One Wire Temperature Sensor value that is connected to KD240.
 
 ## Next Steps
 
