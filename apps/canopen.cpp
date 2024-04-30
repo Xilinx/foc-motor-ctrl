@@ -18,8 +18,10 @@ using namespace lely;
 #define CONTROL_WORD	0x6040
 #define STATUS_WORD	0x6041
 #define OP_MODE		0x6060
-#define PDO_SPEED	0x6081
-#define PDO_POSITION	0x5001
+#define OP_MODE_DIS	0x6061
+#define PDO_SPEED	0x606C
+#define PDO_TARGET_SPEED 0x60FF
+#define SUPPORTED_MODES	0x6502
 
 #define EDS_PATH "/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl/share/foc-motor-ctrl/foc-mc.eds"
 #define SLAVE_ID	4
@@ -106,9 +108,8 @@ private:
 		auto speedValue = getSpeed();
 		auto positionValue = getPosition();
 
-		(*this)[PDO_SPEED][0] = speedValue; // Update Speed object (object 5000:00).
-		(*this)[PDO_POSITION][0] = positionValue; // Update Position object (object 5001:00).
-		(*this)[STATUS_WORD][0] = 0x0; // update this as specs.
+		(*this)[PDO_SPEED][0] = (int32_t) speedValue; // Update Speed object (object 5000:00).
+		(*this)[STATUS_WORD][0] = (uint16_t) 0x0; // update this as specs.
 	}
 
 	void setSpeed(int speed)
