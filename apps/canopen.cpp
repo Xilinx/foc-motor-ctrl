@@ -11,6 +11,7 @@
 #include <lely/io2/sys/timer.hpp>
 #include <lely/coapp/slave.hpp>
 #include <thread>
+#include <iostream>
 #include "motor-control/motor-control.hpp"
 
 using namespace lely;
@@ -73,6 +74,14 @@ protected:
 				handleModeChange(MotorOpMode::kModeOff);
 			}
 		}
+	}
+
+	void OnSync(uint8_t cnt, const time_point& t) noexcept override
+	{
+		std::cout<<".\n";
+		(void) cnt;
+		(void) t;
+		updatePDOs();
 	}
 
 
@@ -156,11 +165,13 @@ int main(int argc, char* argv[]) {
 	// Create CANopen slave with desired node ID
 	MotorCtrlSlave slave(timer, chan, EDS_PATH , "", SLAVE_ID);
 
+#if 0
 	// Lamda function to update the tpdo periodically
 	void (MotorCtrlSlave::*update_tpdo_func)() = &MotorCtrlSlave::UpdateTpdoPeriodically;
 	std::thread tpdo_update_thread([update_tpdo_func, &slave]() {
 		(slave.UpdateTpdoPeriodically)();
 	});
+#endif
 
 	// Create signal handler for clean shutdown
 	io::SignalSet sigset(poll, exec);
@@ -177,7 +188,7 @@ int main(int argc, char* argv[]) {
 
 	// Run main loop and TPDO update thread
 	loop.run();
-	tpdo_update_thread.join();
+	//tpdo_update_thread.join();
 
 	return 0;
 }
