@@ -13,20 +13,13 @@
 #include <thread>
 #include <iostream>
 #include "motor-control/motor-control.hpp"
+#include "canopen.h"
+#include <atomic>
+#include <mutex>
+#include <thread>
 
 using namespace lely;
-
-#define CONTROL_WORD	0x6040
-#define STATUS_WORD	0x6041
-#define OP_MODE		0x6060
-#define OP_MODE_DIS	0x6061
-#define PDO_SPEED	0x606C
-#define PDO_TARGET_SPEED 0x60FF
-#define SUPPORTED_MODES	0x6502
-
-#define EDS_PATH "/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl/share/foc-motor-ctrl/foc-mc.eds"
-#define SLAVE_ID	4
-
+using namespace canopen_foc_mc;
 
 class MotorCtrlSlave: public canopen::BasicSlave {
 public:
@@ -37,6 +30,8 @@ public:
 		BasicSlave(timer, chan, dcf_txt, dcf_bin,id)
 	{
 		mpMotorCtrl = MotorControl::getMotorControlInstance(1);
+		controlWord = 0x0;
+		statusWord = 0x0;
 	}
 
 	~MotorCtrlSlave()
@@ -44,30 +39,42 @@ public:
 		delete mpMotorCtrl;
 	}
 
-	// Update TPDO data at a regular interval
-	void UpdateTpdoPeriodically()
-	{
-		//todo: Placeholder in case OnRead is not working
-		while (true) {
-			updatePDOs();
-			std::this_thread::sleep_for(std::chrono::milliseconds(500));
-		}
-	}
 protected:
 	void OnWrite(uint16_t idx, uint8_t subidx) noexcept override
 	{
-		if (idx == CONTROL_WORD && subidx == 0x0) {
+		if (idx == Obj_ControlWord && subidx == 0x0) {
 			uint16_t control = (*this)[idx][subidx];
 
 			if (control & 0xB == 0xB) {
 				//turn on the motor
-				uint16_t mode = (*this)[OP_MODE][0];
-				if(mode == 3) {
-					handleModeChange(MotorOpMode::kModeSpeed);
-				} else if (mode == 4) {
-					handleModeChange(MotorOpMode::kModeTorque);
-				} else {
-					// not handling other modes
+				uint16_t mode = (*this)[Obj_OpMode][0];
+				switch (mode)
+				{
+					case No_Mode:
+						operationMode.store(mode);
+						break;
+					case Profiled_Velocity:
+						operationMode.store(mode);
+						handleModeChange(MotorOpMode::kModeSpeed);
+						break;
+					case Profiled_Torque:
+						operationMode.store(mode);
+						handleModeChange(MotorOpMode::kModeTorque);
+						break;
+					case Profiled_Position:
+					case Velocity:
+					case Reserved:
+					case Homing:
+					case Interpolated_Position:
+					case Cyclic_Synchronous_Position:
+					case Cyclic_Synchronous_Velocity:
+					case Cyclic_Synchronous_Torque:
+						std::cerr << "Error: Master tried to set unsupported operation mode: "
+							<< mode << std::endl;
+						break;
+					default:
+						std::cerr << "Error: Master tried to set unknown operation mode: "
+							<< mode << std::endl;
 				}
 			}
 			if (control & 0x104) {
@@ -82,11 +89,15 @@ protected:
 		(void) cnt;
 		(void) t;
 		updatePDOs();
+		this->TpdoEvent(1);
 	}
 
 
 private:
 	MotorControl *mpMotorCtrl;
+	uint16_t statusWord;
+	uint16_t controlWord;
+	std::atomic<int8_t> operationMode;
 
 	void handleModeChange(MotorOpMode mode)
 	{
@@ -117,8 +128,10 @@ private:
 		auto speedValue = getSpeed();
 		auto positionValue = getPosition();
 
-		(*this)[PDO_SPEED][0] = (int32_t) speedValue; // Update Speed object (object 5000:00).
-		(*this)[STATUS_WORD][0] = (uint16_t) 0x0; // update this as specs.
+		(*this)[Obj_VelocityActual][0] = (int32_t) speedValue; // Update Speed object (object 5000:00).
+		(*this)[Obj_StatusWord][0] = statusWord; // update this as specs.
+		// (*this)[Obj_PositionActual][0] = (uint32_t) positionValue; // update this as specs.
+
 	}
 
 	void setSpeed(int speed)
@@ -165,14 +178,6 @@ int main(int argc, char* argv[]) {
 	// Create CANopen slave with desired node ID
 	MotorCtrlSlave slave(timer, chan, EDS_PATH , "", SLAVE_ID);
 
-#if 0
-	// Lamda function to update the tpdo periodically
-	void (MotorCtrlSlave::*update_tpdo_func)() = &MotorCtrlSlave::UpdateTpdoPeriodically;
-	std::thread tpdo_update_thread([update_tpdo_func, &slave]() {
-		(slave.UpdateTpdoPeriodically)();
-	});
-#endif
-
 	// Create signal handler for clean shutdown
 	io::SignalSet sigset(poll, exec);
 	sigset.insert(SIGHUP);
@@ -188,7 +193,6 @@ int main(int argc, char* argv[]) {
 
 	// Run main loop and TPDO update thread
 	loop.run();
-	//tpdo_update_thread.join();
 
 	return 0;
 }
