@@ -32,9 +32,11 @@ The following diagram illustrates the top-level architecture and arrangement of 
 - Middleware
   - IIO Framework and libiio library
   - Generic UIO framework
+  - CANopen library
 - Application and library
   - Motor Control Library (includes UIO driver for the custom Motor Control IP)
   - Bokeh dashboard
+  - CANopen Server
 
 ## Kernel Drivers
 
@@ -54,6 +56,8 @@ The following drivers are added to support this app:
 - SVPWM_GEN (`hsl_svpwm_duty`): SVPWM provides space vector PWM to calcualte phase ratio for the motor.
 
 There is also custom Motor control IP, which is responsible for the design specific glue logic and driving the motor's Gate Driver. The driver for this IP is a UIO based and the device will instantiate the UIO device for this IP. The userspace driver for this is implemented inside the motor control library in the control block.
+
+> Note: For CANopen implementation CAN driver is used from the default networking stack and is not detailed here.
 
 ### Device and Channel Attributes
 
@@ -264,9 +268,25 @@ The device is now accessible in the userspace through the `/dev/uioX` device. In
 
 For more information on the UIO interface, refer to the kernel [documentation](https://www.kernel.org/doc/html/v4.18/driver-api/uio-howto.html).
 
+### CANopen Library
+
+The CANopen server implementation for the drive kit is based on [Lely CANopen library stack](https://opensource.lely.com/canopen/) for the communication layer.
+
+The Lely Core CANopen library is an open-source, feature-rich, and industrial-quality CANopen implementation for both masters and slaves. It is designed to be a passive library, relying on the user to send and receive CAN frames and update the clock. The interface between the CANopen stack and the CAN bus is provided by the CAN network object from the CAN library (liblely-can).
+
+*The library is divided into several components:*
+
+- liblely-co: A CANopen implementation for both masters and slaves.
+- liblely-coapp: A C++ CANopen application library that provides a high-level application interface for liblely-co.
+- liblely-io2: An asynchronous I/O library that provides support for timers, signal handlers, and CAN devices.
+
 ## Application and Library
 
-The motor control library is a C++ library that provides APIs for the front end application to control and fetch motor parameters. It also has a pybind11 wrapper to support the library APIs through python front end. The front end GUI included with this application is based on a python bokeh server, which can be accessed in a web browser in the network.
+The motor control library is a C++ library that provides APIs for the front end application to control and fetch motor parameters. It also has a pybind11 wrapper to support the library APIs through python front end.
+
+The front end GUI included with this application is based on a python bokeh server, which can be accessed in a web browser in the network.
+
+The CANopen server (slave wrapper) include with this application is implementated to access the motor control library (C++) over the CAN network using CANopen CiA 402 profile.
 
 ### Motor Control Library
 
@@ -349,6 +369,306 @@ The following additional threads are implemented in the library:
 A python based bokeh server is implemented to provide a GUI interface to the application. It imports the motor control python library. The plot updates are handled by an update function which is called at the interval specified in the Refresh Interval text box. For each update, the function requests the number of samples specified in the Sample Size text box and update the plots with new data.
 
 For more details on the GUI usage, refer the [Application Deployment](./app_deployment.md) page for the details on the components and its usage.
+
+### CANOpen Overview
+
+The CANOpen server is an another interface provided for this motor control application.
+It is based on canopen communication protocol. This section provides a top level overview
+of the canopen protocol & operations. Detail canopen protocol and specifications can be found on
+[CAN in Automation (CiA) website](https://www.can-cia.org/) and various other online resources.
+
+CANopen is a robust communication protocol widely used in industrial automation for managing
+networked devices, such as sensors and actuators. It is based on the Controller Area Network (CAN)
+and provides a standardized way to enable communication and control among devices.
+
+#### CANopen Protocol Stack
+
+Conceptually, the CANopen protocol stack is structured into several layers, each responsible for different aspects of communication:
+
+1. **Bus Layer**:
+   - Physical: Defines the physical and electrical characteristics of the network, such as connectors, wiring, and signaling levels.
+   - Data link: Managed by the CAN protocol, this layer handles error detection, message arbitration, and framing. It ensures that messages are transmitted without collisions and that errors are detected and handled.
+
+2. **Communication Layer**:
+   - Network: Responsible for managing the states of the devices in the network. It includes functionalities such as starting, stopping, and resetting devices. Each device can be in one of several states: Initialization, Pre-operational, Operational, or Stopped.
+   - Transport/Session:
+     - **Process Data Objects (PDO)**: Used for real-time data exchange. PDOs are transmitted cyclically or on change of state and are suitable for high-speed data transfer.
+     - **Service Data Objects (SDO)**: Used for configuration and diagnostics. SDOs allow access to any object in the object dictionary and are used for less time-critical communication.
+     - **Emergency (EMCY) Objects**: Used to signal error conditions. EMCY messages are transmitted when a device detects an error, allowing for immediate error handling.
+     - **Synchronization (SYNC) Objects**: Used to synchronize actions across the network. A SYNC message can trigger the simultaneous operation of multiple devices.
+     - **Time Stamp (TIME) Objects**: Used to provide a common time reference for devices in the network.
+
+3. **Application Layer**:
+   - This top layer interacts with the user application and provides services like reading sensor data, controlling actuators, or configuring device parameters.
+
+
+#### CAN Frame and COB-ID
+
+At the core of CANopen communication is the CAN frame which are transmitted on the CAN bus and the concept of Communication Object Identifier(COB-ID).
+
+**CAN Frame:**
+   - A CAN frame consists of several fields that define the structure of a message. These fields include:
+      | Field Name | Description | Bits |
+      |---|---|---|
+      | Start of Frame (SOF) | Single dominant bit (0) | 1 |
+      | Identifier (ID) | Unique message identifier & Priority | 11 |
+      | Control  | Type of frame(RTR) and Length of Data (DLC) | 5 |
+      | Data Field | Actual data content | 0-8 bytes |
+      | CRC (Cyclic Redundancy Check) | Error detection code | 15 |
+      | ACK (Acknowledge) | Reception confirmation (dominant 0 by successful receivers) | 1 |
+      | End of Frame (EOF) | Five consecutive recessive bits (1) | 5 |
+
+**COB-ID**:
+   - The COB-ID is a unique identifier for each CANopen message, determining its priority and the type of communication. It consists of an 11-bit or 29-bit identifier (depending on the CAN protocol version) and is crucial for the arbitration process on the CAN bus.
+   - The COB-ID is used to differentiate various types of CANopen messages, such as NMT commands, PDOs, SDOs, and EMCYs.
+   - It is split in two parts: By default, the first 4 bits equal a function code and the next 7 bits contain the node ID.
+   - Here is the list of common COB-IDs
+     | Communication Object | Function Code(4 bit) | Node Ids (7bit) | COB-IDS (Hex) | Total Objects |
+     |----------------------|----------------------|-----------------|---------------|---------------|
+     | NMT                  | 0000                 | 0000000         | 0             | 1             |
+     | SYNC                 | 0001                 | 0000000         | 80            | 1             |
+     | EMCY                 | 0001                 | 0000001-1111111 | 81 - FF       | 127           |
+     | TIME                 | 0010                 | 0000000         | 100           | 1             |
+     | Transmit PDO 1       | 0011                 | 0000001-1111111 | 181 - 1FF     | 127           |
+     | Receive PDO 1        | 0100                 | 0000001-1111111 | 201 - 27F     | 127           |
+     | Transmit PDO 2       | 0101                 | 0000001-1111111 | 281 - 2FF     | 127           |
+     | Receive PDO 2        | 0110                 | 0000001-1111111 | 301 - 37F     | 127           |
+     | Transmit PDO 3       | 0111                 | 0000001-1111111 | 381 - 3FF     | 127           |
+     | Receive PDO 3        | 1000                 | 0000001-1111111 | 401 - 47F     | 127           |
+     | Transmit PDO 4       | 1001                 | 0000001-1111111 | 481 - 4FF     | 127           |
+     | Receive PDO 4        | 1010                 | 0000001-1111111 | 501 - 57F     | 127           |
+     | Transmit SDO         | 1011                 | 0000001-1111111 | 581 - 5FF     | 127           |
+     | Recieve  SDO         | 1100                 | 0000001-1111111 | 601 - 67F     | 127           |
+     | Heartbeat            | 1110                 | 0000001-1111111 | 701 - 77F     | 127           |
+
+#### CANopen Object Dictionary
+
+The heart of the CANopen protocol is the object dictionary, which is a standardized collection of all parameters and variables that can be accessed via CANopen. The object dictionary is organized in a hierarchical structure with each object identified by a unique 16-bit index. Objects include:
+
+- **Communication Objects**: Parameters related to CANopen communication (e.g., COB IDs, transmission types).
+- **Manufacturer-Specific Objects**: Custom parameters defined by the device manufacturer.
+- **Standardized Device Profile Objects**: Parameters defined by device profiles such as CiA 402 for motion control.
+
+#### Key Operations
+
+1. **Initialization**:
+   - Devices on the network initialize and configure their communication parameters based on the object dictionary.
+
+2. **Network Management (NMT)**:
+   - Devices transition between different states (e.g., Pre-operational, Operational) based on NMT commands.
+
+3. **PDO Communication**:
+   - Devices exchange real-time data using PDOs. For instance, a motor controller might receive speed commands and send back actual speed values using PDOs.
+
+4. **SDO Communication**:
+   - Devices perform configuration and diagnostics using SDOs. This includes reading and writing to the object dictionary.
+
+5. **Emergency Messaging**:
+   - Devices signal error conditions using EMCY messages, enabling immediate error handling.
+
+6. **Synchronization**:
+   - Devices synchronize their actions using SYNC messages, ensuring coordinated operations across the network.
+
+7. **Time Stamping**:
+   - Devices use TIME objects to maintain a consistent time reference, essential for time-sensitive applications.
+
+
+### CANOpen server
+
+The CANopen server is designed to provide a robust interface that allows users to control and monitor motor operations over the CAN bus, leveraging the CiA 402 profile. This server facilitates seamless integration with motor control features, enabling commands such as start, stop, change mode, set speed, set torque, and retrieve motor position and speed.
+
+The CANopen server is built on top of the Lely core library, which provides a comprehensive implementation of the CiA 301 standard. The server implements the CiA 402 profile, focusing on two primary modes of operation: Profiled Velocity and Profiled Torque. The target speed or torque can be set using respective object.
+
+The server architecture can be divided into the following key components:
+
+1. **CANopen Object Dictionary**:
+   - The heart of the CANopen protocol, the object dictionary, contains all the parameters accessible via the CAN bus. For the CiA 402 profile, this includes objects related to motor control, such as operation modes, control commands, status indicators, and parameters for velocity and torque control.
+
+2. **Motor Control Library Integration**:
+   - The server interfaces with an underlying motor control C++ library to execute various motor control commands. This integration ensures that all CANopen commands translate into appropriate actions on the motor, providing a seamless control experience.
+
+3. **CANopen Protocol Layers**:
+   - **CiA 301 (CANopen Communication Profile)**: Managed by the Lely core library, this layer handles the general CANopen communication, including network management (NMT), process data objects (PDO), service data objects (SDO), and more.
+   - **CiA 402 (CANopen Device Profile for Drives and Motion Control)**: Implemented in the application wrapper, this layer defines the specific commands and parameters for motor control, such as operation modes, control word, status word, and various motor-specific settings.
+
+![CANopen Server](media/sw-co-server.jpg)]
+
+#### Operational Overview
+
+The motor control drive device (KD240) is controlled primarily by the use of the objects **Control Word** and **Target Values**, with fault and status feedback provided via the **Status Word** object. The mode of the operation is controlled by **Modes of Operation** Object.
+
+The PDS FSA state machine controls the sequencing of power to the drive, and access to drive motion. It also provides the ability to react to faults and to disable the drive if so needed.
+
+The various configuration registers are normally configured using SDO operations. The status and command word operations are often set and read using PDO communications, but can also be managed using SDO operations. PDO operation can “be in the background”, but are not confirmed, and can also use up significant amounts of bus time if there are many units all reporting their positions continuously while moving. The SDO method allows control of bus activity as the vast majority of packets are the SDO commands and their responses.
+
+The default the slave node id of the KD240 is `4`. It can be changed from during the application launch with argument as described in deployment section. The supported bitrates for the CAN bus are:
+- 1Mbps
+- 800 kbps
+- 500 kbps
+- 250 kbps
+- 125 kbps
+- 50 kbps
+- 20 kbps
+
+
+
+#### System State Machine
+
+Object **6040h** (Control Word)  is used to request state transitions while Object 6041h (**Status Word**) reflects the current state of the State Machine. The below diagram reprents various state tranistions. The boxed names represent States, while the numbered arrows represent Transitions. In each case, the state reflected by Object 6041h is updated when the transition has been completed. Fault Reaction Active is the exception in that the fault is immediately reported when the fault is detected, while the fault reaction is still underway; when the reaction is completed, the state then automatically transitions to Fault.
+
+![FSM](./media/sw-co-fsm.png)
+
+The Foc Motor control drive undergoes the state through the C++ library, when in either of following states:
+- *Switched on*
+- *Operation enabled*
+- *Quick stop active*
+
+Other states transitioned from master using the control words are tracked in the server but will not directly
+change the hardware state.
+
+![control word](./media/sw-co-ctrlword.png)
+
+The **oms** bit is depended on the state of operation.
+
+Depending on the current state, the below table shows command coding for various transition through the control word:
+
+| Command                       | Bit 7 | Bit 3 | Bit 2 | Bit 1 | Bit 0 | Transitions |
+| :-                            | :---: | :---: | :---: | :---: | :---: |  :---:      |
+| Shutdown                      | 0     | X     | 1     | 1     | 0     | 2,6,8      |
+| Switch on                     | 0     | 0     | 1     | 1     | 1     | 3           |
+| Switch on + enable operation  | 0     | 1     | 1     | 1     | 1     | 3 + 4       |
+| Disable voltage               | 0     | X     | X     | 0     | X     | 7,9,10,12   |
+| Quick stop                    | 0     | X     | 0     | 1     | X     | 7,10,11     |
+| Disable operation             | 0     | 0     | 1     | 1     | 1     | 5           |
+| Enable operation              | 0     | 1     | 1     | 1     | 1     | 4,16        |
+| Fault reset                   | R-edge| X     | X     | X     | X     | 15          |
+
+The State of device can be queried by the object **4041h** (status word). The below table reflects the current state.
+
+|Statusword            | PDS FSA state          |
+|----------------------|------------------------|
+| xxxx xxxx x0xx 0000b | Not ready to switch on |
+| xxxx xxxx x1xx 0000b | Switch on disabled     |
+| xxxx xxxx x01x 0001b | Ready to switch on     |
+| xxxx xxxx x01x 0011b | Switched on            |
+| xxxx xxxx x01x 0111b | Operation enabled      |
+| xxxx xxxx x00x 0111b | Quick stop active      |
+| xxxx xxxx x0xx 1111b | Fault reaction act     |
+| xxxx xxxx x0xx 1000b | Fault                  |
+
+
+#### Modes of Operation
+
+The power drive system's behavior depends on the activated mode of operation. The mode of operation can be changed and controled by **6060h** (Modes of Operation) Object. The control word dictates the actual state change as described before.
+
+The control device writes to the modes of operation object in order to select the operation
+mode. The drive device provides the modes of operation display object to indicate the actual
+activated operation mode. Controlword, statusword, and set-points are used mode-specific.
+This implies the responsibility of the control device to avoid inconsistencies and erroneous
+behavior. The switching between the modes of operation implies no automatic reconfiguration
+of COBs for real-time data transmission.
+
+This server supports following modes of operations (value of 6040h object in paranthese):
+- Profile Velocity
+  - Value for 6060h = 0x3
+  - Mode specific `Bit 8` of the control word represents Halt bit
+    | Bit | Value | Definition                                              |
+    |-----|-------|---------------------------------------------------------|
+    | 8   | 0     | The motion shall be executed or continued               |
+    | 8   | 1     | Axis shall be stopped according to the halt option code |
+  - Mode specific `Bit 10`, `Bit 12` and `Bit 13` of the status word respresents
+    | Bit  | Value | Definition                                              |
+    |------|-------|---------------------------------------------------------|
+    | 10   | 0     | Halt (Bit 8 of Control Word) = 0 : Target not reached <br> Halt (Bit 8 of Control Word) = 1 : Axis decelerates   |
+    | 10   | 1     | Halt (bit 8 in controlword) = 0: Target reached <br> Halt (bit 8 in controlword) = 1: Velocity of axis is 0      |
+    | 12   | 0     | Speed is not equal 0
+    | 12   | 1     | Speed is equal 0
+    | 13   | 0     | Maximum slippage not reached
+    | 13   | 1     | Maximum slippage reached
+
+- Profile Torque
+  - Value for 6060h = 0x4
+  - Mode specific `Bit 8` of the control word represents Halt bit
+    | Bit | Value | Definition                                              |
+    |-----|-------|---------------------------------------------------------|
+    | 8   | 0     | The motion shall be executed or continued               |
+    | 8   | 1     | Axis shall be stopped according to the halt option code |
+  - Mode specific `Bit 10`, `Bit 12` and `Bit 13` of the status word respresents
+    | Bit  | Value | Definition                                              |
+    |------|-------|---------------------------------------------------------|
+    | 10   | 0     | Halt (Bit 8 of Control Word) = 0 : Target not reached <br> Halt (Bit 8 of Control Word) = 1 : Axis decelerates   |
+    | 10   | 1     | Halt (bit 8 in controlword) = 0: Target reached <br> Halt (bit 8 in controlword) = 1: Velocity of axis is 0      |
+    | 12   | -     | Reserved
+    | 12   | -     | Reserved
+    | 13   | -     | Reserved
+    | 13   | -     | Reserved
+
+#### Object Dictionary Details
+
+The Object Dictionary is defined in the Electronic Data Sheet (EDS), which lists all supported objects, along with any sub-objects. The full object dictionary can be found in eds (electronic data sheet) file available on the github [here](https://github.com/xilinx/foc-motor-ctrl/blob/main/apps/foc-mc.eds).
+
+Following are the list of objects implmented for this server:
+
+- **CiA 301 Device & Communication Objects**
+  | Index  | Sub  |   Description                        | Access Type | PDO Mapped |
+  |--------|------|--------------------------------------|-------------|------------|
+  | 1000   | 0    | Device Type                          | Constant    |            |
+  | 1001   | 0    | Error Register                       | RO          | YES        |
+  | 1005   | 0    | COB-ID SYNC Message                  | RW          |            |
+  | 1006   | 0    | Communication cycle period           | RW          |            |
+  | 1007   | 0    | SYNC Window lenght                   | RW          |            |
+  | 1008   | 0    | Manufacture Device Name              | Constant    |            |
+  | 1009   | 0    | Manufacture Hw Ver                   | Constant    |            |
+  | 100A   | 0    | Manufacture Hw Ver                   | Constant    |            |
+  | 1005   | 0    | COB-ID SYNC Message                  | RW          |            |
+  | 1012   | 0    | COB-ID time stamp object             | RW          |            |
+  | 1014   | 0    | COB-ID EMCY                          | RW          |            |
+  | 1015   | 0    | Inhibit time EMCY                    | RW          |            |
+  | 1016   | 0-1  | Consumer heartbeat time              | -           |            |
+  | 1017   | 0    | Producer heartbeat time              | RW          |            |
+  | 1018   | 0-4  | Indentiy                             | -           |            |
+  | 1019   | 0    | Synchronous counter overflow value   | RW          |            |
+  | 1200   | 0-2  | SDO Server Parameter                 | -           |            |
+  | 1400   | 0-5  | RPDO Comunication Parameters-1       | -           |            |
+  | 1401   | 0-5  | RPDO Comunication Parameters-2       | -           |            |
+  | 1402   | 0-5  | RPDO Comunication Parameters-3       | -           |            |
+  | 1403   | 0-5  | RPDO Comunication Parameters-4       | -           |            |
+  | 1600   | 0-1  | RPDO Mapping Parameters-1            | -           |            |
+  | 1601   | 0-2  | RPDO Mapping Parameters-2            | -           |            |
+  | 1602   | 0-2  | RPDO Mapping Parameters-3            | -           |            |
+  | 1603   | 0-2  | RPDO Mapping Parameters-4            | -           |            |
+  | 1800   | 0-6  | TPDO Comunication Parameters-1       | -           |            |
+  | 1801   | 0-6  | TPDO Comunication Parameters-2       | -           |            |
+  | 1802   | 0-6  | TPDO Comunication Parameters-3       | -           |            |
+  | 1803   | 0-6  | TPDO Comunication Parameters-4       | -           |            |
+  | 1A00   | 0-1  | TPDO Mapping Parameters-1            | -           |            |
+  | 1A01   | 0-2  | TPDO Mapping Parameters-2            | -           |            |
+  | 1A02   | 0-2  | TPDO Mapping Parameters-3            | -           |            |
+  | 1A03   | 0-2  | TPDO Mapping Parameters-4            | -           |            |
+
+- **Cia 402 Application Profile Objects**
+  | Index  | Sub  |   Description                        | Access Type | PDO Mapped |
+  |--------|------|--------------------------------------|-------------|------------|
+  | 603F   | 0    |   Error Code                         | RO          |            |
+  | 6040   | 0    |   Control Word                       | RW          | YES        |
+  | 6041   | 0    |   Status Word                        | RO          | YES        |
+  | 605A   | 0    |   Quick Stop                         | RO          |            |
+  | 605B   | 0    |   Shutdown                           | RO          |            |
+  | 6060   | 0    |   Modes of Operation                 | RW          | YES        |
+  | 6061   | 0    |   Modes of Operation display         | RO          | YES        |
+  | 606C   | 0    |   Velocity Actual Value              | RO          | YES        |
+  | 6071   | 0    |   Target Torque                      | RW          | YES        |
+  | 6077   | 0    |   Torque Actual Value                | RO          | YES        |
+  | 60FF   | 0    |   Target Velocity                    | RW          | YES        |
+  | 6502   | 0    |   Supported Drive Modes              | RO          |            |
+
+Detailed configuration and values of objects are available [here](canopen_obj_dic.md).
+
+#### Ros2 canopen
+<TODO>
+- bus diagram
+- ros2 canopen stack
+- rviz
 
 ## Next Steps
 
