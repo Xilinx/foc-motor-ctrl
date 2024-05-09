@@ -19,6 +19,7 @@ namespace canopen_foc_mc
 		Obj_Shutdown = 0x605B,
 		Obj_OpMode = 0x6060,
 		Obj_OpModeDisplay = 0x6061,
+		Obj_PositionActual = 0x6064,
 		Obj_VelocityActual = 0x606C,
 		Obj_TargetTorque = 0x6071,
 		Obj_TorqueActual = 0x6077,

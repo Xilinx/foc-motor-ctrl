@@ -1,5 +1,5 @@
 [FileInfo]
-FileName=foc-mc-new.eds
+FileName=foc-mc.eds
 FileVersion=1
 FileRevision=1
 EDSVersion=4.0
@@ -8,8 +8,8 @@ CreatedBy=Pallav Joshi
 CreationTime=1:01AM
 CreationDate=09-28-2023
 ModifiedBy=Pallav Joshi
-ModificationTime=11:10AM
-ModificationDate=04-29-2024
+ModificationTime=01:24AM
+ModificationDate=05-09-2024
 
 [Comments]
 Lines=1
@@ -56,7 +56,7 @@ SupportedObjects=3
 3=0x1018
 
 [OptionalObjects]
-SupportedObjects=43
+SupportedObjects=46
 1=0x1003
 2=0x1005
 3=0x1006
@@ -97,9 +97,12 @@ SupportedObjects=43
 38=0x605B
 39=0x6060
 40=0x6061
-41=0x606C
-42=0x60FF
-43=0x6502
+41=0x6064
+42=0x606C
+43=0x6071
+44=0x6077
+45=0x60FF
+46=0x6502
 
 [ManufacturerObjects]
 SupportedObjects=1
@@ -111,7 +114,7 @@ ObjectType=0x07
 DataType=0x0007
 LowLimit=
 HighLimit=
-AccessType=ro
+AccessType=const
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0x00
@@ -1429,7 +1432,7 @@ DataType=0x0007
 LowLimit=
 HighLimit=
 AccessType=rw
-DefaultValue=$NODEID+0x80000480
+DefaultValue=$NODEID+0x00000480
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=COB-ID used by TPDO
@@ -1581,15 +1584,15 @@ ObjectType=0x07
 
 [1A03]
 ParameterName=TPDO mapping parameter
-SubNumber=9
+SubNumber=3
 ObjectType=0x09
 
 [1A03sub0]
 DataType=0x0005
 LowLimit=
 HighLimit=
-AccessType=rw
-DefaultValue=0
+AccessType=const
+DefaultValue=2
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Number of mapped application objects in PDO
@@ -1599,7 +1602,7 @@ DataType=0x0007
 LowLimit=
 HighLimit=
 AccessType=rw
-DefaultValue=0x00000000
+DefaultValue=0x60410010
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Application object 1
@@ -1610,76 +1613,10 @@ DataType=0x0007
 LowLimit=
 HighLimit=
 AccessType=rw
-DefaultValue=0x00000000
+DefaultValue=0x60640020
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Application object 2
-ObjectType=0x07
-
-[1A03sub3]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Application object 3
-ObjectType=0x07
-
-[1A03sub4]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Application object 4
-ObjectType=0x07
-
-[1A03sub5]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Application object 5
-ObjectType=0x07
-
-[1A03sub6]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Application object 6
-ObjectType=0x07
-
-[1A03sub7]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Application object 7
-ObjectType=0x07
-
-[1A03sub8]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Application object 8
 ObjectType=0x07
 
 [5FFF]
@@ -1710,7 +1647,7 @@ ObjectType=0x07
 DataType=0x0006
 LowLimit=
 HighLimit=
-AccessType=wo
+AccessType=rw
 DefaultValue=
 PDOMapping=1
 ObjFlags=0x00
@@ -1751,10 +1688,10 @@ ObjFlags=0x00
 [6060]
 ParameterName=Modes of Operation
 ObjectType=0x07
-DataType=0x0005
+DataType=0x0002
 LowLimit=
 HighLimit=
-AccessType=wo
+AccessType=rw
 DefaultValue=
 PDOMapping=1
 ObjFlags=0x00
@@ -1762,12 +1699,23 @@ ObjFlags=0x00
 [6061]
 ParameterName=Modes of Operation display
 ObjectType=0x07
-DataType=0x0005
+DataType=0x0002
 LowLimit=
 HighLimit=
 AccessType=ro
 DefaultValue=
 PDOMapping=1
+ObjFlags=0x00
+
+[6064]
+ParameterName=Position Actual Value
+ObjectType=0x07
+DataType=0x0004
+LowLimit=
+HighLimit=
+AccessType=ro
+DefaultValue=
+PDOMapping=0
 ObjFlags=0x00
 
 [606C]
@@ -1778,6 +1726,28 @@ LowLimit=
 HighLimit=
 AccessType=ro
 DefaultValue=
+PDOMapping=1
+ObjFlags=0x00
+
+[6071]
+ParameterName=Target Torque
+ObjectType=0x07
+DataType=0x0003
+LowLimit=
+HighLimit=
+AccessType=rw
+DefaultValue=0
+PDOMapping=1
+ObjFlags=0x00
+
+[6077]
+ParameterName=Torque Actual Value
+ObjectType=0x07
+DataType=0x0003
+LowLimit=
+HighLimit=
+AccessType=ro
+DefaultValue=0
 PDOMapping=1
 ObjFlags=0x00
 
