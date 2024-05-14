@@ -455,7 +455,7 @@ private:
 	void run_vel_mode(void)
 	{
 		std::cout << __FUNCTION__ << ":" <<__LINE__<< std::endl;
-		double target_speed = static_cast<double>(((uint32_t)(*this)[Obj_TargetVelocity][0])) / 1000;
+		double target_speed = static_cast<double>(((int32_t)(*this)[Obj_TargetVelocity][0])) / 1000;
 		double actual_position = static_cast<double>(((int32_t)(*this)[Obj_PositionActual][0])) / 1000.0;
 		double actual_speed = static_cast<double>(((int32_t)(*this)[Obj_VelocityActual][0])) / 1000.0;
 
@@ -502,7 +502,7 @@ private:
 	void run_torque_mode(void)
 	{
 		std::cout << __FUNCTION__ << ":" <<__LINE__<< std::endl;
-		double target_torque = static_cast<double>(((uint32_t)(*this)[Obj_TargetTorque][0])) / 1000;
+		double target_torque = static_cast<double>(((int32_t)(*this)[Obj_TargetTorque][0])) / 1000;
 		double actual_position = static_cast<double>(((int32_t)(*this)[Obj_PositionActual][0])) / 1000.0;
 		double actual_speed = static_cast<double>(((int32_t)(*this)[Obj_VelocityActual][0])) / 1000.0;
 
@@ -510,7 +510,7 @@ private:
 			   (operation_mode.load() == Profiled_Velocity))
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-			target_torque = static_cast<double>(((uint32_t)(*this)[Obj_TargetTorque][0])) / 1000;
+			target_torque = static_cast<double>(((int32_t)(*this)[Obj_TargetTorque][0])) / 1000;
 			//if (target_position != actual_position)
 			//if ((actual_speed > (target_speed + (target_speed/10))) ||
 			//	(actual_speed < (target_speed - (target_speed/10)))	) 	//for now consider 10% margin
