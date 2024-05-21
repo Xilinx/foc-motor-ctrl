@@ -8,13 +8,13 @@ master:
   node_id: 1
   driver: "ros2_canopen::MasterDriver"
   package: "canopen_master_driver"
-  sync_period: 2000
+  sync_period: 10000
 
 defaults:
   dcf: "foc-mc.eds"
   driver: "ros2_canopen::Cia402Driver"
   package: "canopen_402_driver"
-  period: 1000
+  period: 10
 
 nodes:
   kd240:
