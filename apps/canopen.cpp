@@ -12,11 +12,7 @@
 #include <lely/coapp/slave.hpp>
 #include <thread>
 #include <iostream>
-#if 1
 #include "motor-control/motor-control.hpp"
-#else
-#include "dummy-motor-control.hpp"
-#endif
 #include "canopen.h"
 #include <atomic>
 #include <mutex>
@@ -84,7 +80,7 @@ protected:
 			default:
 				std::cout << "Error: Master tried to set unknown operation mode." << std::endl;
 			}
-			std::cout << "Switched to mode :" << mode << std::endl;
+			//printf("Switched to mode=%d\n", mode);
 			(*this)[Obj_OpModeDisplay][0] = (int8_t)(mode);
 			this->TpdoEvent(1);
 		}
@@ -459,14 +455,14 @@ private:
 		double actual_position = static_cast<double>(((int32_t)(*this)[Obj_PositionActual][0])) / 1000.0;
 		double actual_speed = static_cast<double>(((int32_t)(*this)[Obj_VelocityActual][0])) / 1000.0;
 
+		std::cout << "Velocity (Actual/Target) : " << actual_speed << "/" << target_speed << std::endl;
+
 		while ((state.load() == InternalState::Operation_Enable) &&
 			   (operation_mode.load() == Profiled_Velocity))
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			target_speed = static_cast<double>(((int32_t)(*this)[Obj_TargetVelocity][0])) / 1000.0;
-			//if (target_position != actual_position)
-			if ((actual_speed > (target_speed + (target_speed/10))) ||
-				(actual_speed < (target_speed - (target_speed/10)))	) 	//for now consider 10% margin
+		//	if (actual_speed != target_speed)
 			{
 				clear_status_bit(SW_Operation_mode_specific0);
 				clear_status_bit(SW_Target_reached);
@@ -481,7 +477,7 @@ private:
 				this->setSpeed(target_speed);
 				//while (Vel target reached)
 				{
-					std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
 					actual_position = getPosition();
 					actual_speed = getPosition();
 					(*this)[Obj_PositionActual][0] = (int32_t)(actual_position * 1000);
@@ -496,13 +492,16 @@ private:
 					this->TpdoEvent(1);
 				}
 			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
+		(*this)[Obj_PositionActual][0] = (int32_t)(0);
+		(*this)[Obj_VelocityActual][0] = (int32_t)(0);
 	}
 
 	void run_torque_mode(void)
 	{
 		std::cout << __FUNCTION__ << ":" <<__LINE__<< std::endl;
-		double target_torque = static_cast<double>(((int32_t)(*this)[Obj_TargetTorque][0])) / 1000;
+		double target_torque = static_cast<double>(((int16_t)(*this)[Obj_TargetTorque][0])) / 1000;
 		double actual_position = static_cast<double>(((int32_t)(*this)[Obj_PositionActual][0])) / 1000.0;
 		double actual_speed = static_cast<double>(((int32_t)(*this)[Obj_VelocityActual][0])) / 1000.0;
 
@@ -510,7 +509,7 @@ private:
 			   (operation_mode.load() == Profiled_Velocity))
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-			target_torque = static_cast<double>(((int32_t)(*this)[Obj_TargetTorque][0])) / 1000;
+			target_torque = static_cast<double>(((int16_t)(*this)[Obj_TargetTorque][0])) / 1000;
 			//if (target_position != actual_position)
 			//if ((actual_speed > (target_speed + (target_speed/10))) ||
 			//	(actual_speed < (target_speed - (target_speed/10)))	) 	//for now consider 10% margin
