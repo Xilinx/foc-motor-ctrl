@@ -15,6 +15,8 @@ defaults:
   driver: "ros2_canopen::Cia402Driver"
   package: "canopen_402_driver"
   period: 10
+  sdo:
+    - {index: 0x60FF, sub_index: 0, value: 500000}
 
 nodes:
   kd240:
