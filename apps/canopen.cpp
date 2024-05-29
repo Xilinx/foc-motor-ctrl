@@ -567,8 +567,8 @@ private:
 };
 
 int main(int argc, char* argv[]) {
-	// Get CAN interface name (default to "vcan0")
-	const char* can_interface = (argc > 1) ? argv[1] : "vcan0";
+	// Get CAN interface name (default to "can0")
+	const char* can_interface = (argc > 1) ? argv[1] : "can0";
 
 	// Initialize I/O context and polling instance
 	io::IoGuard io_guard;
