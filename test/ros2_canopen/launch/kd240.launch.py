@@ -43,7 +43,7 @@ def generate_launch_description():
                 "motor_control",
                 "bus.yml",
             ),
-            "can_interface_name": "vcan0",
+            "can_interface_name": "can0",
         }.items(),
     )
 
