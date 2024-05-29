@@ -15,8 +15,8 @@ CreatedBy=Pallav Joshi
 CreationTime=1:01AM
 CreationDate=09-28-2023
 ModifiedBy=Pallav Joshi
-ModificationTime=06:49PM
-ModificationDate=05-15-2024
+ModificationTime=01:34PM
+ModificationDate=05-28-2024
 
 [DeviceInfo]
 Vendorname=Advanced Micro Devices, Inc
@@ -25,7 +25,7 @@ OrderCode=
 VendorNumber=0x00000586
 ProductNumber=0x00000013
 RevisionNumber=0x00000011
-BaudRate_10=1
+BaudRate_10=0
 BaudRate_20=1
 BaudRate_50=1
 BaudRate_125=1
@@ -36,7 +36,7 @@ BaudRate_1000=1
 SimpleBootupMaster=0
 SimpleBootupSlave=1
 GroupMessaging=0
-LSS_Supported=1
+LSS_Supported=0
 Granularity=8
 DynamicChannelsSupported=0
 NrOfRXPDO=4
@@ -59,7 +59,7 @@ SupportedObjects=3
 3=0x1018
 
 [OptionalObjects]
-SupportedObjects=46
+SupportedObjects=47
 1=0x1003
 2=0x1005
 3=0x1006
@@ -98,14 +98,15 @@ SupportedObjects=46
 36=0x6041
 37=0x605A
 38=0x605B
-39=0x6060
-40=0x6061
-41=0x6064
-42=0x606C
-43=0x6071
-44=0x6077
-45=0x60FF
-46=0x6502
+39=0x605D
+40=0x6060
+41=0x6061
+42=0x6064
+43=0x606C
+44=0x6071
+45=0x6077
+46=0x60FF
+47=0x6502
 
 [ManufacturerObjects]
 SupportedObjects=1
@@ -118,7 +119,7 @@ DataType=0x0007
 LowLimit=
 HighLimit=
 AccessType=const
-DefaultValue=0x00000000
+DefaultValue=0xFFFF0192
 PDOMapping=0
 ObjFlags=0x00
 
@@ -543,97 +544,20 @@ ObjFlags=0x00
 
 [1016]
 ParameterName=Consumer heartbeat time
-SubNumber=9
+SubNumber=2
 ObjectType=0x08
 
 [1016sub0]
 DataType=0x0005
 LowLimit=
 HighLimit=
-AccessType=ro
-DefaultValue=0x08
+AccessType=const
+DefaultValue=0x01
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Highest sub-index supported
 
 [1016sub1]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Consumer heartbeat time
-ObjectType=0x07
-
-[1016sub2]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Consumer heartbeat time
-ObjectType=0x07
-
-[1016sub3]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Consumer heartbeat time
-ObjectType=0x07
-
-[1016sub4]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Consumer heartbeat time
-ObjectType=0x07
-
-[1016sub5]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Consumer heartbeat time
-ObjectType=0x07
-
-[1016sub6]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Consumer heartbeat time
-ObjectType=0x07
-
-[1016sub7]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Consumer heartbeat time
-ObjectType=0x07
-
-[1016sub8]
 DataType=0x0007
 LowLimit=
 HighLimit=
@@ -1236,7 +1160,7 @@ DataType=0x0005
 LowLimit=
 HighLimit=
 AccessType=rw
-DefaultValue=255
+DefaultValue=1
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Transmission type
@@ -1306,7 +1230,7 @@ DataType=0x0005
 LowLimit=
 HighLimit=
 AccessType=rw
-DefaultValue=255
+DefaultValue=1
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Transmission type
@@ -1376,7 +1300,7 @@ DataType=0x0005
 LowLimit=
 HighLimit=
 AccessType=rw
-DefaultValue=255
+DefaultValue=1
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Transmission type
@@ -1446,7 +1370,7 @@ DataType=0x0005
 LowLimit=
 HighLimit=
 AccessType=rw
-DefaultValue=255
+DefaultValue=1
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Transmission type
@@ -1650,7 +1574,7 @@ ObjectType=0x07
 DataType=0x0006
 LowLimit=
 HighLimit=
-AccessType=rw
+AccessType=rww
 DefaultValue=
 PDOMapping=1
 ObjFlags=0x00
@@ -1669,7 +1593,7 @@ ObjFlags=0x00
 [605A]
 ParameterName=Quick Stop
 ObjectType=0x07
-DataType=0x0006
+DataType=0x0003
 LowLimit=
 HighLimit=
 AccessType=rw
@@ -1680,11 +1604,22 @@ ObjFlags=0x00
 [605B]
 ParameterName=Shutdown
 ObjectType=0x07
-DataType=0x0007
+DataType=0x0003
 LowLimit=
 HighLimit=
 AccessType=ro
 DefaultValue=
+PDOMapping=0
+ObjFlags=0x00
+
+[605D]
+ParameterName=Halt
+ObjectType=0x07
+DataType=0x0003
+LowLimit=
+HighLimit=
+AccessType=rw
+DefaultValue=1
 PDOMapping=0
 ObjFlags=0x00
 
@@ -1695,7 +1630,7 @@ DataType=0x0002
 LowLimit=
 HighLimit=
 AccessType=rw
-DefaultValue=
+DefaultValue=0
 PDOMapping=1
 ObjFlags=0x00
 
@@ -1718,7 +1653,7 @@ LowLimit=
 HighLimit=
 AccessType=ro
 DefaultValue=
-PDOMapping=0
+PDOMapping=1
 ObjFlags=0x00
 
 [606C]
@@ -1761,7 +1696,7 @@ DataType=0x0004
 LowLimit=
 HighLimit=
 AccessType=rw
-DefaultValue=
+DefaultValue=500000
 PDOMapping=1
 ObjFlags=0x00
 
