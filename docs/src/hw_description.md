@@ -46,6 +46,8 @@
   * Time Aware DMA (TADMA)
   * Test PMOD controller
 
+* 1-Wire Bus Host: This interface can be used to read an external 1-Wire device, such as a temperature sensor.
+
 ## Motor Control System
 
 ### QEI
@@ -227,6 +229,12 @@ The other signal which is monitored to see if the Transmitter and Receiver clock
 
 For more information on how to use PMOD signals to check clock synchronization and to measure latency and confirm Qbv programming, refer to [application deployment page](./app_deployment.md).
 
+## AXI 1-wire Bus Host IP
+
+The AXI 1-Wire Host provides a 1-Wire bus controller interface to an AXI4-Lite interface. It supports the 1-Wire bus protocol with support for the essential 1-Wire bus master signals. The AXI 1-Wire Host contains a 1-Wire Host Core Controller, which guarantees protocol timing for driving off-board devices. It can be configured to generate an interrupt when the controller completes the signal instruction cycle. The AXI 1-Wire Host can be configured to bypass the 1-Wire Host Core Controller to manipulate the 1-Wire bus as a general purpose I/O (GPIO).
+
+Information on how to use the AXI 1-Wire IP can be found on [GitHub](https://github.com/Xilinx/axi_1wire_host-design).
+
 ## Clocks, Resets, and Interrupts
 
 ### Clocks
@@ -273,6 +281,7 @@ The following table lists the PL-to-PS interrupts used in this design.
 |pl_ps_irq0[5]| HLS SVPWM Duty IP  |
 |pl_ps_irq0[6]| HLS PWM Gen IP     |
 |pl_ps_irq0[7]| TSN Subsystem      |
+|pl_ps_irq1[0]| AXI 1-Wire IP      |
 
 The TSN Subsystem interrupts are itemized in the following table.
 
@@ -288,13 +297,13 @@ The resource utilization numbers on this platform post implementation is reporte
 
 | Resource  | Utilization  | Available  | Utilization %  |
 | :---      |    :----     | :---       |    :----       |
-| LUT       | 57895        | 70560      | 82.05 |
-| LUTRAM    | 4098         | 28800      | 14.23 |
-| FF        | 84715        | 141120     | 60.03 |
+| LUT       | 57008        | 70560      | 80.79 |
+| LUTRAM    | 2996         | 28800      | 10.40 |
+| FF        | 81183        | 141120     | 57.53 |
 | BRAM      | 116          | 216        | 53.70 |
-| DSP       | 133          | 360        | 36.94 |
-| IO        | 63           | 81         | 77.78 |
-| BUFG      | 21           | 196        | 10.71 |
+| DSP       | 136          | 360        | 37.78 |
+| IO        | 64           | 81         | 79.01 |
+| BUFG      | 17           | 196        | 8.67  |
 | MMCM      | 2            | 3          | 66.67 |
 | PLL       | 0            | 6          | 0.00  |
 
