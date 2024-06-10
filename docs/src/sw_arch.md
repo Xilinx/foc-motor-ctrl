@@ -510,8 +510,6 @@ The default the slave node id of the KD240 is `4`. It can be changed from during
 - 50 kbps
 - 20 kbps
 
-
-
 #### System State Machine
 
 Object **6040h** (Control Word)  is used to request state transitions while Object 6041h (**Status Word**) reflects the current state of the State Machine. The below diagram reprents various state tranistions. The boxed names represent States, while the numbered arrows represent Transitions. In each case, the state reflected by Object 6041h is updated when the transition has been completed. Fault Reaction Active is the exception in that the fault is immediately reported when the fault is detected, while the fault reaction is still underway; when the reaction is completed, the state then automatically transitions to Fault.
@@ -664,15 +662,23 @@ Following are the list of objects implmented for this server:
 
 Detailed configuration and values of objects are available [here](canopen_obj_dic.md).
 
-#### Ros2 canopen
-<TODO>
-- bus diagram
-- ros2 canopen stack
-- rviz
+#### Using CANopen Server
+
+The CANopen server can be utilized by any CiA 402 master on the CAN bus, providing a flexible and standardized interface for motor control. One of the possible usage is demonstrated in the deployment section, showing how a ROS2 based canopen master running on KR260 can access the CANopen Server over the CAN bus.
+
+![CanOpen Bus](./media/sw-canopen-bus.jpg)
+
+**ROS2 CANopen Mater**
+
+The example CANOpen master used in the deployment section is based on [ROS2 CANopen Stack](https://ros-industrial.github.io/ros2_canopen/manual/humble/). This stack prvoides:
+
+- **Easy YAML based bus configuration**: In this file you define the nodes that are connected to the bus by specifying their node id, the corresponding EDS file.
+- **Serivce based operation**: The stack can be operated using standard ROS2 nodes. The lifecycle and CANOpen state can be controlled using the Services of ROS2 nodes based on the driver selected in the YAML file.
+- **ROS2 control based operation**: **canopen_ros2_control/CIA402System** interface is provided to control CANOpen device over CANOpen CiA 402 profile.
+
+As ROS2 control integration is provided by ROS2 CANOpen stack, it is easy to just define a hardware interface to us KD240 in the Robot system as a joint.
 
 ## Next Steps
 
 - [Application Deployment](./app_deployment.md)
 - Go back to the [KD240 FOC Motor Control Landing Page](../foc_motor_control_landing)
-
-
