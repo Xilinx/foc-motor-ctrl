@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-#define EDS_PATH "/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl/share/foc-motor-ctrl/foc-mc.eds"
-#define SLAVE_ID	4
+#define DEFAULT_EDS_PATH	"/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl/share/foc-motor-ctrl/foc-mc.eds"
+#define DEFAULT_NODE_ID		4
+#define DEFAULT_CAN_IF		"can0"
 
 namespace canopen_foc_mc
 {

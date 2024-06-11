@@ -26,7 +26,7 @@ public:
 	using BasicSlave::BasicSlave;
 
 	MotorCtrlSlave(io::TimerBase &timer, io::CanChannelBase &chan,
-		       const ::std::string &dcf_txt, const ::std::string &dcf_bin="", uint8_t id=0xff):
+			   const ::std::string &dcf_txt, const ::std::string &dcf_bin="", uint8_t id=0xff):
 		BasicSlave(timer, chan, dcf_txt, dcf_bin,id)
 	{
 		mpMotorCtrl = MotorControl::getMotorControlInstance(1);
@@ -80,7 +80,6 @@ protected:
 			default:
 				std::cout << "Error: Master tried to set unknown operation mode." << std::endl;
 			}
-			//printf("Switched to mode=%d\n", mode);
 			(*this)[Obj_OpModeDisplay][0] = (int8_t)(mode);
 			this->TpdoEvent(1);
 		}
@@ -512,7 +511,7 @@ private:
 			target_torque = static_cast<double>(((int16_t)(*this)[Obj_TargetTorque][0])) / 1000;
 			//if (target_position != actual_position)
 			//if ((actual_speed > (target_speed + (target_speed/10))) ||
-			//	(actual_speed < (target_speed - (target_speed/10)))	) 	//for now consider 10% margin
+			//	(actual_speed < (target_speed - (target_speed/10)))	)	//for now consider 10% margin
 			{
 				clear_status_bit(SW_Operation_mode_specific0);
 				clear_status_bit(SW_Target_reached);
@@ -566,9 +565,79 @@ private:
 
 };
 
+// Function to print the usage message
+void printUsage(const char* programName)
+{
+	std::cout << "Usage: " << programName << " [options]\n"
+			  << "Options:\n"
+			  << "  -h, --help                   Print this help message\n"
+			  << "  -i, --interface <interface>  Name of the CAN interface. Default is "
+			  << DEFAULT_CAN_IF << "\n"
+			  << "  -n, --node <id>              Node id of the can slave. Default is '"
+			  << DEFAULT_NODE_ID << "'\n"
+			  << "  -e, --eds <eds file>         Path to the eds file. \n"
+			  << "                               Default is " << DEFAULT_EDS_PATH << "\n";
+}
+
+// Function to parse the command-line arguments
+void parseArguments(int argc, char* argv[], std::string& interface,
+		            int& node, std::string& eds_file)
+{
+	// Set defaults from macros
+	interface = DEFAULT_CAN_IF;
+	node = DEFAULT_NODE_ID;
+	eds_file = DEFAULT_EDS_PATH;
+
+	for (int i = 1; i < argc; ++i) {
+		std::string arg = argv[i];
+
+		if (arg == "-h" || arg == "--help") {
+			printUsage(argv[0]);
+			exit(0);
+		} else if (arg == "-e" || arg == "--eds") {
+			if (i + 1 < argc) {
+				eds_file = argv[++i];
+				//TODO: Validate if the path exists
+			} else {
+				std::cerr << "Error: --eds option requires an argument.\n";
+				printUsage(argv[0]);
+				exit(1);
+			}
+		} else if (arg == "-i" || arg == "--interface") {
+			if (i + 1 < argc) {
+				interface = argv[++i];
+			} else {
+				std::cerr << "Error: --interface option requires an argument.\n";
+				printUsage(argv[0]);
+				exit(1);
+			}
+		} else if (arg == "-n" || arg == "--node") {
+			if (i + 1 < argc) {
+				try {
+					node = std::stoi(argv[++i]);
+				} catch (std::invalid_argument&) {
+					std::cerr << "Error: Invalid node ID. It must be an integer.\n";
+					printUsage(argv[0]);
+					exit(1);
+				}
+			} else {
+				std::cerr << "Error: --node option requires an argument.\n";
+				printUsage(argv[0]);
+				exit(1);
+			}
+		} else {
+			std::cerr << "Unknown option: " << arg << "\n";
+			printUsage(argv[0]);
+			exit(1);
+		}
+	}
+}
 int main(int argc, char* argv[]) {
-	// Get CAN interface name (default to "can0")
-	const char* can_interface = (argc > 1) ? argv[1] : "can0";
+	std::string can_interface;
+	std::string eds_file;
+	int node_id;
+
+	parseArguments(argc, argv, can_interface, node_id, eds_file);
 
 	// Initialize I/O context and polling instance
 	io::IoGuard io_guard;
@@ -580,14 +649,18 @@ int main(int argc, char* argv[]) {
 	auto exec = loop.get_executor();
 	io::Timer timer(poll, exec, CLOCK_MONOTONIC);
 
-
 	// Create virtual SocketCAN CAN controller and channel
-	io::CanController ctrl(can_interface);
+	io::CanController ctrl(can_interface.c_str());
 	io::CanChannel chan(poll, exec);
 	chan.open(ctrl);
 
+	// Print the arguments used
+	std::cout << "CAN Interface: " << can_interface << "\n";
+	std::cout << "Node ID: " << node_id << "\n";
+	std::cout << "EDS file: " << eds_file << "\n";
+
 	// Create CANopen slave with desired node ID
-	MotorCtrlSlave slave(timer, chan, EDS_PATH , "", SLAVE_ID);
+	MotorCtrlSlave slave(timer, chan, eds_file, "", node_id);
 
 	// Create signal handler for clean shutdown
 	io::SignalSet sigset(poll, exec);
