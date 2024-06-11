@@ -425,26 +425,7 @@ private:
 
 	void handleModeChange(MotorOpMode mode)
 	{
-#if 0
-		switch (mode) {
-		case 0:
-			mpMotorCtrl->setOperationMode(MotorOpMode::kModeOff);
-			break;
-		case 1:
-			mpMotorCtrl->setOperationMode(MotorOpMode::kModeSpeed);
-			break;
-		case 2:
-			mpMotorCtrl->setOperationMode(MotorOpMode::kModeTorque);
-			break;
-		case 3:
-			mpMotorCtrl->setOperationMode(MotorOpMode::kModeOpenLoop);
-			break;
-		default:
-			break;
-		}
-#else
 		mpMotorCtrl->setOperationMode(mode);
-#endif
 	}
 
 	void run_vel_mode(void)
@@ -505,13 +486,11 @@ private:
 		double actual_speed = static_cast<double>(((int32_t)(*this)[Obj_VelocityActual][0])) / 1000.0;
 
 		while ((state.load() == InternalState::Operation_Enable) &&
-			   (operation_mode.load() == Profiled_Velocity))
+			   (operation_mode.load() == Profiled_Torque))
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			target_torque = static_cast<double>(((int16_t)(*this)[Obj_TargetTorque][0])) / 1000;
-			//if (target_position != actual_position)
-			//if ((actual_speed > (target_speed + (target_speed/10))) ||
-			//	(actual_speed < (target_speed - (target_speed/10)))	)	//for now consider 10% margin
+			// while target not achieved
 			{
 				clear_status_bit(SW_Operation_mode_specific0);
 				clear_status_bit(SW_Target_reached);
