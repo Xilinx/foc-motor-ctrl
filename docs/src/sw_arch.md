@@ -286,7 +286,7 @@ The motor control library is a C++ library that provides APIs for the front end 
 
 The front end GUI included with this application is based on a python bokeh server, which can be accessed in a web browser in the network.
 
-The CANopen server (slave wrapper) include with this application is implementated to access the motor control library (C++) over the CAN network using CANopen CiA 402 profile.
+The CANopen server (slave wrapper) included with this application is implemented to access the motor control library (C++) over the CAN network using CANopen CiA 402 profile.
 
 ### Motor Control Library
 
@@ -370,11 +370,11 @@ A python based bokeh server is implemented to provide a GUI interface to the app
 
 For more details on the GUI usage, refer the [Application Deployment](./app_deployment.md) page for the details on the components and its usage.
 
-### CANOpen Overview
+### CANopen Overview
 
-The CANOpen server is an another interface provided for this motor control application.
-It is based on canopen communication protocol. This section provides a top level overview
-of the canopen protocol & operations. Detail canopen protocol and specifications can be found on
+The CANopen server is an another interface provided for this motor control application.
+It is based on CANopen communication protocol. This section provides a top level overview
+of the CANopen protocol & operations. Detail CANopen protocol and specifications can be found on
 [CAN in Automation (CiA) website](https://www.can-cia.org/) and various other online resources.
 
 CANopen is a robust communication protocol widely used in industrial automation for managing
@@ -473,7 +473,7 @@ The heart of the CANopen protocol is the object dictionary, which is a standardi
    - Devices use TIME objects to maintain a consistent time reference, essential for time-sensitive applications.
 
 
-### CANOpen server
+### CANopen server
 
 The CANopen server is designed to provide a robust interface that allows users to control and monitor motor operations over the CAN bus, leveraging the CiA 402 profile. This server facilitates seamless integration with motor control features, enabling commands such as start, stop, change mode, set speed, set torque, and retrieve motor position and speed.
 
@@ -557,11 +557,11 @@ The State of device can be queried by the object **4041h** (status word). The be
 
 #### Modes of Operation
 
-The power drive system's behavior depends on the activated mode of operation. The mode of operation can be changed and controled by **6060h** (Modes of Operation) Object. The control word dictates the actual state change as described before.
+The power drive system's behavior depends on the activated mode of operation. The mode of operation can be changed and controlled by **6060h** (Modes of Operation) Object. The control word dictates the actual state change as described before.
 
 The control device writes to the modes of operation object in order to select the operation
 mode. The drive device provides the modes of operation display object to indicate the actual
-activated operation mode. Controlword, statusword, and set-points are used mode-specific.
+activated operation mode. controlword, statusword, and set-points are used mode-specific.
 This implies the responsibility of the control device to avoid inconsistencies and erroneous
 behavior. The switching between the modes of operation implies no automatic reconfiguration
 of COBs for real-time data transmission.
@@ -577,7 +577,7 @@ This server supports following modes of operations (value of 6040h object in par
   - Mode specific `Bit 10`, `Bit 12` and `Bit 13` of the status word respresents
     | Bit  | Value | Definition                                              |
     |------|-------|---------------------------------------------------------|
-    | 10   | 0     | Halt (Bit 8 of Control Word) = 0 : Target not reached <br> Halt (Bit 8 of Control Word) = 1 : Axis decelerates   |
+    | 10   | 0     | Halt (Bit 8 of controlword) = 0 : Target not reached <br> Halt (Bit 8 of controlword) = 1 : Axis decelerates   |
     | 10   | 1     | Halt (bit 8 in controlword) = 0: Target reached <br> Halt (bit 8 in controlword) = 1: Velocity of axis is 0      |
     | 12   | 0     | Speed is not equal 0
     | 12   | 1     | Speed is equal 0
@@ -594,7 +594,7 @@ This server supports following modes of operations (value of 6040h object in par
   - Mode specific `Bit 10`, `Bit 12` and `Bit 13` of the status word respresents
     | Bit  | Value | Definition                                              |
     |------|-------|---------------------------------------------------------|
-    | 10   | 0     | Halt (Bit 8 of Control Word) = 0 : Target not reached <br> Halt (Bit 8 of Control Word) = 1 : Axis decelerates   |
+    | 10   | 0     | Halt (Bit 8 of controlword) = 0 : Target not reached <br> Halt (Bit 8 of controlword) = 1 : Axis decelerates   |
     | 10   | 1     | Halt (bit 8 in controlword) = 0: Target reached <br> Halt (bit 8 in controlword) = 1: Velocity of axis is 0      |
     | 12   | -     | Reserved
     | 12   | -     | Reserved
@@ -605,7 +605,7 @@ This server supports following modes of operations (value of 6040h object in par
 
 The Object Dictionary is defined in the Electronic Data Sheet (EDS), which lists all supported objects, along with any sub-objects. The full object dictionary can be found in eds (electronic data sheet) file available on the github [here](https://github.com/xilinx/foc-motor-ctrl/blob/main/apps/foc-mc.eds).
 
-Following are the list of objects implmented for this server:
+Following are the list of objects implemented for this server:
 
 - **CiA 301 Device & Communication Objects**
   | Index  | Sub  |   Description                        | Access Type | PDO Mapped |
@@ -650,10 +650,12 @@ Following are the list of objects implmented for this server:
   | 603F   | 0    |   Error Code                         | RO          |            |
   | 6040   | 0    |   Control Word                       | RW          | YES        |
   | 6041   | 0    |   Status Word                        | RO          | YES        |
-  | 605A   | 0    |   Quick Stop                         | RO          |            |
+  | 605A   | 0    |   Quick Stop                         | RW          |            |
   | 605B   | 0    |   Shutdown                           | RO          |            |
+  | 605D   | 0    |   Halt                               | RW          |            |
   | 6060   | 0    |   Modes of Operation                 | RW          | YES        |
   | 6061   | 0    |   Modes of Operation display         | RO          | YES        |
+  | 6064   | 0    |   Position Actual Value              | RO          | YES        |
   | 606C   | 0    |   Velocity Actual Value              | RO          | YES        |
   | 6071   | 0    |   Target Torque                      | RW          | YES        |
   | 6077   | 0    |   Torque Actual Value                | RO          | YES        |
@@ -664,19 +666,21 @@ Detailed configuration and values of objects are available [here](canopen_obj_di
 
 #### Using CANopen Server
 
-The CANopen server can be utilized by any CiA 402 master on the CAN bus, providing a flexible and standardized interface for motor control. One of the possible usage is demonstrated in the deployment section, showing how a ROS2 based canopen master running on KR260 can access the CANopen Server over the CAN bus.
+The CANopen server can be utilized by any CiA 402 master on the CAN bus, providing a flexible and standardized interface for motor control. One of the possible usage is demonstrated in the deployment section, showing how a ROS2 based CANopen master running on KR260 can access the CANopen Server over the CAN bus.
 
 ![CanOpen Bus](./media/sw-canopen-bus.jpg)
 
 **ROS2 CANopen Mater**
 
-The example CANOpen master used in the deployment section is based on [ROS2 CANopen Stack](https://ros-industrial.github.io/ros2_canopen/manual/humble/). This stack prvoides:
+The example CANopen master used in the deployment section is based on [ROS2 CANopen Stack](https://ros-industrial.github.io/ros2_canopen/manual/humble/). This stack provides:
 
 - **Easy YAML based bus configuration**: In this file you define the nodes that are connected to the bus by specifying their node id, the corresponding EDS file.
-- **Serivce based operation**: The stack can be operated using standard ROS2 nodes. The lifecycle and CANOpen state can be controlled using the Services of ROS2 nodes based on the driver selected in the YAML file.
-- **ROS2 control based operation**: **canopen_ros2_control/CIA402System** interface is provided to control CANOpen device over CANOpen CiA 402 profile.
+- **Service based operation**: The stack can be operated using standard ROS2 nodes. The lifecycle and CANopen state can be controlled using the Services of ROS2 nodes based on the driver selected in the YAML file.
+- **ROS2 control based operation**: **canopen_ros2_control/CIA402System** interface is provided to control CANopen device over CANopen CiA 402 profile.
 
-As ROS2 control integration is provided by ROS2 CANOpen stack, it is easy to just define a hardware interface to us KD240 in the Robot system as a joint.
+As ROS2 control integration is provided by ROS2 CANopen stack, it is easy to just define a hardware interface to use KD240 in the Robot system as a joint.
+
+Example implementation of the ROS2 CANopen master that is used for deployment on KR260 is available [here](https://github.com/xilinx/foc-motor-ctrl/blob/main/test/ros2_canopen).
 
 ## Next Steps
 
