@@ -38,6 +38,12 @@ if(BUILD_CANOPEN_APP)
 	install(FILES foc-mc.eds
 		DESTINATION share/foc-motor-ctrl/
 	)
+
+	install(PROGRAMS launch_server.sh
+		DESTINATION ${CMAKE_INSTALL_BINDIR}
+		RENAME start_motor_server
+	)
+
 endif()
 
 if(BUILD_CMDLINE_APP)
