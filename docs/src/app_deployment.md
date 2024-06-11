@@ -67,11 +67,16 @@ This guide is targeted for Ubuntu® 22.04 and the AMD 2023.1 toolchain.
 
   ![KD240-Setup](./media/Connect_ACpower_to_J32.jpg)
 
-* Connect the One Wire Temperature Sensor to J47 Temp Sensor connector. Red connects to 3-5V, Blue/Black 
+* Connect the One Wire Temperature Sensor to J47 Temp Sensor connector. Red connects to 3-5V, Blue/Black
 connects to ground and Yellow/White is Sense(data)
 
   ![KD240-Setup](./media/Connect_OneWire_to_J47.jpg)
 
+* Only for CANopen server interface: Connect PMOD-CAN module to PMOD3 on the
+  KR260. Connect CAN cables from J18 on the KD240 to the PMOD-CAN module (CANL
+  to CANL, CANH to CANH, GND to GND).
+
+  ![KD240-KR260-CAN](./media/KD240_KR260_CAN.jpg)
 
 ### Tested Artifacts
 
@@ -130,29 +135,42 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
       sudo apt install lm-sensors
       ```
 
-## Run the Motor Control Application
+## Load the Firmware
 
-* Load the firmware:
+* Show the list and status of available application firmware.
 
-  * Show the list and status of available application firmware.
+  After installing the firmware, execute xmutil listapps to verify that it is captured under the listapps function and to have dfx-mgrd rescan and register all accelerators in the firmware directory tree.
 
-    After installing the firmware, execute xmutil listapps to verify that it is captured under the listapps function and to have dfx-mgrd rescan and register all accelerators in the firmware directory tree.
+  ```bash
+  ubuntu@kria:~$ sudo xmutil listapps
+         Accelerator          Accel_type                 Base           Base_type      #slots(PL+AIE)    Active_slot
 
-    ```bash
-    ubuntu@kria:~$ sudo xmutil listapps
-           Accelerator          Accel_type                 Base           Base_type      #slots(PL+AIE)    Active_slot
+    kd240-motor-ctrl-qei       XRT_FLAT         kd240-motor-ctrl-qei     XRT_FLAT            (0+0)           -1
+  ```
 
-      kd240-motor-ctrl-qei       XRT_FLAT         kd240-motor-ctrl-qei     XRT_FLAT            (0+0)           -1
-    ```
+* Load the desired application firmware.
 
-  * Load the desired application firmware.
+  When there is already another accelerator/firmware loaded, unload it first, then load the kd240-foc-motor-ctrl firmware.
 
-    When there is already another accelerator/firmware loaded, unload it first, then load the kd240-foc-motor-ctrl firmware.
+  ```bash
+  sudo xmutil unloadapp
+  sudo xmutil loadapp kd240-motor-ctrl-qei
+  ```
 
-    ```bash
-    sudo xmutil unloadapp
-    sudo xmutil loadapp kd240-motor-ctrl-qei
-    ```
+## Control Interfaces
+
+This application provides two interfaces to control the motor. The dashboard
+application allows the user to control the motor and view live plots via a
+web-based dashboard running on the KD240. The CANopen application allows the
+user to start a CANopen server on the KD240 and control the motor via service
+calls from another device over the CAN bus. The steps for both control
+interfaces are described in more detail below.
+
+Note: Only one interface can used at a time.
+
+## Run the Motor Control Dashboard Application
+
+### On the KD240
 
 * Run the bokeh server:
 
@@ -167,7 +185,7 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
 
   ![Terminal](./media/terminal.png)
 
-## On the Host PC
+### On the Host PC
 
 * Open &lt;ip&gt;:5006 in a web browser.
 
@@ -177,8 +195,6 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
 * If the unit is plugged into a network with DHCP, an IP will be assigned automatically. If not on a network, then configure a static IP. For help on setting up static IP, see [Setting up a private network](https://github.com/Xilinx/vck190-base-trd/blob/2022.1/docs/source/run/run-dashboard.rst#setting-up-a-private-network).
 
 >**NOTE:** The open-loop mode of motor operation is a test mode intended for users with motor control knowledge and experience. Incorrect configurations of values of Vd and Vq can cause the motor to spin at speeds higher than its rating and potentially cause excessive motor heating. Use caution when using the open-loop mode.
-
-## Dashboard
 
 ### Dashboard Features
 
@@ -218,6 +234,215 @@ The following images show what the dashboard looks like when a larger load is ap
 ![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Speed_Loaded.png)
 ![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_Torque_Loaded.png)
 ![Motor-Control-Dashboard](./media/Motor_Control_Dashboard_OpenLoop_Loaded.png)
+
+## Run the Motor Control ROS2 CANopen Application
+
+### Test CAN Communication
+
+* On the KR260, go through [Booting Kria Starter Kit Linux](https://xilinx.github.io/kria-apps-docs/kr260/build/html/docs/kria_starterkit_linux_boot.html) to complete the minimum setup required to boot Linux before continuing with instructions on this page.
+
+* Install and load firmware on KR260. The kr260-tsn-rs485pmod firmware is used
+  to enable to PMOD-CAN interface on KR260.
+
+  ```bash
+  sudo apt install kr260-tsn-rs485pmod
+  sudo xmutil unloadapp
+  sudo xmutil loadapp kr260-tsn-rs485pmod
+  ```
+
+* Set up the CAN interface on both the KR260 and KD240.
+
+  ```bash
+  sudo ip link set can0 up type can bitrate 1000000
+  sudo ip link set can0 txqueuelen 1000
+  sudo ip link set can0 up
+  ```
+
+* Install can-utils on both the KR260 and KD240.
+
+  ```bash
+  sudo apt install -y can-utils
+  ```
+
+* On one board, run candump.
+
+  ```bash
+  candump can0
+  ```
+
+* On the other board, use cansend to send test data. You should see this data
+  show up on the board running candump.
+
+  ```bash
+  sudo cansend can0 123#1122334455667788
+  ```
+
+### On the KD240
+
+* Run the CANopen application.
+
+  ```bash
+  export PATH=${PATH}:/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl/bin
+  start_motor_server
+  ```
+
+### On the KR260 (master)
+
+* Download the docker image on the KR260.
+
+  ```bash
+  docker pull xilinx/foc-motor-ctrl-ros2-canopen-host:latest
+  ```
+
+* You can find the images installed with the following command:
+
+  ```bash
+  docker images
+  ```
+
+* Launch the docker container on the KR260.
+
+  ```bash
+  docker run \
+      --env=DISPLAY \
+      --env=XDG_SESSION_TYPE \
+      --net=host \
+      --privileged \
+      --volume=/home/ubuntu/.Xauthority:/root/.Xauthority:rw \
+      -v /tmp:/tmp \
+      -v /dev:/dev \
+      -v /sys:/sys \
+      -v /etc/vart.conf:/etc/vart.conf \
+      -v /lib/firmware/xilinx:/lib/firmware/xilinx \
+      -v /run:/run \
+      -it foc-motor-ctrl-ros2-canopen-host:latest bash
+  ```
+
+* Make sure you are inside the docker container and source the ROS setup files.
+
+  ```bash
+  source /opt/ros/humble/setup.bash
+  source /root/ros_ws/install/setup.bash
+  ```
+
+* Start the launch file.
+
+  ```bash
+  ros2 launch foc_motor kd240.launch.py
+  ```
+
+* Open a new terminal, find the docker container id, and launch another
+  session connected to the same container.
+
+  ```bash
+  docker ps       # Copy container_id from output of this command
+  docker exec -it <container_id> bash
+  ```
+
+* In the new docker session, source the ROS setup files.
+
+  ```bash
+  source /opt/ros/humble/setup.bash
+  source /root/ros_ws/install/setup.bash
+  ```
+
+* Check the available services and their types.
+
+  ```bash
+  ros2 service list -t
+  ```
+
+  The output should look similar to this:
+  ```bash
+  ubuntu@KR260:~$ ros2 service list -t
+  /device_container_node/change_state [lifecycle_msgs/srv/ChangeState]
+  /device_container_node/describe_parameters [rcl_interfaces/srv/DescribeParameters]
+  /device_container_node/get_parameter_types [rcl_interfaces/srv/GetParameterTypes]
+  /device_container_node/get_parameters [rcl_interfaces/srv/GetParameters]
+  /device_container_node/init_driver [canopen_interfaces/srv/CONode]
+  /device_container_node/list_parameters [rcl_interfaces/srv/ListParameters]
+  /device_container_node/set_parameters [rcl_interfaces/srv/SetParameters]
+  /device_container_node/set_parameters_atomically [rcl_interfaces/srv/SetParametersAtomically]
+  /kd240/cyclic_position_mode [std_srvs/srv/Trigger]
+  /kd240/cyclic_velocity_mode [std_srvs/srv/Trigger]
+  /kd240/describe_parameters [rcl_interfaces/srv/DescribeParameters]
+  /kd240/get_parameter_types [rcl_interfaces/srv/GetParameterTypes]
+  /kd240/get_parameters [rcl_interfaces/srv/GetParameters]
+  /kd240/halt [std_srvs/srv/Trigger]
+  /kd240/init [std_srvs/srv/Trigger]
+  /kd240/interpolated_position_mode [std_srvs/srv/Trigger]
+  /kd240/list_parameters [rcl_interfaces/srv/ListParameters]
+  /kd240/nmt_reset_node [std_srvs/srv/Trigger]
+  /kd240/nmt_start_node [std_srvs/srv/Trigger]
+  /kd240/position_mode [std_srvs/srv/Trigger]
+  /kd240/recover [std_srvs/srv/Trigger]
+  /kd240/sdo_read [canopen_interfaces/srv/CORead]
+  /kd240/sdo_write [canopen_interfaces/srv/COWrite]
+  /kd240/set_parameters [rcl_interfaces/srv/SetParameters]
+  /kd240/set_parameters_atomically [rcl_interfaces/srv/SetParametersAtomically]
+  /kd240/target [canopen_interfaces/srv/COTargetDouble]
+  /kd240/torque_mode [std_srvs/srv/Trigger]
+  /kd240/velocity_mode [std_srvs/srv/Trigger]
+  /launch_ros_33646/describe_parameters [rcl_interfaces/srv/DescribeParameters]
+  /launch_ros_33646/get_parameter_types [rcl_interfaces/srv/GetParameterTypes]
+  /launch_ros_33646/get_parameters [rcl_interfaces/srv/GetParameters]
+  /launch_ros_33646/list_parameters [rcl_interfaces/srv/ListParameters]
+  /launch_ros_33646/set_parameters [rcl_interfaces/srv/SetParameters]
+  /launch_ros_33646/set_parameters_atomically [rcl_interfaces/srv/SetParametersAtomically]
+  /master/describe_parameters [rcl_interfaces/srv/DescribeParameters]
+  /master/get_parameter_types [rcl_interfaces/srv/GetParameterTypes]
+  /master/get_parameters [rcl_interfaces/srv/GetParameters]
+  /master/list_parameters [rcl_interfaces/srv/ListParameters]
+  /master/sdo_read [canopen_interfaces/srv/COReadID]
+  /master/sdo_write [canopen_interfaces/srv/COWriteID]
+  /master/set_parameters [rcl_interfaces/srv/SetParameters]
+  /master/set_parameters_atomically [rcl_interfaces/srv/SetParametersAtomically]
+  ```
+
+* To view an interface definition, use:
+  ```bash
+  ros2 interface show <type>
+  ```
+
+  For example, to view the interface definition for the canopen_interfaces/srv/COTargetDouble
+  type which is used for the /kd240/target service, run the command below.
+  This will print the input (target) and output (success).
+  ```bash
+  ubuntu@KR260:~$ ros2 interface show canopen_interfaces/srv/COTargetDouble
+  float64 target
+  ---
+  bool success
+  ```
+
+* Use service calls to control the motor.
+
+  The services available and their descriptions can be found in the
+  [Cia402 Driver documentation](https://ros-industrial.github.io/ros2_canopen/manual/humble/user-guide/cia402-driver.html).
+
+  Reset:
+  ```bash
+  ros2 service call /kd240/nmt_reset_node std_srvs/srv/Trigger
+  ```
+
+  Init:
+  ```bash
+  ros2 service call /kd240/init std_srvs/srv/Trigger
+  ```
+
+  Change to velocity mode:
+  ```bash
+  ros2 service call /kd240/velocity_mode std_srvs/srv/Trigger
+  ```
+
+  Change target speed:
+  ```bash
+  ros2 service call /kd240/target canopen_interfaces/srv/COTargetDouble "target: 800"
+  ```
+
+  Halt:
+  ```bash
+  ros2 service call /kd240/halt std_srvs/srv/Trigger
+  ```
 
 ## Run One Wire Temperature Sensor Demo
 
@@ -283,7 +508,7 @@ Testing was performed with the following artifacts:
 
 * The sensor read through the filesystem provides temperature in millidegrees Celsius
 
-* The `lm_sensors` utility's `sensors` command gathers information from the kernel interfaces provided by `hwmon` subsystem, aggregates this raw data, 
+* The `lm_sensors` utility's `sensors` command gathers information from the kernel interfaces provided by `hwmon` subsystem, aggregates this raw data,
 applies scaling and calibration and presents it in a human-readable format.
 
 * Run the 1-wire demo to measure temperature.
