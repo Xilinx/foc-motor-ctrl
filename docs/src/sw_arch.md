@@ -23,12 +23,14 @@ The following diagram illustrates the top-level architecture and arrangement of 
 ![Software Architecture Overview](media/sw_arch.jpg)
 
 - Kernel: Ubuntu Linux kernel
+  - `hwmon` : Hardware Monitoring Kernel Framework
   - Drivers:
     - `xilinx_adc_hub`: IIO driver for analog-to-digital converter (ADC) HUB
     - `hls_qei_axi`: IIO driver for the QEI sensor
     - `hsl_foc_periodic`: IIO driver for the sensor based field oriented controller
     - `hls_pwm_gen`: IIO driver for PWM GEN
     - `hsl_svpwm_duty`: IIO driver for SVPWM
+    - `amd_axi_w1` : AMD 1Wire programmable logic bus driver
 - Middleware
   - IIO Framework and libiio library
   - Generic UIO framework
@@ -37,6 +39,7 @@ The following diagram illustrates the top-level architecture and arrangement of 
   - Motor Control Library (includes UIO driver for the custom Motor Control IP)
   - Bokeh dashboard
   - CANopen Server
+  - lm-sensors : Linux Monitoring Sensors utility package
 
 ## Kernel Drivers
 
@@ -681,6 +684,70 @@ The example CANopen master used in the deployment section is based on [ROS2 CANo
 As ROS2 control integration is provided by ROS2 CANopen stack, it is easy to just define a hardware interface to use KD240 in the Robot system as a joint.
 
 Example implementation of the ROS2 CANopen master that is used for deployment on KR260 is available [here](https://github.com/xilinx/foc-motor-ctrl/blob/main/test/ros2_canopen).
+
+## One Wire
+
+In addition to above motor control application, this platform also provides One Wire interface. The One Wire protocol is a communication protocol that allows for the transfer of data and power over a single wire.
+
+This application makes use of the One Wire Temperature sensor which is a digital thermometer that uses the 1-wire protocol to communicate with a host device.
+
+It measures temperature and converts it into digital signal, which can be read by microcontrollers and other devices.
+
+The following diagram illustrates the top-level architecture and arrangement of various software components:
+
+![One Wire Architecture Overview](media/1-wire_arch.JPG)
+
+- Kernel: Ubuntu Linux kernel
+  - `hwmon` : Hardware Monitoring Kernel Framework
+  - Drivers:
+    - `amd_axi_w1` : AMD 1Wire programmable logic bus driver
+- Application
+  - `lm-sensors` : Linux Monitoring Sensors utility package
+
+### Kernel Driver
+
+The driver developed for the platform provides support to the AMD 1-Wire programmable logic IP block and guarantees protocol
+timing for driving off-board devices such as thermal sensors, proms, etc using the 1wire protocol.
+
+The 1-Wire master driver in the kernel controls the 1-wire bus and provides the fundamental operations for communication, such as
+sending and receiving bits, handling resets and presence pulses
+
+The driver registers and manages the discovery and attachment of slave devices.
+
+Workflow for 1-wire Slave connection:
+
+- Initialization : The bus master driver initializes and registers with the 1-wire core.
+- Detection: The bus master scans the bus for connected devices, identifying each by its unique address and adds an entry 28-XXXXXXXXXXXX in the `/sys/bus/w1/devices`.
+- Binding : The 1-wire core matches detected devices with the appropriate slave.
+- Communication : Slave uses the bus master operations to interact with the devices.
+
+The Linux kernel includes hardware monitoring(hwmon) modules that interact with the sensor chips.
+
+The driver exposes the sensor data to user space via the sysfs filesystem, located at /sys/class/hwmon/hwmonX, where `X` is the
+number corresponding to the detected chips.
+
+For integration of 1-wire sensor with the `hwmon` framework, a symbolic link in the `/sys/class/hwmon` directory is created pointing to
+the one wire sensor. This is automatically managed by the 1-wire driver.
+
+For example:
+
+- To list all the `hwmon` interfaces:
+  ```
+  ubuntu@kria:~$ ls /sys/class/hwmon/
+  hwmon0  hwmon1  hwmon2
+  ```
+- Load the motor-ctrl-qei firmware which loads the one wire kernel module. Assuming 1-wire Sensor is connected to KD240
+- After firmware load a new `hwmon3` directory will appear which indicates successful recognition of 1-wire sensor.
+- To read the temperature via hwmon, you can read the `temp1_input` file within the `hwmon3` directory.
+- This provides temperature in millidegrees Celsius.
+
+### Application
+
+lm_sensors (Linux monitoring sensors) is a free and open-source application that provides tools and drivers for monitoring temperatures,
+voltage, and fans. `sensors` is an application or primary command that is used to read and display sensor data.
+
+This `sensors` command gathers information from the kernel interfaces provided by `hwmon` subsystem, aggregates this raw data, applies scaling
+and calibration and presents it in a human-readable format.
 
 ## Next Steps
 
