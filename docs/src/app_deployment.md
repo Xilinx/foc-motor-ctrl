@@ -185,7 +185,24 @@ Note: Only one interface can used at a time.
 
   ![Terminal](./media/terminal.png)
 
-### On the Host PC
+* Change Motor Configurations:
+
+  By default the motor configuration parameters are provided by `/etc/motor-control/config` file.
+  The configuration file stores various parameters required for motor control. These parameters include general
+  motor settings, voltage and mode configurations, PWM settings, gain parameters, and other calibration settings.
+  This allows for flexible and precise configuration of different motors by simply adjusting these parameters in
+  the config file. One can point to a different configuration file by passing additional argument to the bokeh server
+  allowing to use different configuration files for different motors.
+
+  To run the Bokeh server with a specific configuration file, use the following command structure:
+    ```bash
+    sudo bokeh serve --show --allow-websocket-origin=<ip>:5006 mc_bokeh.py --args </path/to/config/file>
+    ```
+  Replace <ip> with board `ip` and `<path/to/config/file>` with the actual path to the desired configuration file.
+
+  > Note: If no path is specified, the default configuration file [anaheim.config](https://github.com/Xilinx/foc-motor-ctrl/blob/main/lib/configs/anaheim.config) will be used. Inline comments in the config file explains each parameter.
+
+## On the Host PC
 
 * Open &lt;ip&gt;:5006 in a web browser.
 
