@@ -37,7 +37,6 @@ public:
 
 	~MotorCtrlSlave()
 	{
-		//MotorControl::destroyMotorControlInstance(mpMotorCtrl);
 		delete mpMotorCtrl;
 	}
 
@@ -142,6 +141,7 @@ protected:
 		}
 		if (is_fault_reset())
 		{
+			// TODO: clear faults
 			set_ready_to_switch_on();
 		}
 	}
@@ -179,6 +179,8 @@ protected:
 		if (is_quickstop())
 		{
 			set_quick_stop();
+			// Stop the Motor if it is running
+			stopMotor();
 		}
 		{
 			std::scoped_lock<std::mutex> lock(w_mutex);
@@ -189,19 +191,8 @@ protected:
 
 		if (old_operation_mode.load() != operation_mode.load())
 		{
-			if (profiled_velocity_mode.joinable())
-			{
-				std::cout<<"Joined velocity thread"<<std::endl;
-				handleModeChange(MotorOpMode::kModeOff);
-				profiled_velocity_mode.join();
-			}
-			if (profiled_torque_mode.joinable())
-			{
-				std::cout<<"Joined torque thread"<<std::endl;
-				handleModeChange(MotorOpMode::kModeOff);
-				profiled_torque_mode.join();
-			}
-
+			// Stop the Motor if it is running
+			stopMotor();
 			old_operation_mode.store(operation_mode.load());
 
 			switch (operation_mode.load())
@@ -423,19 +414,44 @@ private:
 	std::thread profiled_velocity_mode;
 	std::thread profiled_torque_mode;
 
+
+	double _last_speed, _last_torque;
+	int _last_mode;
+
 	void handleModeChange(MotorOpMode mode)
 	{
-		mpMotorCtrl->setOperationMode(mode);
+		int new_mode = static_cast<int>(mode);
+		if (_last_mode != new_mode) {
+			mpMotorCtrl->setOperationMode(mode);
+			_last_mode = new_mode;
+		}
+	}
+
+
+	void stopMotor(void)
+	{
+		if (profiled_velocity_mode.joinable())
+		{
+			std::cout<<"Joined velocity thread"<<std::endl;
+			profiled_velocity_mode.join();
+			handleModeChange(MotorOpMode::kModeOff);
+		}
+		if (profiled_torque_mode.joinable())
+		{
+			std::cout<<"Joined torque thread"<<std::endl;
+			profiled_torque_mode.join();
+			handleModeChange(MotorOpMode::kModeOff);
+		}
 	}
 
 	void run_vel_mode(void)
 	{
-		std::cout << __FUNCTION__ << ":" <<__LINE__<< std::endl;
+		std::cout << __FUNCTION__ << ":" << "Started" << std::endl;
 		double target_speed = static_cast<double>(((int32_t)(*this)[Obj_TargetVelocity][0])) / 1000;
 		double actual_position = static_cast<double>(((int32_t)(*this)[Obj_PositionActual][0])) / 1000.0;
 		double actual_speed = static_cast<double>(((int32_t)(*this)[Obj_VelocityActual][0])) / 1000.0;
 
-		std::cout << "Velocity (Actual/Target) : " << actual_speed << "/" << target_speed << std::endl;
+		//std::cout << "Velocity (Actual/Target) : " << actual_speed << "/" << target_speed << std::endl;
 
 		while ((state.load() == InternalState::Operation_Enable) &&
 			   (operation_mode.load() == Profiled_Velocity))
@@ -476,11 +492,12 @@ private:
 		}
 		(*this)[Obj_PositionActual][0] = (int32_t)(0);
 		(*this)[Obj_VelocityActual][0] = (int32_t)(0);
+		std::cout << __FUNCTION__ << ":" << "Terminated" << std::endl;
 	}
 
 	void run_torque_mode(void)
 	{
-		std::cout << __FUNCTION__ << ":" <<__LINE__<< std::endl;
+		std::cout << __FUNCTION__ << ":" << "Started" << std::endl;
 		double target_torque = static_cast<double>(((int16_t)(*this)[Obj_TargetTorque][0])) / 1000;
 		double actual_position = static_cast<double>(((int32_t)(*this)[Obj_PositionActual][0])) / 1000.0;
 		double actual_speed = static_cast<double>(((int32_t)(*this)[Obj_VelocityActual][0])) / 1000.0;
@@ -521,27 +538,32 @@ private:
 				}
 			}
 		}
+		std::cout << __FUNCTION__ << ":" << "Terminated" << std::endl;
 	}
 
 	void setSpeed(double speed)
 	{
-		mpMotorCtrl->SetSpeed(speed);
+		if(_last_speed != speed)
+			mpMotorCtrl->SetSpeed(speed);
+		_last_speed = speed;
 	}
 
 	void setTorque(double torque)
 	{
-		mpMotorCtrl->SetTorque(torque);
+		if(_last_torque != torque)
+			mpMotorCtrl->SetTorque(torque);
+		_last_torque = torque;
 	}
 
 	int getSpeed(void)
 	{
 		return mpMotorCtrl->getSpeed();
 	}
+
 	int getPosition(void)
 	{
 		return mpMotorCtrl->getPosition();
 	}
-
 };
 
 // Function to print the usage message
@@ -611,7 +633,9 @@ void parseArguments(int argc, char* argv[], std::string& interface,
 		}
 	}
 }
-int main(int argc, char* argv[]) {
+
+int main(int argc, char* argv[])
+{
 	std::string can_interface;
 	std::string eds_file;
 	int node_id;
