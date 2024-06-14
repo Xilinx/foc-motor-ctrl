@@ -404,45 +404,48 @@ Conceptually, the CANopen protocol stack is structured into several layers, each
 3. **Application Layer**:
    - This top layer interacts with the user application and provides services like reading sensor data, controlling actuators, or configuring device parameters.
 
-
 #### CAN Frame and COB-ID
 
 At the core of CANopen communication is the CAN frame which are transmitted on the CAN bus and the concept of Communication Object Identifier(COB-ID).
 
 **CAN Frame:**
-   - A CAN frame consists of several fields that define the structure of a message. These fields include:
-      | Field Name | Description | Bits |
-      |---|---|---|
-      | Start of Frame (SOF) | Single dominant bit (0) | 1 |
-      | Identifier (ID) | Unique message identifier & Priority | 11 |
-      | Control  | Type of frame(RTR) and Length of Data (DLC) | 5 |
-      | Data Field | Actual data content | 0-8 bytes |
-      | CRC (Cyclic Redundancy Check) | Error detection code | 15 |
-      | ACK (Acknowledge) | Reception confirmation (dominant 0 by successful receivers) | 1 |
-      | End of Frame (EOF) | Five consecutive recessive bits (1) | 5 |
+
+- A CAN frame consists of several fields that define the structure of a message. These fields include:
+
+  | Field Name | Description | Bits |
+  |---|---|---|
+  | Start of Frame (SOF) | Single dominant bit (0) | 1 |
+  | Identifier (ID) | Unique message identifier & Priority | 11 |
+  | Control  | Type of frame(RTR) and Length of Data (DLC) | 5 |
+  | Data Field | Actual data content | 0-8 bytes |
+  | CRC (Cyclic Redundancy Check) | Error detection code | 15 |
+  | ACK (Acknowledge) | Reception confirmation (dominant 0 by successful receivers) | 1 |
+  | End of Frame (EOF) | Five consecutive recessive bits (1) | 5 |
 
 **COB-ID**:
-   - The COB-ID is a unique identifier for each CANopen message, determining its priority and the type of communication. It consists of an 11-bit or 29-bit identifier (depending on the CAN protocol version) and is crucial for the arbitration process on the CAN bus.
-   - The COB-ID is used to differentiate various types of CANopen messages, such as NMT commands, PDOs, SDOs, and EMCYs.
-   - It is split in two parts: By default, the first 4 bits equal a function code and the next 7 bits contain the node ID.
-   - Here is the list of common COB-IDs
-     | Communication Object | Function Code(4 bit) | Node Ids (7bit) | COB-IDS (Hex) | Total Objects |
-     |----------------------|----------------------|-----------------|---------------|---------------|
-     | NMT                  | 0000                 | 0000000         | 0             | 1             |
-     | SYNC                 | 0001                 | 0000000         | 80            | 1             |
-     | EMCY                 | 0001                 | 0000001-1111111 | 81 - FF       | 127           |
-     | TIME                 | 0010                 | 0000000         | 100           | 1             |
-     | Transmit PDO 1       | 0011                 | 0000001-1111111 | 181 - 1FF     | 127           |
-     | Receive PDO 1        | 0100                 | 0000001-1111111 | 201 - 27F     | 127           |
-     | Transmit PDO 2       | 0101                 | 0000001-1111111 | 281 - 2FF     | 127           |
-     | Receive PDO 2        | 0110                 | 0000001-1111111 | 301 - 37F     | 127           |
-     | Transmit PDO 3       | 0111                 | 0000001-1111111 | 381 - 3FF     | 127           |
-     | Receive PDO 3        | 1000                 | 0000001-1111111 | 401 - 47F     | 127           |
-     | Transmit PDO 4       | 1001                 | 0000001-1111111 | 481 - 4FF     | 127           |
-     | Receive PDO 4        | 1010                 | 0000001-1111111 | 501 - 57F     | 127           |
-     | Transmit SDO         | 1011                 | 0000001-1111111 | 581 - 5FF     | 127           |
-     | Recieve  SDO         | 1100                 | 0000001-1111111 | 601 - 67F     | 127           |
-     | Heartbeat            | 1110                 | 0000001-1111111 | 701 - 77F     | 127           |
+
+- The COB-ID is a unique identifier for each CANopen message, determining its priority and the type of communication. It consists of an 11-bit or 29-bit identifier (depending on the CAN protocol version) and is crucial for the arbitration process on the CAN bus.
+- The COB-ID is used to differentiate various types of CANopen messages, such as NMT commands, PDOs, SDOs, and EMCYs.
+- It is split in two parts: By default, the first 4 bits equal a function code and the next 7 bits contain the node ID.
+- Here is the list of common COB-IDs
+
+  | Communication Object | Function Code(4 bit) | Node Ids (7bit) | COB-IDS (Hex) | Total Objects |
+  |----------------------|----------------------|-----------------|---------------|---------------|
+  | NMT                  | 0000                 | 0000000         | 0             | 1             |
+  | SYNC                 | 0001                 | 0000000         | 80            | 1             |
+  | EMCY                 | 0001                 | 0000001-1111111 | 81 - FF       | 127           |
+  | TIME                 | 0010                 | 0000000         | 100           | 1             |
+  | Transmit PDO 1       | 0011                 | 0000001-1111111 | 181 - 1FF     | 127           |
+  | Receive PDO 1        | 0100                 | 0000001-1111111 | 201 - 27F     | 127           |
+  | Transmit PDO 2       | 0101                 | 0000001-1111111 | 281 - 2FF     | 127           |
+  | Receive PDO 2        | 0110                 | 0000001-1111111 | 301 - 37F     | 127           |
+  | Transmit PDO 3       | 0111                 | 0000001-1111111 | 381 - 3FF     | 127           |
+  | Receive PDO 3        | 1000                 | 0000001-1111111 | 401 - 47F     | 127           |
+  | Transmit PDO 4       | 1001                 | 0000001-1111111 | 481 - 4FF     | 127           |
+  | Receive PDO 4        | 1010                 | 0000001-1111111 | 501 - 57F     | 127           |
+  | Transmit SDO         | 1011                 | 0000001-1111111 | 581 - 5FF     | 127           |
+  | Receive  SDO         | 1100                 | 0000001-1111111 | 601 - 67F     | 127           |
+  | Heartbeat            | 1110                 | 0000001-1111111 | 701 - 77F     | 127           |
 
 #### CANopen Object Dictionary
 
@@ -475,7 +478,6 @@ The heart of the CANopen protocol is the object dictionary, which is a standardi
 7. **Time Stamping**:
    - Devices use TIME objects to maintain a consistent time reference, essential for time-sensitive applications.
 
-
 ### CANopen server
 
 The CANopen server is designed to provide a robust interface that allows users to control and monitor motor operations over the CAN bus, leveraging the CiA 402 profile. This server facilitates seamless integration with motor control features, enabling commands such as start, stop, change mode, set speed, set torque, and retrieve motor position and speed.
@@ -505,7 +507,7 @@ The PDS FSA state machine controls the sequencing of power to the drive, and acc
 The various configuration registers are normally configured using SDO operations. The status and command word operations are often set and read using PDO communications, but can also be managed using SDO operations. PDO operation can “be in the background”, but are not confirmed, and can also use up significant amounts of bus time if there are many units all reporting their positions continuously while moving. The SDO method allows control of bus activity as the vast majority of packets are the SDO commands and their responses.
 
 The default the slave node id of the KD240 is `4`. It can be changed from during the application launch with argument as described in deployment section. The supported bitrates for the CAN bus are:
-- 1Mbps
+
 - 800 kbps
 - 500 kbps
 - 250 kbps
@@ -520,6 +522,7 @@ Object **6040h** (Control Word)  is used to request state transitions while Obje
 ![FSM](./media/sw-co-fsm.png)
 
 The Foc Motor control drive undergoes the state through the C++ library, when in either of following states:
+
 - *Switched on*
 - *Operation enabled*
 - *Quick stop active*
@@ -557,7 +560,6 @@ The State of device can be queried by the object **4041h** (status word). The be
 | xxxx xxxx x0xx 1111b | Fault reaction act     |
 | xxxx xxxx x0xx 1000b | Fault                  |
 
-
 #### Modes of Operation
 
 The power drive system's behavior depends on the activated mode of operation. The mode of operation can be changed and controlled by **6060h** (Modes of Operation) Object. The control word dictates the actual state change as described before.
@@ -569,40 +571,50 @@ This implies the responsibility of the control device to avoid inconsistencies a
 behavior. The switching between the modes of operation implies no automatic reconfiguration
 of COBs for real-time data transmission.
 
-This server supports following modes of operations (value of 6040h object in paranthese):
-- Profile Velocity
-  - Value for 6060h = 0x3
-  - Mode specific `Bit 8` of the control word represents Halt bit
-    | Bit | Value | Definition                                              |
-    |-----|-------|---------------------------------------------------------|
-    | 8   | 0     | The motion shall be executed or continued               |
-    | 8   | 1     | Axis shall be stopped according to the halt option code |
-  - Mode specific `Bit 10`, `Bit 12` and `Bit 13` of the status word respresents
-    | Bit  | Value | Definition                                              |
-    |------|-------|---------------------------------------------------------|
-    | 10   | 0     | Halt (Bit 8 of controlword) = 0 : Target not reached <br> Halt (Bit 8 of controlword) = 1 : Axis decelerates   |
-    | 10   | 1     | Halt (bit 8 in controlword) = 0: Target reached <br> Halt (bit 8 in controlword) = 1: Velocity of axis is 0      |
-    | 12   | 0     | Speed is not equal 0
-    | 12   | 1     | Speed is equal 0
-    | 13   | 0     | Maximum slippage not reached
-    | 13   | 1     | Maximum slippage reached
+This server supports following modes of operations (value of 6040h object in parentheses):
 
-- Profile Torque
-  - Value for 6060h = 0x4
-  - Mode specific `Bit 8` of the control word represents Halt bit
-    | Bit | Value | Definition                                              |
-    |-----|-------|---------------------------------------------------------|
-    | 8   | 0     | The motion shall be executed or continued               |
-    | 8   | 1     | Axis shall be stopped according to the halt option code |
-  - Mode specific `Bit 10`, `Bit 12` and `Bit 13` of the status word respresents
-    | Bit  | Value | Definition                                              |
-    |------|-------|---------------------------------------------------------|
-    | 10   | 0     | Halt (Bit 8 of controlword) = 0 : Target not reached <br> Halt (Bit 8 of controlword) = 1 : Axis decelerates   |
-    | 10   | 1     | Halt (bit 8 in controlword) = 0: Target reached <br> Halt (bit 8 in controlword) = 1: Velocity of axis is 0      |
-    | 12   | -     | Reserved
-    | 12   | -     | Reserved
-    | 13   | -     | Reserved
-    | 13   | -     | Reserved
+##### Profile Velocity
+
+- Value for 6060h = 0x3
+- Mode specific `Bit 8` of the control word represents Halt bit
+
+  | Bit | Value | Definition                                              |
+  |-----|-------|---------------------------------------------------------|
+  | 8   | 0     | The motion shall be executed or continued               |
+  | 8   | 1     | Axis shall be stopped according to the halt option code |
+
+- Mode specific `Bit 10`, `Bit 12` and `Bit 13` of the status word represents
+
+  | Bit | Value | Definition                                                                                                 |
+  |-----|-------|------------------------------------------------------------------------------------------------------------|
+  | 10  | 0     | Halt (Bit 8 of controlword) = 0 : Target not reached<br>Halt (Bit 8 of controlword) = 1 : Axis decelerates |
+  | 10  | 1     | Halt (bit 8 in controlword) = 0: Target reached<br>Halt (bit 8 in controlword) = 1: Velocity of axis is 0  |
+  | 12  | 0     | Speed is not equal to 0                                                                                    |
+  | 12  | 1     | Speed is equal to 0                                                                                        |
+  | 13  | 0     | Maximum slippage not reached                                                                               |
+  | 13  | 1     | Maximum slippage reached                                                                                   |
+
+##### Profile Torque
+
+- Value for 6060h = 0x4
+- Mode specific `Bit 8` of the control word represents Halt bit
+
+  | Bit | Value | Definition                                              |
+  |-----|-------|---------------------------------------------------------|
+  | 8   | 0     | The motion shall be executed or continued               |
+  | 8   | 1     | Axis shall be stopped according to the halt option code |
+
+- Mode specific `Bit 10`, `Bit 12` and `Bit 13` of the status word represents
+
+  | Bit | Value | Definition                                                                                                 |
+  |-----|-------|------------------------------------------------------------------------------------------------------------|
+  | 10  | 0     | Halt (Bit 8 of controlword) = 0 : Target not reached<br>Halt (Bit 8 of controlword) = 1 : Axis decelerates |
+  | 10  | 1     | Halt (bit 8 in controlword) = 0: Target reached<br>Halt (bit 8 in controlword) = 1: Velocity of axis is 0  |
+  | 12  | -     | Reserved                                                                                                   |
+  | 12  | -     | Reserved                                                                                                   |
+  | 13  | -     | Reserved                                                                                                   |
+  | 13  | -     | Reserved                                                                                                   |
+
 
 #### Object Dictionary Details
 
@@ -611,6 +623,7 @@ The Object Dictionary is defined in the Electronic Data Sheet (EDS), which lists
 Following are the list of objects implemented for this server:
 
 - **CiA 301 Device & Communication Objects**
+
   | Index  | Sub  |   Description                        | Access Type | PDO Mapped |
   |--------|------|--------------------------------------|-------------|------------|
   | 1000   | 0    | Device Type                          | Constant    |            |
@@ -648,6 +661,7 @@ Following are the list of objects implemented for this server:
   | 1A03   | 0-2  | TPDO Mapping Parameters-4            | -           |            |
 
 - **Cia 402 Application Profile Objects**
+
   | Index  | Sub  |   Description                        | Access Type | PDO Mapped |
   |--------|------|--------------------------------------|-------------|------------|
   | 603F   | 0    |   Error Code                         | RO          |            |
@@ -673,7 +687,7 @@ The CANopen server can be utilized by any CiA 402 master on the CAN bus, providi
 
 ![CanOpen Bus](./media/sw-canopen-bus.jpg)
 
-**ROS2 CANopen Mater**
+##### ROS2 CANopen Mater
 
 The example CANopen master used in the deployment section is based on [ROS2 CANopen Stack](https://ros-industrial.github.io/ros2_canopen/manual/humble/). This stack provides:
 
@@ -753,3 +767,4 @@ and calibration and presents it in a human-readable format.
 
 - [Application Deployment](./app_deployment.md)
 - Go back to the [KD240 FOC Motor Control Landing Page](../foc_motor_control_landing)
+
