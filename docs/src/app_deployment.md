@@ -87,8 +87,8 @@ Testing was performed with the following artifacts:
 | Component                      | Version                    |
 |--------------------------------|----------------------------|
 | Boot Firmware                  | K24-BootFW-01.01           |
-| Linux Kernel                   | 5.15.0-1027-xilinx-zynqmp  |
-| xlnx-firmware-kd240-motor-ctrl | 0.10.1-0xlnx1              |
+| Linux Kernel                   | 5.15.0-1030-xilinx-zynqmp  |
+| xlnx-firmware-kd240-motor-ctrl | 0.12-0xlnx1                |
 
 To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/1641152513/Kria+K26+SOM#Boot-Firmware-Updates).
 
@@ -96,7 +96,7 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
 
 | Package                        | Version      |
 |--------------------------------|--------------|
-| xlnx-app-kd240-foc-motor-ctrl  | 0.3.1-0xlnx5 |
+| xlnx-app-kd240-foc-motor-ctrl  | 0.4-0xlnx1   |
 
 ### Initial Setup
 
@@ -270,7 +270,7 @@ The following images show what the dashboard looks like when a larger load is ap
 * Set up the CAN interface on both the KR260 and KD240.
 
   ```bash
-  sudo ip link set can0 up type can bitrate 1000000
+  sudo ip link set can0 up type can bitrate 100000
   sudo ip link set can0 txqueuelen 1000
   sudo ip link set can0 up
   ```
@@ -462,18 +462,6 @@ The following images show what the dashboard looks like when a larger load is ap
   ```
 
 ## Run One Wire Temperature Sensor Demo
-
-### Tested Artifacts
-
-Testing was performed with the following artifacts:
-
-#### KD240 platform Artifacts
-
-| Component                      | Version              |
-|--------------------------------|----------------------|
-| Boot Firmware                  | K24-BootFW-01.00.bin |
-| Linux Kernel                   | 5.15.0-1030          |
-| xlnx-firmware-kd240-motor-ctrl | 0.12-0xlnx1          |
 
 * In this demo, the lm-sensors utility probes the One Wire Temperature sensor, reads and displays the captured temperature value on  the serial terminal.
 
