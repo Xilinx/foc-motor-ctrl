@@ -31,7 +31,7 @@ set(CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/configs")
 set(CONFIG_FILE ${CONFIG_DIR}/anaheim.config)
 
 # set DEFAULT_CONFIG variable with the default config name.
-set(DEFAULT_CONFIG anaheim.config)
+set(DEFAULT_CONFIG anaheim.config CACHE STRING "Default configuration file name")
 
 # Add library sources
 target_sources(${FMC_LIB_NAME} PRIVATE
@@ -82,16 +82,18 @@ add_compile_definitions(PY_MODULE_NAME=${PY_FMC_LIB})
 if(EXISTS ${CONFIG_FILE})
     install(FILES ${CONFIG_FILE} DESTINATION etc/motor-control COMPONENT config)
 
-    install(CODE "
-        execute_process(COMMAND
-          mkdir -p /etc/motor-control
-        )
-        execute_process(COMMAND
-          ${CMAKE_COMMAND} -E create_symlink
-          ${CMAKE_INSTALL_PREFIX}/etc/motor-control/${DEFAULT_CONFIG}
-          /etc/motor-control/config
-        )
-      ")
+    if(NOT SKIP_POST_INSTALL)
+        install(CODE "
+            execute_process(COMMAND
+              mkdir -p /etc/motor-control
+            )
+            execute_process(COMMAND
+              ${CMAKE_COMMAND} -E create_symlink
+              ${CMAKE_INSTALL_PREFIX}/etc/motor-control/${DEFAULT_CONFIG}
+              /etc/motor-control/config
+            )
+          ")
+    endif()
 endif()
 
 # Set install targets for the library
