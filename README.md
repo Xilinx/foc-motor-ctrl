@@ -34,7 +34,7 @@ This repository provides a field oriented control based motor control library an
     ```bash
     mkdir -p build
     cd build/
-    cmake -DCMAKE_INSTALL_PREFIX=/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl -DBUILD_DASHBOARD_APP=ON ..
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl -DBUILD_DASHBOARD_APP=ON -DBUILD_CANOPEN_APP=ON ..
     ```
 
     **Project specific configuration options**
@@ -49,6 +49,7 @@ This repository provides a field oriented control based motor control library an
     Options                | Possible Values | Default    | Description
     -----------------------|-----------------|------------|-------------
     CMAKE_INSTALL_PREFIX   | install location|`/usr/local`| Provide custom install location.
+    SKIP_POST_INSTALL      | ON, OFF         | OFF        | Skip the post install that can be handled by packaging system.
 
 4. Build the libraries, applications and tests.
 
