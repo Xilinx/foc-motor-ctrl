@@ -1,0 +1,23 @@
+# Copyright (C) 2023 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+options:
+  dcf_path: "@BUS_CONFIG_PATH@"
+
+master:
+  node_id: 1
+  driver: "ros2_canopen::MasterDriver"
+  package: "canopen_master_driver"
+  sync_period: 10000
+
+defaults:
+  dcf: "foc-mc.eds"
+  driver: "ros2_canopen::Cia402Driver"
+  package: "canopen_402_driver"
+  period: 10
+  sdo:
+    - {index: 0x60FF, sub_index: 0, value: 500000}
+
+nodes:
+  wheel_joint:
+    node_id: 4

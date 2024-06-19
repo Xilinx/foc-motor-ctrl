@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="define_control" params="
+      name
+      prefix
+      bus_config
+      master_config
+      can_interface_name
+      master_bin">
+
+        <ros2_control name="${name}" type="system">
+            <hardware>
+              <plugin>canopen_ros2_control/RobotSystem</plugin>
+              <param name="bus_config">${bus_config}</param>
+              <param name="master_config">${master_config}</param>
+              <param name="can_interface_name">${can_interface_name}</param>
+              <param name="master_bin">"${master_bin}"</param>
+            </hardware>
+            <joint name="${prefix}joint1">
+                <param name="device_name">wheel_joint</param>
+                <command_interface name="velocity" />
+                <state_interface name="position" />
+                <state_interface name="velocity" />
+            </joint>
+        </ros2_control>
+    </xacro:macro>
+
+    <xacro:define_control
+        name="foc_system"
+        prefix=""
+        bus_config="$(find ros2_co_control)/config/motor_control/bus.yml"
+        master_config="$(find ros2_co_control)/config/motor_control/master.dcf"
+        can_interface_name="vcan0"
+        master_bin="" />
+
+</robot>

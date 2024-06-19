@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <link name="base_plate">
+        <visual>
+            <geometry>
+                <box size="0.8 1.6 0.1"/>
+            </geometry>
+            <material name="White">
+                <color rgba="1 1 1 1"/>
+            </material>
+        </visual>
+    </link>
+
+    <joint name="motor_joint" type="fixed">
+        <parent link="base_plate"/>
+        <child link="motor"/>
+        <origin xyz="0 0.6 0"/>
+    </joint>
+
+    <link name="motor">
+        <visual>
+            <geometry>
+                <cylinder length="0.4" radius="0.1"/>
+            </geometry>
+            <origin rpy="1.57075 0 0" xyz="0 0 0.15"/>
+            <material name="Black">
+                <color rgba="0.2 0.2 0.2 1"/>
+            </material>
+        </visual>
+    </link>
+
+    <joint name="screw_joint" type="fixed">
+        <parent link="motor"/>
+        <child link="screw"/>
+        <origin xyz="0 0.22 0"/>
+    </joint>
+
+    <link name="screw">
+        <visual>
+            <geometry>
+                <cylinder length="0.04" radius="0.01"/>
+            </geometry>
+            <origin rpy="1.57075 0 0" xyz="0 0 0.15"/>
+            <material name="Grey">
+                <color rgba="0.9 0.9 0.9 1"/>
+            </material>
+        </visual>
+    </link>
+
+    <joint name="wheel_joint" type="continuous">
+        <parent link="screw"/>
+        <child link="wheel"/>
+        <origin xyz="0 0.04 0.15" rpy="${pi/2} 0 0" />
+        <axis xyz="0 0 -1"/>
+    </joint>
+
+    <link name="wheel">
+        <visual>
+            <geometry>
+                <cylinder length="0.04" radius="0.125"/>
+            </geometry>
+            <material name="Grey">
+                <color rgba="0.9 0.9 0.9 1"/>
+            </material>
+        </visual>
+    </link>
+
+</robot>
