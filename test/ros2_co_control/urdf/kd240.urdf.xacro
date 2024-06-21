@@ -5,4 +5,12 @@
 
     <xacro:include filename="ros2_control.xacro" />
 
+    <xacro:define_control
+        name="foc_system"
+        prefix=""
+        bus_config="$(find ros2_co_control)/config/motor_control/bus.yml"
+        master_config="$(find ros2_co_control)/config/motor_control/master.dcf"
+        can_interface_name="can0"
+        master_bin="" />
+
 </robot>

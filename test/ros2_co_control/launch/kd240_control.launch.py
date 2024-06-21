@@ -1,8 +1,7 @@
 # Copyright (C) 2023 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: MIT
 
-import os
-import sys
+
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
@@ -44,7 +43,7 @@ def generate_launch_description():
         arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
     )
 
-    forward_position_controller_spawner = Node(
+    forward_velocity_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["forward_velocity_controller", "--controller-manager", "/controller_manager"],
@@ -60,7 +59,7 @@ def generate_launch_description():
     nodes_to_start = [
         control_node,
         joint_state_broadcaster_spawner,
-        forward_position_controller_spawner,
+        forward_velocity_controller_spawner,
         robot_state_publisher_node,
     ]
 

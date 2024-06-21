@@ -10,7 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(canopen REQUIRED)
 find_package(lely_core_libraries REQUIRED)
 
-cogen_dcf(motor_control)
+generate_dcf(motor_control)
 
 install(DIRECTORY
     launch urdf
