@@ -475,7 +475,7 @@ private:
 				{
 
 					actual_position = getPosition();
-					actual_speed = getPosition();
+					actual_speed = getSpeed();
 					(*this)[Obj_PositionActual][0] = (int32_t)(actual_position * 1000);
 					(*this)[Obj_VelocityActual][0] = (int32_t)(actual_speed * 1000);
 				}
