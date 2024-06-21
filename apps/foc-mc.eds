@@ -8,15 +8,15 @@ Lines4=|-------------------------------------------------|
 [FileInfo]
 FileName=foc-mc.eds
 FileVersion=1
-FileRevision=1
+FileRevision=2
 EDSVersion=4.0
-Description=FOC Motor Contorl Device
+Description=FOC Motor Control Device
 CreatedBy=Pallav Joshi
 CreationTime=1:01AM
 CreationDate=09-28-2023
 ModifiedBy=Pallav Joshi
-ModificationTime=01:34PM
-ModificationDate=05-28-2024
+ModificationTime=09:46PM
+ModificationDate=06-19-2024
 
 [DeviceInfo]
 Vendorname=Advanced Micro Devices, Inc
@@ -32,7 +32,7 @@ BaudRate_125=1
 BaudRate_250=1
 BaudRate_500=1
 BaudRate_800=1
-BaudRate_1000=1
+BaudRate_1000=0
 SimpleBootupMaster=0
 SimpleBootupSlave=1
 GroupMessaging=0
@@ -59,7 +59,7 @@ SupportedObjects=3
 3=0x1018
 
 [OptionalObjects]
-SupportedObjects=47
+SupportedObjects=49
 1=0x1003
 2=0x1005
 3=0x1006
@@ -74,39 +74,41 @@ SupportedObjects=47
 12=0x1015
 13=0x1016
 14=0x1017
-15=0x1019
-16=0x1200
-17=0x1280
-18=0x1400
-19=0x1401
-20=0x1402
-21=0x1403
-22=0x1600
-23=0x1601
-24=0x1602
-25=0x1603
-26=0x1800
-27=0x1801
-28=0x1802
-29=0x1803
-30=0x1A00
-31=0x1A01
-32=0x1A02
-33=0x1A03
-34=0x603F
-35=0x6040
-36=0x6041
-37=0x605A
-38=0x605B
-39=0x605D
+15=0x1200
+16=0x1280
+17=0x1400
+18=0x1401
+19=0x1402
+20=0x1403
+21=0x1600
+22=0x1601
+23=0x1602
+24=0x1603
+25=0x1800
+26=0x1801
+27=0x1802
+28=0x1803
+29=0x1A00
+30=0x1A01
+31=0x1A02
+32=0x1A03
+33=0x603F
+34=0x6040
+35=0x6041
+36=0x605A
+37=0x605B
+38=0x605D
+39=0x605E
 40=0x6060
 41=0x6061
-42=0x6064
-43=0x606C
-44=0x6071
-45=0x6077
-46=0x60FF
-47=0x6502
+42=0x6062
+43=0x6063
+44=0x6064
+45=0x606C
+46=0x6071
+47=0x6077
+48=0x60FF
+49=0x6502
 
 [ManufacturerObjects]
 SupportedObjects=1
@@ -131,12 +133,12 @@ LowLimit=
 HighLimit=
 AccessType=ro
 DefaultValue=0x00
-PDOMapping=1
+PDOMapping=0
 ObjFlags=0x00
 
 [1003]
 ParameterName=Pre-defined error field
-SubNumber=17
+SubNumber=6
 ObjectType=0x08
 
 [1003sub0]
@@ -194,127 +196,6 @@ ParameterName=Standard error field
 ObjectType=0x07
 
 [1003sub5]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=ro
-DefaultValue=
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Standard error field
-ObjectType=0x07
-
-[1003sub6]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=ro
-DefaultValue=
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Standard error field
-ObjectType=0x07
-
-[1003sub7]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=ro
-DefaultValue=
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Standard error field
-ObjectType=0x07
-
-[1003sub8]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=ro
-DefaultValue=
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Standard error field
-ObjectType=0x07
-
-[1003sub9]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=ro
-DefaultValue=
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Standard error field
-ObjectType=0x07
-
-[1003subA]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=ro
-DefaultValue=
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Standard error field
-ObjectType=0x07
-
-[1003subB]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=ro
-DefaultValue=
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Standard error field
-ObjectType=0x07
-
-[1003subC]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=ro
-DefaultValue=
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Standard error field
-ObjectType=0x07
-
-[1003subD]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=ro
-DefaultValue=
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Standard error field
-ObjectType=0x07
-
-[1003subE]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=ro
-DefaultValue=
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Standard error field
-ObjectType=0x07
-
-[1003subF]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=ro
-DefaultValue=
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Standard error field
-ObjectType=0x07
-
-[1003sub10]
 DataType=0x0007
 LowLimit=
 HighLimit=
@@ -638,17 +519,6 @@ ObjFlags=0x00
 ParameterName=Serial number
 ObjectType=0x07
 
-[1019]
-ParameterName=Synchronous counter overflow value
-ObjectType=0x07
-DataType=0x0005
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0
-PDOMapping=0
-ObjFlags=0x00
-
 [1200]
 ParameterName=SDO server parameter
 SubNumber=3
@@ -736,15 +606,15 @@ ObjectType=0x07
 
 [1400]
 ParameterName=RPDO communication parameter
-SubNumber=4
+SubNumber=3
 ObjectType=0x09
 
 [1400sub0]
 DataType=0x0005
 LowLimit=
 HighLimit=
-AccessType=ro
-DefaultValue=0x05
+AccessType=const
+DefaultValue=0x02
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Highest sub-index supported
@@ -771,28 +641,17 @@ ObjFlags=0x00
 ParameterName=Transmission type
 ObjectType=0x07
 
-[1400sub5]
-DataType=0x0006
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Event timer
-ObjectType=0x07
-
 [1401]
 ParameterName=RPDO communication parameter
-SubNumber=4
+SubNumber=3
 ObjectType=0x09
 
 [1401sub0]
 DataType=0x0005
 LowLimit=
 HighLimit=
-AccessType=ro
-DefaultValue=0x05
+AccessType=const
+DefaultValue=0x02
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Highest sub-index supported
@@ -819,28 +678,17 @@ ObjFlags=0x00
 ParameterName=Transmission type
 ObjectType=0x07
 
-[1401sub5]
-DataType=0x0006
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Event timer
-ObjectType=0x07
-
 [1402]
 ParameterName=RPDO communication parameter
-SubNumber=4
+SubNumber=3
 ObjectType=0x09
 
 [1402sub0]
 DataType=0x0005
 LowLimit=
 HighLimit=
-AccessType=ro
-DefaultValue=0x05
+AccessType=const
+DefaultValue=0x02
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Highest sub-index supported
@@ -867,28 +715,17 @@ ObjFlags=0x00
 ParameterName=Transmission type
 ObjectType=0x07
 
-[1402sub5]
-DataType=0x0006
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Event timer
-ObjectType=0x07
-
 [1403]
 ParameterName=RPDO communication parameter
-SubNumber=4
+SubNumber=3
 ObjectType=0x09
 
 [1403sub0]
 DataType=0x0005
 LowLimit=
 HighLimit=
-AccessType=ro
-DefaultValue=0x05
+AccessType=const
+DefaultValue=0x02
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Highest sub-index supported
@@ -913,17 +750,6 @@ DefaultValue=255
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Transmission type
-ObjectType=0x07
-
-[1403sub5]
-DataType=0x0006
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Event timer
 ObjectType=0x07
 
 [1600]
@@ -1028,15 +854,15 @@ ObjectType=0x07
 
 [1603]
 ParameterName=RPDO mapping parameter
-SubNumber=9
+SubNumber=3
 ObjectType=0x09
 
 [1603sub0]
 DataType=0x0005
 LowLimit=
 HighLimit=
-AccessType=rw
-DefaultValue=8
+AccessType=const
+DefaultValue=0x02
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Number of mapped application objects in PDO
@@ -1063,83 +889,17 @@ ObjFlags=0x00
 ParameterName=Application object 2
 ObjectType=0x07
 
-[1603sub3]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Application object 3
-ObjectType=0x07
-
-[1603sub4]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Application object 4
-ObjectType=0x07
-
-[1603sub5]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Application object 5
-ObjectType=0x07
-
-[1603sub6]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Application object 6
-ObjectType=0x07
-
-[1603sub7]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Application object 7
-ObjectType=0x07
-
-[1603sub8]
-DataType=0x0007
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0x00000000
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=Application object 8
-ObjectType=0x07
-
 [1800]
 ParameterName=TPDO communication parameter
-SubNumber=6
+SubNumber=5
 ObjectType=0x09
 
 [1800sub0]
 DataType=0x0005
 LowLimit=
 HighLimit=
-AccessType=ro
-DefaultValue=0x06
+AccessType=const
+DefaultValue=0x05
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Highest sub-index supported
@@ -1188,28 +948,17 @@ ObjFlags=0x00
 ParameterName=Event timer
 ObjectType=0x07
 
-[1800sub6]
-DataType=0x0005
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=SYNC start value
-ObjectType=0x07
-
 [1801]
 ParameterName=TPDO communication parameter
-SubNumber=6
+SubNumber=5
 ObjectType=0x09
 
 [1801sub0]
 DataType=0x0005
 LowLimit=
 HighLimit=
-AccessType=ro
-DefaultValue=0x06
+AccessType=const
+DefaultValue=0x05
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Highest sub-index supported
@@ -1258,28 +1007,17 @@ ObjFlags=0x00
 ParameterName=Event timer
 ObjectType=0x07
 
-[1801sub6]
-DataType=0x0005
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=SYNC start value
-ObjectType=0x07
-
 [1802]
 ParameterName=TPDO communication parameter
-SubNumber=6
+SubNumber=5
 ObjectType=0x09
 
 [1802sub0]
 DataType=0x0005
 LowLimit=
 HighLimit=
-AccessType=ro
-DefaultValue=0x06
+AccessType=const
+DefaultValue=0x05
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Highest sub-index supported
@@ -1328,28 +1066,17 @@ ObjFlags=0x00
 ParameterName=Event timer
 ObjectType=0x07
 
-[1802sub6]
-DataType=0x0005
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=SYNC start value
-ObjectType=0x07
-
 [1803]
 ParameterName=TPDO communication parameter
-SubNumber=6
+SubNumber=5
 ObjectType=0x09
 
 [1803sub0]
 DataType=0x0005
 LowLimit=
 HighLimit=
-AccessType=ro
-DefaultValue=0x06
+AccessType=const
+DefaultValue=0x05
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Highest sub-index supported
@@ -1396,17 +1123,6 @@ DefaultValue=0
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Event timer
-ObjectType=0x07
-
-[1803sub6]
-DataType=0x0005
-LowLimit=
-HighLimit=
-AccessType=rw
-DefaultValue=0
-PDOMapping=0
-ObjFlags=0x00
-ParameterName=SYNC start value
 ObjectType=0x07
 
 [1A00]
@@ -1573,7 +1289,7 @@ ParameterName=Controlword
 ObjectType=0x07
 DataType=0x0006
 LowLimit=
-HighLimit=
+HighLimit=65535
 AccessType=rww
 DefaultValue=
 PDOMapping=1
@@ -1608,7 +1324,7 @@ DataType=0x0003
 LowLimit=
 HighLimit=
 AccessType=ro
-DefaultValue=
+DefaultValue=0
 PDOMapping=0
 ObjFlags=0x00
 
@@ -1623,13 +1339,24 @@ DefaultValue=1
 PDOMapping=0
 ObjFlags=0x00
 
+[605E]
+ParameterName=Fault Reation Option Code
+ObjectType=0x07
+DataType=0x0003
+LowLimit=
+HighLimit=
+AccessType=rw
+DefaultValue=2
+PDOMapping=0
+ObjFlags=0x00
+
 [6060]
 ParameterName=Modes of Operation
 ObjectType=0x07
 DataType=0x0002
 LowLimit=
 HighLimit=
-AccessType=rw
+AccessType=rww
 DefaultValue=0
 PDOMapping=1
 ObjFlags=0x00
@@ -1638,6 +1365,28 @@ ObjFlags=0x00
 ParameterName=Modes of Operation display
 ObjectType=0x07
 DataType=0x0002
+LowLimit=
+HighLimit=
+AccessType=ro
+DefaultValue=
+PDOMapping=1
+ObjFlags=0x00
+
+[6062]
+ParameterName=Position Demand Value
+ObjectType=0x07
+DataType=0x0004
+LowLimit=
+HighLimit=
+AccessType=ro
+DefaultValue=
+PDOMapping=1
+ObjFlags=0x00
+
+[6063]
+ParameterName=Position Actual Interval Value
+ObjectType=0x07
+DataType=0x0004
 LowLimit=
 HighLimit=
 AccessType=ro
@@ -1673,7 +1422,7 @@ ObjectType=0x07
 DataType=0x0003
 LowLimit=
 HighLimit=
-AccessType=rw
+AccessType=rww
 DefaultValue=0
 PDOMapping=1
 ObjFlags=0x00
