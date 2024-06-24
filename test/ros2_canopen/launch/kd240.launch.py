@@ -14,9 +14,9 @@ from launch import LaunchDescription
 def generate_launch_description():
     ld = LaunchDescription()
     master_bin_path = os.path.join(
-        get_package_share_directory("foc_motor"),
+        get_package_share_directory("kria_motor_control"),
         "config",
-        "motor_control",
+        "402_system",
         "master.bin",
     )
     if not os.path.exists(master_bin_path):
@@ -31,16 +31,16 @@ def generate_launch_description():
         ),
         launch_arguments={
             "master_config": os.path.join(
-                get_package_share_directory("foc_motor"),
+                get_package_share_directory("kria_motor_control"),
                 "config",
-                "motor_control",
+                "402_system",
                 "master.dcf",
             ),
             "master_bin": master_bin_path,
             "bus_config": os.path.join(
-                get_package_share_directory("foc_motor"),
+                get_package_share_directory("kria_motor_control"),
                 "config",
-                "motor_control",
+                "402_system",
                 "bus.yml",
             ),
             "can_interface_name": "can0",

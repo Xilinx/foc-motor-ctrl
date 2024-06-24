@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 cmake_minimum_required(VERSION 3.8)
-project(foc_motor)
+project(kria_motor_control)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -13,7 +13,7 @@ find_package(ament_cmake REQUIRED)
 find_package(canopen REQUIRED)
 find_package(lely_core_libraries REQUIRED)
 
-cogen_dcf(motor_control)
+cogen_dcf(402_system)
 
 install(DIRECTORY
   launch/
