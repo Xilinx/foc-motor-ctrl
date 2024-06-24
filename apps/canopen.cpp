@@ -63,11 +63,10 @@ protected:
 			switch (mode)
 			{
 			case No_Mode:
-			case Profiled_Velocity:
-			case Profiled_Torque:
-			// Remove below modes
 			case Profiled_Position:
 			case Velocity:
+			case Profiled_Velocity:
+			case Profiled_Torque:
 			case Reserved:
 			case Homing:
 			case Interpolated_Position:
@@ -141,7 +140,6 @@ protected:
 		}
 		if (is_fault_reset())
 		{
-			// TODO: clear faults
 			set_ready_to_switch_on();
 		}
 	}
@@ -180,7 +178,7 @@ protected:
 		{
 			set_quick_stop();
 			// Stop the Motor if it is running
-			stopMotor();
+			stop_motor();
 		}
 		{
 			std::scoped_lock<std::mutex> lock(w_mutex);
@@ -192,7 +190,7 @@ protected:
 		if (old_operation_mode.load() != operation_mode.load())
 		{
 			// Stop the Motor if it is running
-			stopMotor();
+			stop_motor();
 			old_operation_mode.store(operation_mode.load());
 
 			switch (operation_mode.load())
@@ -390,13 +388,6 @@ protected:
 		clear_status_bit(SW_Switch_on_disabled);
 	}
 
-	void OnSync(uint8_t cnt, const time_point& t) noexcept override
-	{
-		(void) cnt;
-		(void) t;
-	}
-
-
 private:
 	MotorControl *mpMotorCtrl;
 	std::atomic<bool> is_relative;
@@ -418,7 +409,7 @@ private:
 	double _last_speed, _last_torque;
 	int _last_mode;
 
-	void handleModeChange(MotorOpMode mode)
+	void handle_mode_change(MotorOpMode mode)
 	{
 		int new_mode = static_cast<int>(mode);
 		if (_last_mode != new_mode) {
@@ -428,19 +419,19 @@ private:
 	}
 
 
-	void stopMotor(void)
+	void stop_motor(void)
 	{
 		if (profiled_velocity_mode.joinable())
 		{
 			std::cout<<"Joined velocity thread"<<std::endl;
 			profiled_velocity_mode.join();
-			handleModeChange(MotorOpMode::kModeOff);
+			handle_mode_change(MotorOpMode::kModeOff);
 		}
 		if (profiled_torque_mode.joinable())
 		{
 			std::cout<<"Joined torque thread"<<std::endl;
 			profiled_torque_mode.join();
-			handleModeChange(MotorOpMode::kModeOff);
+			handle_mode_change(MotorOpMode::kModeOff);
 		}
 	}
 
@@ -469,16 +460,13 @@ private:
 				}
 				is_new_set_point.store(false);
 
-				this->handleModeChange (MotorOpMode::kModeSpeed);
-				this->setSpeed(target_speed);
-				//while (Vel target reached)
-				{
+				this->handle_mode_change (MotorOpMode::kModeSpeed);
+				this->set_velocity(target_speed);
 
-					actual_position = getPosition();
-					actual_speed = getSpeed();
-					(*this)[Obj_PositionActual][0] = (int32_t)(actual_position * 1000);
-					(*this)[Obj_VelocityActual][0] = (int32_t)(actual_speed * 1000);
-				}
+                actual_position = get_position();
+                (*this)[Obj_PositionActual][0] = (int32_t)(actual_position * 1000);
+                actual_speed = get_velocity();
+                (*this)[Obj_VelocityActual][0] = (int32_t)(actual_speed * 1000);
 
 				clear_status_bit(SW_Operation_mode_specific0);
 				set_status_bit(SW_Target_reached);
@@ -507,7 +495,7 @@ private:
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			target_torque = static_cast<double>(((int16_t)(*this)[Obj_TargetTorque][0])) / 1000;
-			// while target not achieved
+			// if target is not achieved (Assume always)
 			{
 				clear_status_bit(SW_Operation_mode_specific0);
 				clear_status_bit(SW_Target_reached);
@@ -518,16 +506,13 @@ private:
 				}
 				is_new_set_point.store(false);
 
-				handleModeChange (MotorOpMode::kModeTorque);
-				setTorque(target_torque);
-				//while (Vel target reached)
-				{
-					std::this_thread::sleep_for(std::chrono::milliseconds(10));
-					actual_position = getPosition();
-					actual_speed = getPosition();
-					(*this)[Obj_PositionActual][0] = (int32_t)(actual_position * 1000);
-					(*this)[Obj_VelocityActual][0] = (int32_t)(actual_speed * 1000);
-				}
+				handle_mode_change (MotorOpMode::kModeTorque);
+				set_effort(target_torque);
+
+                actual_position = get_position();
+                actual_speed = get_position();
+                (*this)[Obj_PositionActual][0] = (int32_t)(actual_position * 1000);
+				(*this)[Obj_VelocityActual][0] = (int32_t)(actual_speed * 1000);
 
 				clear_status_bit(SW_Operation_mode_specific0);
 				set_status_bit(SW_Target_reached);
@@ -541,47 +526,45 @@ private:
 		std::cout << __FUNCTION__ << ":" << "Terminated" << std::endl;
 	}
 
-	void setSpeed(double speed)
+	void set_velocity(double speed)
 	{
 		if(_last_speed != speed)
 			mpMotorCtrl->SetSpeed(speed);
 		_last_speed = speed;
 	}
 
-	void setTorque(double torque)
+	void set_effort(double torque)
 	{
 		if(_last_torque != torque)
 			mpMotorCtrl->SetTorque(torque);
 		_last_torque = torque;
 	}
 
-	int getSpeed(void)
+	int get_velocity(void)
 	{
 		return mpMotorCtrl->getSpeed();
 	}
 
-	int getPosition(void)
+	int get_position(void)
 	{
 		return mpMotorCtrl->getPosition();
 	}
 };
 
-// Function to print the usage message
-void printUsage(const char* programName)
+void print_usage(const char* programName)
 {
 	std::cout << "Usage: " << programName << " [options]\n"
 			  << "Options:\n"
 			  << "  -h, --help                   Print this help message\n"
 			  << "  -i, --interface <interface>  Name of the CAN interface. Default is "
 			  << DEFAULT_CAN_IF << "\n"
-			  << "  -n, --node <id>              Node id of the can slave. Default is '"
+			  << "  -n, --node <id>              Node id of the can slave. Default is "
 			  << DEFAULT_NODE_ID << "'\n"
 			  << "  -e, --eds <eds file>         Path to the eds file. \n"
 			  << "                               Default is " << DEFAULT_EDS_PATH << "\n";
 }
 
-// Function to parse the command-line arguments
-void parseArguments(int argc, char* argv[], std::string& interface,
+void parse_arguments(int argc, char* argv[], std::string& interface,
 		            int& node, std::string& eds_file)
 {
 	// Set defaults from macros
@@ -593,7 +576,7 @@ void parseArguments(int argc, char* argv[], std::string& interface,
 		std::string arg = argv[i];
 
 		if (arg == "-h" || arg == "--help") {
-			printUsage(argv[0]);
+			print_usage(argv[0]);
 			exit(0);
 		} else if (arg == "-e" || arg == "--eds") {
 			if (i + 1 < argc) {
@@ -601,7 +584,7 @@ void parseArguments(int argc, char* argv[], std::string& interface,
 				//TODO: Validate if the path exists
 			} else {
 				std::cerr << "Error: --eds option requires an argument.\n";
-				printUsage(argv[0]);
+				print_usage(argv[0]);
 				exit(1);
 			}
 		} else if (arg == "-i" || arg == "--interface") {
@@ -609,7 +592,7 @@ void parseArguments(int argc, char* argv[], std::string& interface,
 				interface = argv[++i];
 			} else {
 				std::cerr << "Error: --interface option requires an argument.\n";
-				printUsage(argv[0]);
+				print_usage(argv[0]);
 				exit(1);
 			}
 		} else if (arg == "-n" || arg == "--node") {
@@ -618,17 +601,17 @@ void parseArguments(int argc, char* argv[], std::string& interface,
 					node = std::stoi(argv[++i]);
 				} catch (std::invalid_argument&) {
 					std::cerr << "Error: Invalid node ID. It must be an integer.\n";
-					printUsage(argv[0]);
+					print_usage(argv[0]);
 					exit(1);
 				}
 			} else {
 				std::cerr << "Error: --node option requires an argument.\n";
-				printUsage(argv[0]);
+				print_usage(argv[0]);
 				exit(1);
 			}
 		} else {
 			std::cerr << "Unknown option: " << arg << "\n";
-			printUsage(argv[0]);
+			print_usage(argv[0]);
 			exit(1);
 		}
 	}
@@ -640,7 +623,7 @@ int main(int argc, char* argv[])
 	std::string eds_file;
 	int node_id;
 
-	parseArguments(argc, argv, can_interface, node_id, eds_file);
+	parse_arguments(argc, argv, can_interface, node_id, eds_file);
 
 	// Initialize I/O context and polling instance
 	io::IoGuard io_guard;
