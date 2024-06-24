@@ -88,7 +88,7 @@ Testing was performed with the following artifacts:
 |--------------------------------|----------------------------|
 | Boot Firmware                  | K24-BootFW-01.01           |
 | Linux Kernel                   | 5.15.0-1030-xilinx-zynqmp  |
-| xlnx-firmware-kd240-motor-ctrl | 0.12-0xlnx1                |
+| xlnx-firmware-kd240-motor-ctrl | 0.12-0xlnx2                |
 
 To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/1641152513/Kria+K26+SOM#Boot-Firmware-Updates).
 
