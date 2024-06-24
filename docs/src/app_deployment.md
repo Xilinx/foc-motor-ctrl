@@ -335,17 +335,18 @@ The following images show what the dashboard looks like when a larger load is ap
       -it foc-motor-ctrl-ros2-canopen-host:latest bash
   ```
 
+#### Run a simple CiA402 system host
+
 * Make sure you are inside the docker container and source the ROS setup files.
 
   ```bash
-  source /opt/ros/humble/setup.bash
   source /root/ros_ws/install/setup.bash
   ```
 
-* Start the launch file.
+* Start the canopen 402 host ros container using the launch file
 
   ```bash
-  ros2 launch foc_motor kd240.launch.py
+  ros2 launch kria_motor_control kd240.system.launch.py
   ```
 
 * Open a new terminal, find the docker container id, and launch another
@@ -359,7 +360,6 @@ The following images show what the dashboard looks like when a larger load is ap
 * In the new docker session, source the ROS setup files.
 
   ```bash
-  source /opt/ros/humble/setup.bash
   source /root/ros_ws/install/setup.bash
   ```
 
@@ -370,6 +370,7 @@ The following images show what the dashboard looks like when a larger load is ap
   ```
 
   The output should look similar to this:
+
   ```bash
   ubuntu@KR260:~$ ros2 service list -t
   /device_container_node/change_state [lifecycle_msgs/srv/ChangeState]
@@ -417,6 +418,7 @@ The following images show what the dashboard looks like when a larger load is ap
   ```
 
 * To view an interface definition, use:
+
   ```bash
   ros2 interface show <type>
   ```
@@ -424,6 +426,7 @@ The following images show what the dashboard looks like when a larger load is ap
   For example, to view the interface definition for the canopen_interfaces/srv/COTargetDouble
   type which is used for the /kd240/target service, run the command below.
   This will print the input (target) and output (success).
+
   ```bash
   ubuntu@KR260:~$ ros2 interface show canopen_interfaces/srv/COTargetDouble
   float64 target
@@ -437,29 +440,120 @@ The following images show what the dashboard looks like when a larger load is ap
   [Cia402 Driver documentation](https://ros-industrial.github.io/ros2_canopen/manual/humble/user-guide/cia402-driver.html).
 
   Reset:
+
   ```bash
   ros2 service call /kd240/nmt_reset_node std_srvs/srv/Trigger
   ```
 
   Init:
+
   ```bash
   ros2 service call /kd240/init std_srvs/srv/Trigger
   ```
 
   Change to velocity mode:
+
   ```bash
   ros2 service call /kd240/velocity_mode std_srvs/srv/Trigger
   ```
 
   Change target speed:
+
   ```bash
-  ros2 service call /kd240/target canopen_interfaces/srv/COTargetDouble "target: 800"
+  ros2 service call /kd240/target canopen_interfaces/srv/COTargetDouble "target: 3000"
   ```
 
-  Halt:
+#### Run a ROS2 Control based example
+
+* Make sure you are inside the docker container and source the ROS setup files.
+
   ```bash
-  ros2 service call /kd240/halt std_srvs/srv/Trigger
+  source /root/ros_ws/install/setup.bash
   ```
+
+* Start the canopen 402 control system host using the launch file
+
+  ```bash
+  ros2 launch kria_motor_control kd240.ros2_control.launch.py
+  ```
+
+* Open a new terminal, find the docker container id, and launch another
+  session connected to the same container.
+
+  ```bash
+  docker ps       # Copy container_id from output of this command
+  docker exec -it <container_id> bash
+  ```
+
+* In the new docker session, source the ROS setup files.
+
+  ```bash
+  source /root/ros_ws/install/setup.bash
+  ```
+
+* List the available controllers using ros2 control cli utility
+
+  ```bash
+  ros2 control list_controllers
+  ```
+
+  The output should look similar to this:
+
+  ```bash
+  ubuntu@KR260:~$ ros2 control list_controllers
+  forward_velocity_controller[velocity_controllers/JointGroupVelocityController] active
+  joint_state_broadcaster[joint_state_broadcaster/JointStateBroadcaster] active
+  ```
+
+* To view the available hardware interfaces, use:
+
+  ```bash
+  ros2 control list_hardware_interfaces
+  ```
+
+  ```bash
+  ubuntu@KR260:~$ ros2 control list_hardware_interfaces
+  command interfaces
+          wheel_joint/velocity [available] [claimed]
+  state interfaces
+          wheel_joint/position
+          wheel_joint/velocity
+  ```
+
+* List the Ros2 Topics
+
+  ```bash
+  ros2 topic list
+  /dynamic_joint_states
+  /forward_velocity_controller/commands
+  /forward_velocity_controller/transition_event
+  /joint_state_broadcaster/transition_event
+  /joint_states
+  /kd240_wheel/joint_states
+  /kd240_wheel/nmt_state
+  /kd240_wheel/rpdo
+  /kd240_wheel/tpdo
+  /parameter_events
+  /robot_description
+  /rosout
+  /tf
+  /tf_static
+  ```
+
+* Observe the live state of the system using dynamic_joint_states
+
+  ```bash
+  ros2 topic echo  /dynamic_joint_states
+  ```
+
+  This continuously updates the current state of the system and shows the position and speed of the motor.
+
+* Update the speed of the motor using velocity controller
+
+  ```bash
+  ros2 topic pub --once /forward_velocity_controller/commands std_msgs/msg/Float64MultiArray "data: [5000]"
+  ```
+![Ro2_control_demo](./media/sw_ros2_control.png)
 
 ## Run One Wire Temperature Sensor Demo
 
