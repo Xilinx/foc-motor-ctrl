@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>kria_motor_control</name>
-  <version>0.0.1</version>
+  <version>0.4.0</version>
   <description>Example package to demontrate access to Kria FOC Motor over canopen</description>
   <maintainer email="pallav.joshi@amd.com">pallav</maintainer>
   <license>MIT</license>
@@ -11,9 +11,6 @@
 
   <depend>canopen</depend>
   <depend>lely_core_libraries</depend>
-
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
