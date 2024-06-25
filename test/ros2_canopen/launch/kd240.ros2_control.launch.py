@@ -27,7 +27,7 @@ def generate_launch_description():
     )
     robot_description = {"robot_description": robot_description_content}
     robot_control_config = PathJoinSubstitution(
-        [FindPackageShare("kria_motor_control"), "config", "ros2_controllers.yaml"]
+        [FindPackageShare("kria_motor_control"), "config/402_control", "ros2_controllers.yaml"]
     )
 
     control_node = Node(
