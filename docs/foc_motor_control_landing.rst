@@ -9,7 +9,7 @@ Overview
 .. toctree::
    :maxdepth: 1
 
-   Introduction <docs/introduction.md>
+   Introduction <src/introduction.md>
 
 Features
 ================================
@@ -33,7 +33,7 @@ Quick Start
 .. toctree::
    :maxdepth: 1
 
-   Setting Up the Board and Application deployment <docs/app_deployment.md>
+   Setting Up the Board and Application deployment <src/app_deployment.md>
 
 ***************************
 Tutorials
@@ -54,8 +54,8 @@ Architecture
 .. toctree::
    :maxdepth: 1
 
-   Hardware Architecture <docs/hw_description.md>
-   Software Architecture <docs/sw_arch.md>
+   Hardware Architecture <src/hw_description.md>
+   Software Architecture <src/sw_arch.md>
 
 *******************************
 Repository
@@ -73,7 +73,7 @@ Other
 .. toctree::
   :maxdepth: 1
 
-  Known Issues <docs/known_issues.md>
+  Known Issues <src/known_issues.md>
 
 ..
    License
