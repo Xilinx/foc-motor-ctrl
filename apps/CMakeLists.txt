@@ -1,8 +1,8 @@
+# Copyright (C) 2023-2024 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: MIT
+
 cmake_minimum_required(VERSION 3.10)
 
-if(BUILD_CANOPEN_APP)
-	#Source file s
-endif()
 # Add application source files
 #add_executable(fmc_cmdline cmdline.cpp)
 

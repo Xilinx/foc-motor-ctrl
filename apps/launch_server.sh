@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2023 Advanced Micro Devices, Inc.
+# Copyright (C) 2024 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: MIT
 #
 
@@ -57,3 +57,4 @@ SUPPRESS_ERR="WARNING: High-speed mode not enabled"
 $SUDO ${ENV} \
         ${SERVER} -i ${CAN_IF} -n ${SLAVE_ID}  2> >(grep -v "$SUPPRESS_ERR" >&2) &
 
+echo "To kill the server run 'sudo killall fmc_canopen'"
