@@ -1,0 +1,16 @@
+# Copyright (C) 2024 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+    forward_velocity_controller:
+      type: velocity_controllers/JointGroupVelocityController
+
+forward_velocity_controller:
+  ros__parameters:
+    joints:
+      - wheel_joint
+

@@ -36,4 +36,8 @@ build/
 # IDE meta data
 cscope.files
 tags
+.vscode/
 
+# Ros generated
+log/
+install/

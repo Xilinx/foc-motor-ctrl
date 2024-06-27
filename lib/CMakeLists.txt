@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Advanced Micro Devices, Inc.
+# Copyright (C) 2023-2024 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: MIT
 
 cmake_minimum_required(VERSION 3.10)
@@ -20,8 +20,8 @@ find_package(libiio REQUIRED)
 find_package(pybind11 REQUIRED)
 
 include_directories(
-	${CMAKE_CURRENT_SOURCE_DIR}/include
-	${LIBIIO_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${LIBIIO_INCLUDE_DIRS}
 )
 
 # Add config file path
@@ -30,8 +30,8 @@ set(CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/configs")
 # List config file to install
 set(CONFIG_FILE ${CONFIG_DIR}/anaheim.config)
 
-# set DEFAULT_CONFIG variable with the default config name.  
-set(DEFAULT_CONFIG anaheim.config)
+# set DEFAULT_CONFIG variable with the default config name.
+set(DEFAULT_CONFIG anaheim.config CACHE STRING "Default configuration file name")
 
 # Add library sources
 target_sources(${FMC_LIB_NAME} PRIVATE
@@ -63,10 +63,10 @@ pybind11_add_module(${PY_FMC_LIB} src/python_bind.cpp)
 
 # Add any required dependencies for the library
 target_link_libraries(${FMC_LIB_NAME}
-	PUBLIC
-		${LIBIIO_LIBRARIES}
-	PRIVATE
-		pybind11::embed
+    PUBLIC
+        ${LIBIIO_LIBRARIES}
+    PRIVATE
+        pybind11::embed
 )
 
 target_link_libraries(${PY_FMC_LIB} PRIVATE ${FMC_LIB_NAME})
@@ -80,8 +80,20 @@ add_compile_definitions(PY_MODULE_NAME=${PY_FMC_LIB})
 
 # Set install destination for config file
 if(EXISTS ${CONFIG_FILE})
-	install(FILES ${CONFIG_FILE} DESTINATION /etc/motor-control)
-  	install(CODE "execute_process(COMMAND ln -s /etc/motor-control/${DEFAULT_CONFIG} /etc/motor-control/config)")
+    install(FILES ${CONFIG_FILE} DESTINATION etc/motor-control COMPONENT config)
+
+    if(NOT SKIP_POST_INSTALL)
+        install(CODE "
+            execute_process(COMMAND
+              mkdir -p /etc/motor-control
+            )
+            execute_process(COMMAND
+              ${CMAKE_COMMAND} -E create_symlink
+              ${CMAKE_INSTALL_PREFIX}/etc/motor-control/${DEFAULT_CONFIG}
+              /etc/motor-control/config
+            )
+          ")
+    endif()
 endif()
 
 # Set install targets for the library

@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="define_control" params="
+      name
+      prefix
+      bus_config
+      master_config
+      can_interface_name
+      master_bin">
+
+        <ros2_control name="${name}" type="system">
+            <hardware>
+              <plugin>canopen_ros2_control/RobotSystem</plugin>
+              <param name="bus_config">${bus_config}</param>
+              <param name="master_config">${master_config}</param>
+              <param name="can_interface_name">${can_interface_name}</param>
+              <param name="master_bin">"${master_bin}"</param>
+            </hardware>
+            <joint name="wheel_joint">
+                <param name="device_name">kd240_wheel</param>
+                <state_interface name="velocity" />
+                <state_interface name="position" />
+                <command_interface name="velocity" />
+            </joint>
+        </ros2_control>
+    </xacro:macro>
+
+</robot>

@@ -9,8 +9,17 @@ This repository provides a field oriented control based motor control library an
 
 1. Install build prerequisites:
 
+- IIO library and python binding
     ```bash
     sudo apt install cmake python3-dev python3-pybind11 libiio-dev
+    ```
+- Lely core libraries
+    ```bash
+    sudo add-apt-repository ppa:lely/ppa
+    sudo apt-get update
+
+    sudo apt-get install liblely-coapp-dev liblely-co-tools python3-dcf-tools
+    sudo apt-get install pkg-config
     ```
 
 2. Clone the repo into workspace:
@@ -25,7 +34,7 @@ This repository provides a field oriented control based motor control library an
     ```bash
     mkdir -p build
     cd build/
-    cmake -DCMAKE_INSTALL_PREFIX=/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl -DBUILD_DASHBOARD_APP=ON ..
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl -DBUILD_DASHBOARD_APP=ON -DBUILD_CANOPEN_APP=ON ..
     ```
 
     **Project specific configuration options**
@@ -40,6 +49,7 @@ This repository provides a field oriented control based motor control library an
     Options                | Possible Values | Default    | Description
     -----------------------|-----------------|------------|-------------
     CMAKE_INSTALL_PREFIX   | install location|`/usr/local`| Provide custom install location.
+    SKIP_POST_INSTALL      | ON, OFF         | OFF        | Skip the post install that can be handled by packaging system.
 
 4. Build the libraries, applications and tests.
 
@@ -82,5 +92,5 @@ is being used.
 
 ## License
 
-Copyright (C) 2023, Advanced Micro Devices, Inc.\
+Copyright (C) 2023-2024, Advanced Micro Devices, Inc.\
 SPDX-License-Identifier: MIT

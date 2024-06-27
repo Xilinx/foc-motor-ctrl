@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro"  name="foc_motor">
+
+    <xacro:include filename="motor_kit.xacro" />
+    <xacro:include filename="ros2_control.xacro" />
+
+    <xacro:define_control
+        name="foc_system"
+        prefix=""
+        bus_config="$(find kria_motor_control)/config/402_control/bus.yml"
+        master_config="$(find kria_motor_control)/config/402_control/master.dcf"
+        can_interface_name="can0"
+        master_bin="" />
+
+</robot>
