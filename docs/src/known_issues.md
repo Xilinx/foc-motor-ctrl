@@ -58,10 +58,22 @@ If the motor control application is not functioning as intended, follow these de
    * Sometimes, a web socket disconnection message may appear, indicating a communication issue. If you encounter such disconnection issues, try killing the Bokeh server and relaunching the server and the dashboard.
 
    Sample Disconnection Message:
-   
+
    ```bash
    2023-09-13 18:47:32,361 WebSocket connection closed: code=None, reason=None
    ``````
+
+# CAN bus issue
+
+Sometime, if the CANopen setup is left running for long time, them TX queue of the CAN interface can fillup resulting in the interface hang, especially on KR260.
+There is no indication for this situation except KR260 and KD240 do not receive can message. To fix this just bring the can interface down and up again.
+
+```bash
+sudo ip link set can0 down
+sudo ip link set can0 up
+```
+
+If this is frequent enough then consider increasing the tx queue length on KR260 with `sudo ip link set can0 txqueuelen 10000`
 
 <!---
 
