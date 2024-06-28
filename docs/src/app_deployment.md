@@ -338,6 +338,8 @@ The following images show what the dashboard looks like when a larger load is ap
       --net=host \
       --privileged \
       --volume=/home/ubuntu/.Xauthority:/root/.Xauthority:rw \
+      --name=motor_control \
+      --rm \
       -v /tmp:/tmp \
       -v /dev:/dev \
       -v /sys:/sys \
@@ -349,30 +351,16 @@ The following images show what the dashboard looks like when a larger load is ap
 
 #### Run a simple CiA402 system host
 
-* Make sure you are inside the docker container and source the ROS setup files.
-
-  ```bash
-  source /root/ros_ws/install/setup.bash
-  ```
-
-* Start the canopen 402 host ros container using the launch file
+* In the docker run terminal start the canopen 402 host ros container using the launch file
 
   ```bash
   ros2 launch kria_motor_control kd240.system.launch.py
   ```
 
-* Open a new terminal, find the docker container id, and launch another
-  session connected to the same container.
+* Open a new terminal, start another session of the the same container.
 
   ```bash
-  docker ps       # Copy container_id from output of this command
-  docker exec -it <container_id> bash
-  ```
-
-* In the new docker session, source the ROS setup files.
-
-  ```bash
-  source /root/ros_ws/install/setup.bash
+  docker exec -it motor_control bash
   ```
 
 * Check the available services and their types.
@@ -477,30 +465,16 @@ The following images show what the dashboard looks like when a larger load is ap
 
 #### Run a ROS2 Control based example
 
-* Make sure you are inside the docker container and source the ROS setup files.
-
-  ```bash
-  source /root/ros_ws/install/setup.bash
-  ```
-
-* Start the canopen 402 control system host using the launch file
+* In the docker run terminal start the canopen 402 control system host using the launch file
 
   ```bash
   ros2 launch kria_motor_control kd240.ros2_control.launch.py
   ```
 
-* Open a new terminal, find the docker container id, and launch another
-  session connected to the same container.
+* Open a new terminal, start another session of the the same container.
 
   ```bash
-  docker ps       # Copy container_id from output of this command
-  docker exec -it <container_id> bash
-  ```
-
-* In the new docker session, source the ROS setup files.
-
-  ```bash
-  source /root/ros_ws/install/setup.bash
+  docker exec -it motor_control bash
   ```
 
 * List the available controllers using ros2 control cli utility
@@ -523,6 +497,7 @@ The following images show what the dashboard looks like when a larger load is ap
   ros2 control list_hardware_interfaces
   ```
 
+  The output should look similar to this:
   ```bash
   ubuntu@KR260:~$ ros2 control list_hardware_interfaces
   command interfaces
@@ -535,7 +510,7 @@ The following images show what the dashboard looks like when a larger load is ap
 * List the Ros2 Topics
 
   ```bash
-  ros2 topic list
+  ubuntu@KR260:~$ ros2 topic list
   /dynamic_joint_states
   /forward_velocity_controller/commands
   /forward_velocity_controller/transition_event
@@ -560,11 +535,19 @@ The following images show what the dashboard looks like when a larger load is ap
 
   This continuously updates the current state of the system and shows the position and speed of the motor.
 
-* Update the speed of the motor using velocity controller
+
+* Open a new terminal, start another session of the the same container.
+
+  ```bash
+  docker exec -it motor_control bash
+  ```
+
+* Update the speed of the motor using velocity controller in a new terminal
 
   ```bash
   ros2 topic pub --once /forward_velocity_controller/commands std_msgs/msg/Float64MultiArray "data: [5000]"
   ```
+
 ![Ro2_control_demo](./media/sw_ros2_control.png)
 
 ## Run One Wire Temperature Sensor Demo
