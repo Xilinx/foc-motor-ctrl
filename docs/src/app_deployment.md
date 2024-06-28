@@ -275,7 +275,7 @@ The following images show what the dashboard looks like when a larger load is ap
 
   ```bash
   sudo ip link set can0 up type can bitrate 100000
-  sudo ip link set can0 txqueuelen 1000
+  sudo ip link set can0 txqueuelen 10000
   sudo ip link set can0 up
   ```
 
