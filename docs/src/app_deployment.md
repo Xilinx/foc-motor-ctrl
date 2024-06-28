@@ -126,6 +126,10 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
    * Install the motor control application.
 
       ```bash
+      # Add lely PPA for lely-core libraries
+      sudo add-apt-repository ppa:lely/ppa
+      sudo apt-get update
+
       sudo apt install xlnx-app-kd240-foc-motor-ctrl
       ```
 
@@ -301,6 +305,14 @@ The following images show what the dashboard looks like when a larger load is ap
   ```bash
   export PATH=${PATH}:/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl/bin
   start_motor_server
+  ```
+
+* To terminate the server
+
+  If it is required to kill the server kill fmc_canopen application
+
+  ```bash
+  sudo killall  fmc_canopen
   ```
 
 ### On the KR260 (master)
