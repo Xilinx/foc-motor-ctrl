@@ -99,6 +99,8 @@ Tests:
 
 * Host machine with display
 
+* Ros2 CANopen host with CAN interface, such as the KR260 Starter Kit
+
 * [One Wire Temperature Sensor](https://www.adafruit.com/product/381?gad_source=1&gclid=EAIaIQobChMI2IS22dqmhAMVIxWtBh1legB6EAQYASABEgKwIvD_BwE)
 
 ### Hardware Setup
