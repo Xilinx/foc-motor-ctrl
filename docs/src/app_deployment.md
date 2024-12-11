@@ -16,9 +16,23 @@
 
 This document shows how to set up the board, and run the motor control application.
 
-This guide is targeted for Ubuntu® 24.04 and the AMD 2024.1 toolchain.
+This guide is targeted for the AMD 2026.1 toolchain.
 
 ## Revision History
+
+### Version - v0.6
+
+#### Change Log
+
+Library & Apps:
+
+* Updated app scripts to support the `dfx-mgr` package migration from AMD 2024.2 to AMD 2026.1.
+* Enhanced app scripts for compatibility with the Docker-based deployment workflow.
+
+**Documentation**
+
+* Updated the application, library, and documentation to align with AMD 2026.1 EDF-based artifacts.
+* Refreshed documentation to reflect the latest deployment flow and platform updates.
 
 ### Version - v0.5.2
 
@@ -142,94 +156,135 @@ connects to ground and Yellow/White is Sense(data)
 
   ![KD240-KR260-CAN](./media/KD240_KR260_CAN.jpg)
 
-### Tested Artifacts
+### Docker Image Contents
+
+Starting with the **v0.6 release**, the application is deployed using a Docker-based workflow. Application dependencies and validated software components are packaged within the Docker image, eliminating the need to download and install individual application artifacts separately.
+
+The Docker image has been validated with the following platform and application components.
 
 **_KD240 Platform Artifacts_**
 
-| Components                           | Versions           |
-| ------------------------------------ | ------------------ |
-| Ubuntu                               | 24.04 Noble        |
-| Linux Kernel                         | 6.8.0-1015-xilinx  |
-| K24 Boot Firmware                    | K24-BootFW-v1.04   |
-| xlnx-firmware-kd240-motor-ctrl-qei   | 1.0-0xlnx2         |
+| Components                           | Versions                    |
+| ------------------------------------ | --------------------------- |
+| AMD EDF                              | 26.1                        |
+| Linux Kernel                         | 6.18.10-xilinx              |
+| K24 Boot Firmware                    | BOOT-k24-smk-sdt-1.05.bin   |
+| xlnx-firmware-kd240-motor-ctrl-qei   | 1.2                         |
 
 **_KR260 Platform Artifacts_**
 
-| Components                           | Versions           |
-| ------------------------------------ | ------------------ |
-| Ubuntu                               | 24.04 Noble        |
-| Linux Kernel                         | 6.8.0-1009-xilinx  |
-| K26 Boot Firmware                    | K26-BootFW-01.02   |
-| xlnx-firmware-kr260-tsn-rs485pmod    | 1.0-0xlnx2         |
+| Components                           | Versions                    |
+| ------------------------------------ | --------------------------- |
+| AMD EDF                              | 26.1                        |
+| Linux Kernel                         | 6.18.10-xilinx              |
+| K26 Boot Firmware                    | BOOT-k26-smk-sdt-1.06.bin   |
+| xlnx-firmware-kr260-tsn-rs485pmod    | 1.2                         |
 
 To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/1641152513/Kria+K26+SOM#Boot-Firmware-Updates).
 
 **_Application artifacts_**
 
-| Application Package            | ubuntu versions |
-| ------------------------------ | --------------- |
-| xlnx-app-kd240-foc-motor-ctrl  | 0.5.2-0xlnx1      |
+| Application Package            | EDF versions |
+| ------------------------------ | ------------ |
+| xlnx-app-kd240-foc-motor-ctrl  | 0.6          |
 
 
 #### Repositories Information
 
 | Repository                                                                                             | Release Tag                   |
 | ------------------------------------------------------------------------------------------------------ | ----------------------------- |
-| [Kria SOM Vitis Platforms and Overlays](https://github.com/Xilinx/kria-vitis-platforms)                | [v1.0](https://github.com/Xilinx/kria-vitis-platforms/releases/tag/v1.0)        |
-| [Kria FOC Motor Control App](https://github.com/Xilinx/foc-motor-ctrl)                                 | [v0.5.2](https://github.com/Xilinx/foc-motor-ctrl/tree/v0.5.2)        |
-| [Kernel drivers for the FOC Motor Control App](https://github.com/Xilinx/motor-control-iio-modules)    | [v0.2](https://github.com/Xilinx/motor-control-iio-modules/releases/tag/v0.2)        |
+| [Kria SOM Vitis Platforms and Overlays](https://github.com/Xilinx/kria-vitis-platforms)                | [v2.0](https://github.com/Xilinx/kria-vitis-platforms/releases/tag/<placeholder_v2.0>)        |
+| [Kria FOC Motor Control App](https://github.com/Xilinx/foc-motor-ctrl)                                 | [v0.6](https://github.com/Xilinx/foc-motor-ctrl/tree/<placeholder_v0.6>)        |
+| [Kernel drivers for the FOC Motor Control App](https://github.com/Xilinx/motor-control-iio-modules)    | [v0.3](https://github.com/Xilinx/motor-control-iio-modules/releases/tag/<placeholder_v0.3>)        |
 
 
 ### Initial Setup
 
 1. Go through [Booting Kria Starter Kit Linux](https://xilinx.github.io/kria-apps-docs/kd240/linux_boot.html) to complete the minimum setup required to boot Linux before continuing with instructions on this page.
 
-2. Get the latest motor control application and firmware package:
+2. Pull the docker image from dockerhub.
 
-   * Install the firmware.
+    ```bash
+    docker pull xilinx/kria-foc:0.6
+    ```
+    The storage volume on the SD card can be limited with multiple docker
+    images installed. If there are space issues, use the following command
+    to remove existing docker images.
 
-       ```bash
-       sudo apt install xlnx-firmware-kd240-motor-ctrl-qei
-       ```
-       > **Note:** The `motor-control-iio-modules` package will be installed automatically as a dependency when the firmware is installed.
+    ```bash
+    docker rmi --force <image>
+    ```
 
-   * Install the motor control application.
+    You can find the images installed with the following command:
 
-      ```bash
-      # Add lely PPA for lely-core libraries
-      sudo add-apt-repository ppa:lely/ppa
-      sudo apt-get update
+    ```bash
+    docker images
+    ```
 
-      sudo apt install xlnx-app-kd240-foc-motor-ctrl
-      ```
-      >**Note:** The packages `pybind11`, `libiio-utils` and `bokeh` will be installed as dependencies when the application is installed.
+3. Install the firmware blob using `dfx-fw-install` through the container.
 
-3. Install lm-sensors package for One Wire Temperature sensor
+    ```bash
+    FW_NAME=kd240-motor-ctrl-qei
 
-      ```bash
-      sudo apt install lm-sensors
-      ```
+    sudo mkdir -p /lib/firmware/xilinx/${FW_NAME}
+
+    docker run --rm \
+     -v /lib/firmware/xilinx/${FW_NAME}:/opt/firmware/xilinx/${FW_NAME} \
+     kria-foc:latest sh -c "
+     dfx-fw-install --fw-name ${FW_NAME}
+     "
+    ```
+      > **Note:** All the application dependencies like `motor-control-iio-modules`, `pybind11`, `libiio-utils` and `bokeh` are installed automatically when the firmware is installed.
 
 ## Load the Firmware
 
-* Show the list and status of available application firmware.
+1. Start the Application Container on KD240 host.
 
-  After installing the firmware, execute xmutil listapps to verify that it is captured under the listapps function and to have dfx-mgrd rescan and register all accelerators in the firmware directory tree.
+    ```bash
+    docker run --rm -it --privileged \
+    --net=host \
+    -v /dev:/dev \
+    -v /sys:/sys \
+    -v /var/run/dfx-mgrd.socket:/var/run/dfx-mgrd.socket \
+    -v /run:/run \
+    kria-foc:latest \
+    /bin/bash
+    ```
 
-  ```bash
-  ubuntu@kria:~$ sudo xmutil listapps
-                   Accelerator      Accel_type                          Base Pid       Base_type  #slots(PL+AIE)     Active_slot
-          kd240-motor-ctrl-qei        XRT_FLAT          kd240-motor-ctrl-qei  ok        XRT_FLAT           (0+0)              -1
-  ```
+2. Load Application Firmware.
 
-* Load the desired application firmware.
+    After launching the Docker container, load the required kernel modules and application firmware using `dfx-mgr-client`.
 
-  When there is already another accelerator/firmware loaded, unload it first, then load the kd240-foc-motor-ctrl firmware.
+    * Verify Available Firmware Packages
 
-  ```bash
-  sudo xmutil unloadapp
-  sudo xmutil loadapp kd240-motor-ctrl-qei
-  ```
+    Set the target firmware name, load the required modules, and verify that the firmware package is available.
+
+    ```bash
+    FW_NAME=kd240-motor-ctrl-qei
+
+    # Load required modules for the selected firmware
+    kria-modules-load --fw-name ${FW_NAME}
+
+    # List available firmware packages
+    dfx-mgr-client -listPackage
+    ```
+
+    The output should include the `${FW_NAME}` firmware package.
+
+   * Load the Firmware
+
+   If another firmware package is currently active, unload it before loading the target firmware.
+
+    ```bash
+    # Unload the currently active firmware package
+    # Replace <id> with the package ID reported by dfx-mgr-client
+    dfx-mgr-client -unload <id>
+
+    # Load the target firmware package
+    dfx-mgr-client -loadByName ${FW_NAME}
+    ```
+
+    After the load operation completes successfully, the accelerator is ready for application execution.
 
 ## Control Interfaces
 
@@ -250,31 +305,39 @@ Note: Only one interface can used at a time.
 
   ```bash
   # Run the application to launch bokeh server for the dashboard
-  export PATH=${PATH}:/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl/bin
   start_motor_dashboard
-  # Enter the sudo password if required and note the ip address of the board
   ```
-    >**NOTE:** To terminate the Bokeh server, use the command `sudo killall bokeh`.
 
   Sample output of the terminal on launching the motor dashboard.
 
   ```bash
-  ubuntu@kria:~$ sudo xmutil unloadapp
-  remove from slot 0 returns: 0 (Ok)
-  ubuntu@kria:~$ sudo xmutil loadapp kd240-motor-ctrl-qei
-  kd240-motor-ctrl-qei: loaded to slot 0
-  ubuntu@kria:~$ export PATH=${PATH}:/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl/bin
-  ubuntu@kria:~$ start_motor_dashboard
-  Please enter the password for sudo access
-  [sudo] password for ubuntu:
+  bash-5.2# start_motor_dashboard
+  Checking firmware status...
   Firmware kd240-motor-ctrl-qei is loaded
-  To the access the Application, enter "192.168.4.43:3006" in the host machine's browser.
-  ubuntu@kria:~$ 2025-05-20 01:55:26,517 Starting Bokeh server version 3.5.1 (running on Tornado 6.4)
-  2025-05-20 01:55:26,525 User authentication hooks NOT provided (default user enabled)
-  2025-05-20 01:55:26,540 Bokeh app running at: http://localhost:3006/dashboard
-  2025-05-20 01:55:26,541 Starting Bokeh server with process id: 21745
-  gio: http://localhost:3006/dashboard: Operation not supported
+  To access the Application, open http://192.168.4.89:3006 in the host machine browser.
+  Starting Bokeh server
+  2026-06-16 22:44:51,597 Starting Bokeh server version 3.5.1 (running on Tornado 6.4.2)
+  2026-06-16 22:44:51,606 User authentication hooks NOT provided (default user enabled)
+  2026-06-16 22:44:51,627 Bokeh app running at: http://localhost:3006/dashboard
+  2026-06-16 22:44:51,628 Starting Bokeh server with process id: 1920
+  Using uio device uio0 for motor contorl
+  Map uio physical address: 0x00000000a0020000
+  Map uio size: 0x0000000000001000
+  2026-06-16 22:44:58,395 WebSocket connection opened
+  2026-06-16 22:44:58,397 ServerConnection created
   ```
+
+  The following commands can be used to directly launch the Bokeh server without using the helper script:
+
+  ```bash
+  # Extract IP address of the ethernet port
+  IP_ADDR=$(ip -4 addr show end0 | awk '/inet / {print $2}' | cut -d/ -f1)
+
+  bokeh serve --port 3006 \
+      --allow-websocket-origin=${IP_ADDR}:3006 \
+      /usr/share/foc-motor-ctrl/dashboard
+  ```
+    >**NOTE:** To terminate the Bokeh server, use the command `sudo killall bokeh`.
 
 * Change Motor Configurations:
 
@@ -670,48 +733,44 @@ The following images show what the dashboard looks like when a larger load is ap
 
 * Ensure to load the motor-ctrl-qei firmware before running the demo
 
+   If another firmware package is currently active, unload it before loading the target firmware.
+
+    ```bash
+    # Unload the currently active firmware package
+    # Replace <id> with the package ID reported by dfx-mgr-client
+    dfx-mgr-client -unload <id>
+
+    # Load the target firmware package
+    dfx-mgr-client -loadByName ${FW_NAME}
+    ```
+
+* You can check if the slave entry is added under `/sys/bus/w1/devices` and if master bus also registers this slave.
+
   ```bash
-  sudo xmutil unloadapp
-  sudo xmutil loadapp kd240-motor-ctrl-qei
-  ```
-
-* Run a sanity check to verify if the 1-wire slave sensor has been probed successfully.
-
-  ```bash
-  ubuntu@kria:~$ sudo dmesg | grep 'w1'
-  [  247.023403] w1_master_driver w1_bus_master1: Attaching one wire slave 28.00000f0559bc crc dc
-  ```
-
-* You can also check if the slave entry is added under `/sys/bus/w1/devices` and if master bus also registers this slave.
-
-  ```bash
-  ubuntu@kria:/sys/bus/w1/devices$ ls
-  28-00000f0559bc  w1_bus_master1
-
-  ubuntu@kria:/sys/bus/w1/devices$ cat 28-00000f0559bc/name
-  28-00000f0559bc
-  ubuntu@kria:/sys/bus/w1/devices$ ls 28-00000f0559bc
-  alarms     eeprom_cmd  hwmon  power       temperature
-  conv_time  ext_power   id     resolution  uevent
-  driver     features    name   subsystem   w1_slave
-
-  ubuntu@kria:/sys/bus/w1/devices/w1_bus_master1$ cat w1_master_slave_count
+  bash-5.2# cd /sys/bus/w1/devices/
+  bash-5.2# ls
+  28-00000f051201  w1_bus_master1
+  bash-5.2# cat 28-00000f051201/name
+  28-00000f051201
+  bash-5.2# ls 28-00000f051201
+  alarms  conv_time  driver  eeprom_cmd  ext_power  features  hwmon  id  name  power  resolution  subsystem  temperature  uevent  w1_slave
+  bash-5.2# cd w1_bus_master1
+  bash-5.2# cat w1_master_slave_count
   1
-  ubuntu@kria:/sys/bus/w1/devices/w1_bus_master1$ cat w1_master_slaves
-  28-00000f0559bc
+  bash-5.2# cat w1_master_slaves
+  28-00000f051201
   ```
 
 * You can also read the temperature through the filesystem
 
   ```bash
-  ubuntu@kria:~$ ls /sys/class/hwmon/
+  bash-5.2# cd /sys/class/hwmon/
+  bash-5.2# ls
   hwmon0  hwmon1  hwmon2  hwmon3
-
-  ubuntu@kria:~$ cat /sys/class/hwmon/hwmon3/name
+  bash-5.2# cat hwmon3/name
   w1_slave_temp
-
-  ubuntu@kria:~$ cat /sys/class/hwmon/hwmon3/temp1_input
-  20618
+  bash-5.2# cat hwmon3/temp1_input
+  21250
   ```
 
 * The sensor read through the filesystem provides temperature in millidegrees Celsius
@@ -724,49 +783,50 @@ applies scaling and calibration and presents it in a human-readable format.
   ```bash
   # Output should be the following
 
-  ubuntu@kria:~$ sensors
-  ina260_u3-isa-0000
-  Adapter: ISA adapter
-  in1:           5.06 V
-  power1:        2.46 W
-  curr1:       487.00 mA
-
-  ams-isa-0000
-  Adapter: ISA adapter
-  in1:           1.21 V
-  in2:           0.00 V
-  in3:         720.00 mV
-  in4:         848.00 mV
-  in5:           1.79 V
-  in6:           1.79 V
-  in7:         852.00 mV
-  in8:         848.00 mV
-  in9:         849.00 mV
-  in10:          1.80 V
-  in11:          1.09 V
-  in12:          1.79 V
-  in13:          1.79 V
-  in14:          1.79 V
-  in15:          1.79 V
-  in16:        850.00 mV
-  in17:          1.80 V
-  in18:        598.00 mV
-  in19:        718.00 mV
-  in20:          1.80 V
-  in21:          1.25 V
-  in22:          0.00 V
-  in23:        846.00 mV
-  in24:        846.00 mV
-  in25:        852.00 mV
-  in26:          1.80 V
-  in27:        601.00 mV
-  temp1:        +25.1°C
-  temp2:        +26.5°C
-  temp3:        +27.1°C
+  bash-5.2# sensors
+  ina260-i2c-1-40
+  Adapter: Cadence I2C at ff030000
+  in0:         1000.00 uV (crit min =  +0.00 V, crit max =  +0.00 V)
+  in1:           5.07 V  (crit min =  +0.00 V, crit max =  +0.00 V)
+  power1:        2.55 W  (crit =   0.00 W)
+  curr1:       504.00 mA (crit min =  +0.00 A, crit max =  +0.00 A)
 
   w1_slave_temp-virtual-0
   Adapter: Virtual device
-  temp1:        +20.6°C
+  temp1:        +21.2 C
+
+  ams-isa-0000
+  Adapter: ISA adapter
+  VCC_PSPLL:         1.20 V
+  VCC_PSBATT:        0.00 V
+  VCCINT:          718.00 mV
+  VCCBRAM:         848.00 mV
+  VCCAUX:            1.80 V
+  VCC_PSDDR_PLL:     1.79 V
+  VCC_PSINTFP_DDR: 854.00 mV
+  VCC_PSINTLP:     847.00 mV
+  VCC_PSINTFP:     847.00 mV
+  VCC_PSAUX:         1.80 V
+  VCC_PSDDR:         1.09 V
+  VCC_PSIO3:         1.79 V
+  VCC_PSIO0:         1.79 V
+  VCC_PSIO1:         1.79 V
+  VCC_PSIO2:         1.79 V
+  PS_MGTRAVCC:     851.00 mV
+  PS_MGTRAVTT:       1.80 V
+  VCC_PSADC:         1.79 V
+  VCCINT:          717.00 mV
+  VCCAUX:            1.80 V
+  VREFP:             1.25 V
+  VREFN:             0.00 V
+  VCCBRAM:         848.00 mV
+  VCC_PSINTLP:     846.00 mV
+  VCC_PSINTFP:     850.00 mV
+  VCC_PSAUX:         1.80 V
+  VCCAMS:            1.78 V
+  Temp_LPD:         +40.0 C
+  Temp_FPD:         +40.1 C
+  Temp_PL:          +41.3 C
   ```
 
 * The output will have multiple sensors and `w1_slave_temp-virtual` is the desired One Wire Temperature Sensor value that is connected to KD240.
