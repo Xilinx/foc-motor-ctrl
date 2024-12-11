@@ -86,7 +86,7 @@ Tests:
 
 * [KD240 Drives Starter Kit](https://www.xilinx.com/products/som/kria/kd240-drives-starter-kit.html)
 
-* [KD240 Motor Accessory Kit](https://www.xilinx.com/products/som/kria/kd240-motor-accessory-pack.html)
+* [KD240 Motor Accessory Kit](https://www.amd.com/en/products/system-on-modules/kria/k24/kd240-drives-starter-kit/kd240-motor-accessory-pack.html)
 
 * KD240 power supply and adapter (included with the KD240 Drives Starter Kit)
   * 12V AC adapter for the KD240 Starter Kit and 24V AC adapter for the Motor Accessory Kit
@@ -347,7 +347,7 @@ The following images show what the dashboard looks like when a larger load is ap
 
 ### Test CAN Communication
 
-* On the KR260, go through [Booting Kria Starter Kit Linux](https://xilinx.github.io/kria-apps-docs/kr260/build/html/docs/kria_starterkit_linux_boot.html) to complete the minimum setup required to boot Linux before continuing with instructions on this page.
+* On the KR260, go through [Booting Kria Starter Kit Linux](https://xilinx.github.io/kria-apps-docs/kr260/build/html/docs/linux_boot.html) to complete the minimum setup required to boot Linux before continuing with instructions on this page.
 
 * Install and load firmware on KR260. The kr260-tsn-rs485pmod firmware is used
   to enable to PMOD-CAN interface on KR260.
