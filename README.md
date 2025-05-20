@@ -66,7 +66,7 @@ This repository provides a field oriented control based motor control library an
 
 ## Run the Application
 
-For detailed instructions on how to deploy and run the application, please refer to the [FOC Motor Control Application Deployment Page](https://xilinx.github.io/kria-apps-docs/kd240/foc_motor_ctrl.html).
+For detailed instructions on how to deploy and run the application, please refer to the [FOC Motor Control Application Deployment Page](https://xilinx.github.io/kria-apps-docs/kd240/foc-motor-ctrl/0_5/build/html/docs/app_deployment.html).
 
 ## License
 
