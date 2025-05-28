@@ -19,7 +19,6 @@ from bokeh.models import Label
 from bokeh.models import RadioGroup
 from bokeh.driving import linear
 from numpy import nan
-from collections import deque
 
 css_style = Div(text="""
 <style>
@@ -30,9 +29,17 @@ css_style = Div(text="""
 </style>
 """)
 
+def list_popleft(my_list):
+    # Check if the list is not empty
+    if my_list:
+        # Remove and return the first element
+        return my_list.pop(0)
+    else:
+        raise IndexError("pop from empty list")
+
 sample_size = 500
 interval = 2
-x = deque([nan] * sample_size)
+x = [nan] * sample_size
 for i in range(sample_size):
     x[i] = i+1
 
@@ -85,8 +92,8 @@ electrical_data_titles = [
     'Phase C Voltage'
 ]
 num_electrical_data = len(electrical_data_titles)
-electrical_data_list = [deque([nan] * sample_size) for i in range(num_electrical_data)]
-electrical_plot = figure(plot_width=1000, plot_height=300, title='Electrical Data')
+electrical_data_list = [[nan] * sample_size for i in range(num_electrical_data)]
+electrical_plot = figure(width=1000, height=300, title='Electrical Data')
 electrical_lines = [0] * num_electrical_data
 electrical_ds_list = [0] * num_electrical_data
 electrical_plot.xaxis.axis_label = "Sample"
@@ -118,8 +125,8 @@ mechanical_data_titles = [
     'Motor Position'
 ]
 num_mechanical_data = len(mechanical_data_titles)
-mechanical_data_list = [deque([nan] * sample_size) for i in range(num_mechanical_data)]
-mechanical_plot = figure(plot_width=1000, plot_height=300, title='Mechanical Data')
+mechanical_data_list = [[nan] * sample_size for i in range(num_mechanical_data)]
+mechanical_plot = figure(width=1000, height=300, title='Mechanical Data')
 mechanical_lines = [0] * num_mechanical_data
 mechanical_ds_list = [0] * num_mechanical_data
 mechanical_plot.xaxis.axis_label = "Sample"
@@ -172,7 +179,7 @@ live_analysis_axis_labels = {
 live_analysis_x_selection = live_analysis_options[0]
 live_analysis_y_selection = live_analysis_options[1]
 
-def live_analysis_x_select_data(self):
+def live_analysis_x_select_data(attr, old, new):
     global live_analysis_x_data_list
     global live_analysis_x_selection
     global live_analysis_x_buffer_mapping
@@ -180,7 +187,7 @@ def live_analysis_x_select_data(self):
     live_analysis_plot.xaxis.axis_label = live_analysis_axis_labels[live_analysis_x_selection]
     live_analysis_x_buffer_mapping = get_live_analysis_buffer_mapping(live_analysis_x_selection)
 
-def live_analysis_y_select_data(self):
+def live_analysis_y_select_data(attr, old, new):
     global live_analysis_y_data_list
     global live_analysis_y_selection
     global live_analysis_y_buffer_mapping
@@ -190,10 +197,10 @@ def live_analysis_y_select_data(self):
 
 live_analysis_x_title = Paragraph(text="X-Axis Data:", width=80, align="start")
 live_analysis_x_options = RadioGroup(labels=live_analysis_options, active=0)
-live_analysis_x_options.on_click(live_analysis_x_select_data)
+live_analysis_x_options.on_change('active', live_analysis_x_select_data)
 live_analysis_y_title = Paragraph(text="Y-Axis Data:", width=80, align="start")
 live_analysis_y_options = RadioGroup(labels=live_analysis_options, active=1)
-live_analysis_y_options.on_click(live_analysis_y_select_data)
+live_analysis_y_options.on_change('active', live_analysis_y_select_data)
 
 def get_live_analysis_buffer_mapping(val):
     if val == "PhA Current":
@@ -225,10 +232,10 @@ def get_live_analysis_buffer_mapping(val):
 
 live_analysis_x_buffer_mapping = get_live_analysis_buffer_mapping(live_analysis_x_selection)
 live_analysis_y_buffer_mapping = get_live_analysis_buffer_mapping(live_analysis_y_selection)
-live_analysis_x_data_list = deque([nan] * sample_size)
-live_analysis_y_data_list = deque([nan] * sample_size)
+live_analysis_x_data_list = [nan] * sample_size
+live_analysis_y_data_list = [nan] * sample_size
 
-live_analysis_plot = figure(plot_width=800, plot_height=620, title="Live Analysis")
+live_analysis_plot = figure(width=800, height=620, title="Live Analysis")
 live_analysis_source = ColumnDataSource(dict(x=live_analysis_x_data_list, y=live_analysis_y_data_list))
 live_analysis_scatter = live_analysis_plot.scatter(
     x="x",
@@ -277,7 +284,7 @@ for i in range(len(fault_list)):
         else:
             fault_colors[i] = "green"
 
-fault_status_plot = figure(plot_width=400, plot_height=200, title='Fault Status')
+fault_status_plot = figure(width=400, height=200, title='Fault Status')
 fault_status_plot.grid.visible = False
 fault_status_plot.axis.visible = False
 fault_status_plot.x_range = Range1d(0.8, 3)
@@ -368,12 +375,12 @@ def update_sample_size(attr, old, new):
 
     while len(live_analysis_x_data_list) > sample_size:
         x.pop()
-        live_analysis_x_data_list.popleft()
-        live_analysis_y_data_list.popleft()
+        list_popleft(live_analysis_x_data_list)
+        list_popleft(live_analysis_y_data_list)
         for data in electrical_data_list:
-            data.popleft()
+            list_popleft(data)
         for data in mechanical_data_list:
-            data.popleft()
+            list_popleft(data)
 
     while len(live_analysis_x_data_list) < sample_size:
         x.append(len(x)+1)
@@ -567,10 +574,10 @@ clear_faults_button = Button(label="Clear Faults", width=100, button_type='prima
 clear_faults_button.on_click(clear_faults)
 
 # Error message (plotting)
-plot_error_message = Paragraph(text="", style={'color': 'red'}, width=250, align="center")
+plot_error_message = Paragraph(text="", styles={'color': 'red'}, width=250, align="center")
 
 # Error message (setpoints)
-error_message = Paragraph(text="", style={'color': 'red'}, width=290, align="center")
+error_message = Paragraph(text="", styles={'color': 'red'}, width=290, align="center")
 
 # List of buffered data that will be requested
 buffer_list = [
