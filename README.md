@@ -66,9 +66,9 @@ This repository provides a field oriented control based motor control library an
 
 ## Run the Application
 
-For detailed instructions on how to deploy and run the application, please refer to the [FOC Motor Control Application Deployment Page](https://xilinx.github.io/kria-apps-docs/kd240/build/html/docs/foc-motor-ctrl/src/app_deployment.html).
+For detailed instructions on how to deploy and run the application, please refer to the [FOC Motor Control Application Deployment Page](https://xilinx.github.io/kria-apps-docs/kd240/foc_motor_ctrl.html).
 
 ## License
 
-Copyright (C) 2023-2024, Advanced Micro Devices, Inc.\
+Copyright (C) 2023-2025, Advanced Micro Devices, Inc.\
 SPDX-License-Identifier: MIT
