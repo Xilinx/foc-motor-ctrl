@@ -1,4 +1,4 @@
-﻿<table class="sphinxhide">
+<table class="sphinxhide">
  <tr>
    <td align="center"><img src="../../media/xilinx-logo.png" width="30%"/><h1> Kria&trade; KD240 Drives Starter Kit <br>FOC Motor Control Application Tutorial</h1>
    </td>
@@ -19,6 +19,26 @@ This document shows how to set up the board, and run the motor control applicati
 This guide is targeted for Ubuntu® 24.04 and the AMD 2024.1 toolchain.
 
 ## Revision History
+
+### Version - v0.5.2
+
+#### Change Log
+
+Library & Apps:
+
+* Updated app script for compatibility with Bokeh 3.5.1 (previously 2.4.3).
+
+Documentation:
+
+* Updated documentation to align with recent application changes and version upgrades.
+
+### Version - v0.5.1
+
+#### Change Log
+
+Library & Apps:
+
+* Updated app scripts to handle `dfx-mgr` package update from 2023.2 to 2024.2.
 
 ### Version - v0.5
 
@@ -127,8 +147,8 @@ connects to ground and Yellow/White is Sense(data)
 | Components                           | Versions           |
 | ------------------------------------ | ------------------ |
 | Ubuntu                               | 24.04 Noble        |
-| Linux Kernel                         | 6.8.0-1009-xilinx  |
-| K24 Boot Firmware                    | K24-BootFW-01.02   |
+| Linux Kernel                         | 6.8.0-1015-xilinx  |
+| K24 Boot Firmware                    | K24-BootFW-v1.04   |
 | xlnx-firmware-kd240-motor-ctrl-qei   | 1.0-0xlnx2         |
 
 **_KR260 Platform Artifacts_**
@@ -146,7 +166,7 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
 
 | Application Package            | ubuntu versions |
 | ------------------------------ | --------------- |
-| xlnx-app-kd240-foc-motor-ctrl  | 0.5.1-0xlnx1      |
+| xlnx-app-kd240-foc-motor-ctrl  | 0.5.2-0xlnx1      |
 
 
 #### Repositories Information
@@ -154,7 +174,7 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
 | Repository                                                                                             | Release Tag                   |
 | ------------------------------------------------------------------------------------------------------ | ----------------------------- |
 | [Kria SOM Vitis Platforms and Overlays](https://github.com/Xilinx/kria-vitis-platforms)                | [v1.0](https://github.com/Xilinx/kria-vitis-platforms/releases/tag/v1.0)        |
-| [Kria FOC Motor Control App](https://github.com/Xilinx/foc-motor-ctrl)                                 | [v0.5](https://github.com/Xilinx/foc-motor-ctrl/tree/v0.5)        |
+| [Kria FOC Motor Control App](https://github.com/Xilinx/foc-motor-ctrl)                                 | [v0.5.2](https://github.com/Xilinx/foc-motor-ctrl/tree/v0.5.2)        |
 | [Kernel drivers for the FOC Motor Control App](https://github.com/Xilinx/motor-control-iio-modules)    | [v0.2](https://github.com/Xilinx/motor-control-iio-modules/releases/tag/v0.2)        |
 
 
@@ -246,11 +266,11 @@ Note: Only one interface can used at a time.
   Please enter the password for sudo access
   [sudo] password for ubuntu:
   Firmware kd240-motor-ctrl-qei is loaded
-  To the access the Application, enter "10.0.0.153:3006" in the host machine's browser.
-  ubuntu@kria:~$ 2024-10-04 15:58:02,892 Starting Bokeh server version 2.4.3 (running on Tornado 6.4)
-  2024-10-04 15:58:02,901 User authentication hooks NOT provided (default user enabled)
-  2024-10-04 15:58:02,924 Bokeh app running at: http://localhost:3006/dashboard
-  2024-10-04 15:58:02,924 Starting Bokeh server with process id: 52668
+  To the access the Application, enter "192.168.4.43:3006" in the host machine's browser.
+  ubuntu@kria:~$ 2025-05-20 01:55:26,517 Starting Bokeh server version 3.5.1 (running on Tornado 6.4)
+  2025-05-20 01:55:26,525 User authentication hooks NOT provided (default user enabled)
+  2025-05-20 01:55:26,540 Bokeh app running at: http://localhost:3006/dashboard
+  2025-05-20 01:55:26,541 Starting Bokeh server with process id: 21745
   gio: http://localhost:3006/dashboard: Operation not supported
   ```
 
@@ -764,4 +784,4 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 -->
 
-<p class="sphinxhide" align="center">Copyright&copy; 2023 Advanced Micro Devices, Inc</p>
+<p class="sphinxhide" align="center">Copyright&copy; 2023-2025 Advanced Micro Devices, Inc</p>
