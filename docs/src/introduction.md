@@ -29,7 +29,7 @@ The following provide more detailed definitions around the defined motor control
 
 ### Torque Control
 
-Torque control implements a closed loop control focused on maintaining a specified torque value In this mode of operation, the q-vector provides the useful torque output of the motor, and the d-vector provides the force that is parallel to the rotor. The d-vector represents non-useful force, and thus any non-zero value is considered an error.
+Torque control implements a closed loop control focused on maintaining a specified torque value In this mode of operation, the q-vector provides the useful torque output of the motor, and the d-vector provides the force that is parallel to the rotor. The d-vector represents the direct or non-rotational force vector and when in non-field-weakening control scenarios is controlled around a zero set-point.
 
 ![Torque-Control](./media/torqc.png)
 
