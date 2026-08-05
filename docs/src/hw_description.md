@@ -184,13 +184,14 @@ The LogiCORE™ 100M/1G TSN Subsystem IP implements IEEE 802.1 Time Sensitive Ne
 
 * Network Time Synchronization- 1588 Precision Time Protocol (PTP)
 * Scheduled and Best Effort traffic types
-* Time aware scheduling (IEEE 802.1 Qbv)
-* Frame replication and elimination (IEEE 802.1 CB)
-* Per Stream Filtering and Policing (IEEE 802.1 Qci)
+* Time aware scheduling (IEEE 802.1Qbv)
+* Frame preemption (IEEE 802.1Qbu / IEEE 802.3br)
+
+>**NOTE:** Starting with the 2026.1 release, Frame Replication and Elimination for Reliability (IEEE 802.1CB) and Per-Stream Filtering and Policing (IEEE 802.1Qci) are disabled in the KD240 TSN IP configuration. This recovers the routing and area margin on the K24 SOM that is consumed by the larger 2026.1 TSN Subsystem IP. These features remain enabled on the KR260 TSN reference design.
 
 For more information on the IP, refer to the *100M/1G TSN Subsystem IP Product Guide* ([PG275](https://www.xilinx.com/content/dam/xilinx/member/1gtsn_doc/2020_1/pg275-tsn-endpoint-ethernet-mac.pdf)).
 
->***NOTE:** You will need access to [1GTSN Documentation Lounge](https://www.xilinx.com/member/1gtsn_doc.html) to view the document.
+>**NOTE:** You will need access to [1GTSN Documentation Lounge](https://www.xilinx.com/member/1gtsn_doc.html) to view the document.
 
 #### MCDMA
 
@@ -293,17 +294,17 @@ The TSN Subsystem interrupts are itemized in the following table.
 
 ## Resource Utilization
 
-The resource utilization numbers on this platform post implementation is reported in the following table.
+The following post-implementation resource utilization numbers were generated with **AMD Vivado&trade; 2026.1**. Resource numbers are tool-version dependent; always cite the build version alongside them and regenerate this table when rebuilding on a different release.
 
 | Resource  | Utilization  | Available  | Utilization %  |
 | :---      |    :----     | :---       |    :----       |
-| LUT       | 57008        | 70560      | 80.79 |
-| LUTRAM    | 2996         | 28800      | 10.40 |
-| FF        | 81183        | 141120     | 57.53 |
-| BRAM      | 116          | 216        | 53.70 |
-| DSP       | 136          | 360        | 37.78 |
+| LUT       | 59192        | 70560      | 83.89 |
+| LUTRAM    | 3414         | 28800      | 11.85 |
+| FF        | 81894        | 141120     | 58.03 |
+| BRAM      | 105          | 216        | 48.61 |
+| DSP       | 111          | 360        | 30.83 |
 | IO        | 64           | 81         | 79.01 |
-| BUFG      | 17           | 196        | 8.67  |
+| BUFG      | 13           | 196        | 6.63  |
 | MMCM      | 2            | 3          | 66.67 |
 | PLL       | 0            | 6          | 0.00  |
 
