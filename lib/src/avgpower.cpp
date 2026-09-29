@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2023 Advanced Micro Devices, Inc.
+ * SPDX-License-Identifier: MIT
+ */
+
 #include "avgpower.h"
 
 AVGPower::AVGPower(Adchub* adchub, MC_Uio* mcuio) : madc(adchub), muio(mcuio)

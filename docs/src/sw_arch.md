@@ -768,3 +768,5 @@ and calibration and presents it in a human-readable format.
 - [Application Deployment](./app_deployment.md)
 - Go back to the [KD240 FOC Motor Control Landing Page](../foc_motor_control_landing)
 
+
+<p class="sphinxhide" align="center">Copyright&copy; 2023-2024 Advanced Micro Devices, Inc</p>

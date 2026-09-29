@@ -313,3 +313,5 @@ The following post-implementation resource utilization numbers were generated wi
 * [Software Archicture](./sw_arch.md)
 * Go back to the [KD240 FOC Motor Control Landing Page](../foc_motor_control_landing)
 
+
+<p class="sphinxhide" align="center">Copyright&copy; 2023-2024 Advanced Micro Devices, Inc</p>
