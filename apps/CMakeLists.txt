@@ -39,9 +39,9 @@ if(BUILD_CANOPEN_APP)
 		DESTINATION share/foc-motor-ctrl/
 	)
 
-	install(PROGRAMS launch_server.sh
+	install(PROGRAMS launch-motor-control.sh
 		DESTINATION ${CMAKE_INSTALL_BINDIR}
-		RENAME start_motor_server
+		RENAME start_motor_control
 	)
 
 endif()
@@ -68,9 +68,9 @@ if(BUILD_CMDLINE_APP)
 endif()
 
 if(BUILD_DASHBOARD_APP)
-	set(APP start_motor_dashboard)
+	set(APP start_motor_control)
 
-	install(PROGRAMS launch_dashboard.sh
+	install(PROGRAMS launch-motor-control.sh
 		DESTINATION ${CMAKE_INSTALL_BINDIR}
 		RENAME ${APP}
 	)
