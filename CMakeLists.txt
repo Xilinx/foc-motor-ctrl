@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-project(foc_motor_ctrl)
+project(foc_motor_ctrl VERSION 0.6.0)
 
 set(FMC_LIB_NAME ${PROJECT_NAME})
 set(PY_FMC_LIB py_${PROJECT_NAME})
