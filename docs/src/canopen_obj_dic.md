@@ -470,3 +470,5 @@
 |Access|ReadWrite|
 |Can be mapped|No|
 |Default Value|0x00000001|
+
+<p class="sphinxhide" align="center">Copyright&copy; 2024-2026 Advanced Micro Devices, Inc</p>

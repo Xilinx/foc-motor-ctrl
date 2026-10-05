@@ -1,9 +1,9 @@
 [Comments]
 Lines=4
-Lines1=|-------------------------------------------------|
-Lines2=| Copyright (C) 2024 Advanced Micro Devices, Inc. |
-Lines3=| SPDX-License-Identifier: MIT                    |
-Lines4=|-------------------------------------------------|
+Lines1=|------------------------------------------------------|
+Lines2=| Copyright (C) 2024-2026 Advanced Micro Devices, Inc. |
+Lines3=| SPDX-License-Identifier: MIT                         |
+Lines4=|------------------------------------------------------|
 
 [FileInfo]
 FileName=foc-mc.eds

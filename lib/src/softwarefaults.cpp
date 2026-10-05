@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2023 Advanced Micro Devices, Inc.
+ * SPDX-License-Identifier: MIT
+ */
+
 #include "softwarefaults.h"
 
 SoftwareFaults::SoftwareFaults(Adchub *adchub, MC_Uio *uio) : EventControl(
