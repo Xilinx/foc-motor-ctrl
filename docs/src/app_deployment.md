@@ -205,7 +205,7 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
 2. Pull the docker image from dockerhub.
 
     ```bash
-    docker pull xilinx/kria-foc:0.6
+    docker pull xilinx/foc-motor-ctrl-server:latest
     ```
     The storage volume on the SD card can be limited with multiple docker
     images installed. If there are space issues, use the following command
@@ -230,7 +230,7 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
 
     docker run --rm \
      -v /lib/firmware/xilinx/${FW_NAME}:/opt/firmware/xilinx/${FW_NAME} \
-     kria-foc:latest sh -c "
+     xilinx/foc-motor-ctrl-server:latest sh -c "
      dfx-fw-install --fw-name ${FW_NAME}
      "
     ```
@@ -247,7 +247,7 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
     -v /sys:/sys \
     -v /var/run/dfx-mgrd.socket:/var/run/dfx-mgrd.socket \
     -v /run:/run \
-    kria-foc:latest \
+    xilinx/foc-motor-ctrl-server:latest \
     /bin/bash
     ```
 
@@ -299,7 +299,12 @@ Note: Only one interface can used at a time.
 
 ## Run the Motor Control Dashboard Application
 
-### On the KD240
+Complete [Initial Setup](#initial-setup) and [Load the Firmware](#load-the-firmware) first. Then start the dashboard on the KD240 and open it from a host PC:
+
+1. [Start the Dashboard on the KD240](#start-the-dashboard-on-the-kd240).
+2. [Access the Dashboard from the Host PC](#access-the-dashboard-from-the-host-pc).
+
+### Start the Dashboard on the KD240
 
 * Run the bokeh server:
 
@@ -356,7 +361,7 @@ Note: Only one interface can used at a time.
 
   > Note: If no path is specified, the default configuration file [anaheim.config](https://github.com/Xilinx/foc-motor-ctrl/blob/main/lib/configs/anaheim.config) will be used. Inline comments in the config file explains each parameter.
 
-## On the Host PC
+### Access the Dashboard from the Host PC
 
 * Open &lt;ip&gt;:3006 in a web browser.
 
@@ -408,37 +413,135 @@ The following images show what the dashboard looks like when a larger load is ap
 
 ## Run the Motor Control ROS2 CANopen Application
 
-### Test CAN Communication
+Starting with the **v0.6 release**, this app runs inside Docker containers on
+both boards: the CANopen server container on the KD240 and the ROS2 CANopen
+host container on the KR260.
+
+| Board | Docker image                               |
+| ----- | ------------------------------------------ |
+| KD240 | `xilinx/foc-motor-ctrl-server:latest`      |
+| KR260 | `xilinx/foc-motor-ctrl-ros2-canopen:latest`|
+
+Complete the setup on both boards first, then verify CAN communication
+between them, and finally start the server and the host tests:
+
+1. [Set Up the KD240](#set-up-the-kd240)
+2. [Set Up the KR260](#set-up-the-kr260)
+3. [Test CAN Communication](#test-can-communication)
+4. [Run the CANopen Server on the KD240](#run-the-canopen-server-on-the-kd240)
+5. [Run the CANopen Host Tests on the KR260](#run-the-canopen-host-tests-on-the-kr260)
+
+### Set Up the KD240
+
+* Pull the CANopen server docker image on the KD240.
+
+  ```bash
+  docker pull xilinx/foc-motor-ctrl-server:latest
+  ```
+
+* Launch the docker container on the KD240.
+
+  ```bash
+  docker run --rm -it --privileged \
+  --net=host \
+  -v /dev:/dev \
+  -v /sys:/sys \
+  -v /var/run/dfx-mgrd.socket:/var/run/dfx-mgrd.socket \
+  -v /run:/run \
+  xilinx/foc-motor-ctrl-server:latest \
+  /bin/bash
+  ```
+
+* Bring up the CAN interface from inside the KD240 container.
+
+  ```bash
+  ip link set can0 up type can bitrate 100000
+  ip link set can0 txqueuelen 10000
+  ip link set can0 up
+  ```
+
+### Set Up the KR260
 
 * On the KR260, go through [Booting Kria Starter Kit Linux](https://xilinx.github.io/kria-apps-docs/kr260/build/html/docs/linux_boot.html) to complete the minimum setup required to boot Linux before continuing with instructions on this page.
 
-* Install and load firmware on KR260. The kr260-tsn-rs485pmod firmware is used
-  to enable to PMOD-CAN interface on KR260.
+* Pull the ROS2 CANopen host docker image on the KR260.
 
   ```bash
-  sudo apt install xlnx-firmware-kr260-tsn-rs485pmod
-  sudo xmutil unloadapp
-  sudo xmutil loadapp kr260-tsn-rs485pmod
+  docker pull xilinx/foc-motor-ctrl-ros2-canopen:latest
   ```
 
-* Set up the CAN interface on both the KR260 and KD240.
+* Install the firmware blob on the KR260 using `dfx-fw-install` through the
+  container. The kr260-tsn-rs485pmod firmware is used to enable the PMOD-CAN
+  interface on the KR260.
 
   ```bash
-  sudo ip link set can0 up type can bitrate 100000
-  sudo ip link set can0 txqueuelen 10000
-  sudo ip link set can0 up
+  FW_NAME=kr260-tsn-rs485pmod
+
+  sudo mkdir -p /lib/firmware/xilinx/${FW_NAME}
+
+  docker run --rm \
+   -v /lib/firmware/xilinx/${FW_NAME}:/opt/firmware/xilinx/${FW_NAME} \
+   xilinx/foc-motor-ctrl-ros2-canopen:latest sh -c "
+   dfx-fw-install --fw-name ${FW_NAME}
+   "
   ```
 
-* Verify the CAN interface state
+* Launch the docker container on the KR260.
+
+  ```bash
+  docker run --rm -it --privileged \
+      --net=host \
+      --name=motor_control \
+      -v /dev:/dev \
+      -v /sys:/sys \
+      -v /var/run/dfx-mgrd.socket:/var/run/dfx-mgrd.socket \
+      -v /run:/run \
+      xilinx/foc-motor-ctrl-ros2-canopen:latest bash
+  ```
+
+* Source the ROS2 environment in the container. This has to be repeated in
+  every container session before running any `ros2` command.
+
+  ```bash
+  source /opt/ros/jazzy/setup.sh
+  ```
+
+* Load the kr260-tsn-rs485pmod firmware from inside the KR260 container.
+
+  ```bash
+  FW_NAME=kr260-tsn-rs485pmod
+
+  # Load required modules for the selected firmware
+  kria-modules-load --fw-name ${FW_NAME}
+
+  # List available firmware packages
+  dfx-mgr-client -listPackage
+
+  # Unload the currently active firmware package, if any
+  # Replace <id> with the package ID reported by dfx-mgr-client
+  dfx-mgr-client -unload <id>
+
+  # Load the target firmware package
+  dfx-mgr-client -loadByName ${FW_NAME}
+  ```
+
+* Bring up the CAN interface from inside the KR260 container.
+
+  ```bash
+  ip link set can0 up type can bitrate 100000
+  ip link set can0 txqueuelen 10000
+  ip link set can0 up
+  ```
+
+### Test CAN Communication
+
+The `can-utils` tools are included in both docker images, so run the following
+checks from inside the container on each board.
+
+* Verify the CAN interface state on both boards.
 
   ```bash
   ip -d -s link show can0
-  ```
-
-* Install can-utils on both the KR260 and KD240.
-
-  ```bash
-  sudo apt install -y can-utils
   ```
 
 * On one board, run candump.
@@ -451,62 +554,31 @@ The following images show what the dashboard looks like when a larger load is ap
   show up on the board running candump.
 
   ```bash
-  sudo cansend can0 123#1122334455667788
+  cansend can0 123#1122334455667788
   ```
 
-### On the KD240
+### Run the CANopen Server on the KD240
 
-* Run the CANopen application.
+* In the KD240 container, run the CANopen application.
+
+  > **Note**: The kd240-motor-ctrl-qei firmware must be loaded before starting
+  the server. Refer to [Load the Firmware](#load-the-firmware).
 
   ```bash
-  export PATH=${PATH}:/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl/bin
-  start_motor_server
+  start_motor_control --canopen-server
   ```
 
-* To terminate the server
-
-  If it is required to kill the server kill fmc_canopen application
+* To terminate the server, kill the fmc_canopen application
 
   ```bash
-  sudo killall  fmc_canopen
+  killall fmc_canopen
   ```
 
-### On the KR260 (master)
+### Run the CANopen Host Tests on the KR260
 
-* Download the docker image on the KR260.
-
-  ```bash
-  docker pull xilinx/foc-motor-ctrl-ros2-canopen-host:latest
-  ```
-
-* You can find the images installed with the following command:
-
-  ```bash
-  docker images
-  ```
-
-* Launch the docker container on the KR260.
-
-  ```bash
-  docker run \
-      --env=DISPLAY \
-      --env=XDG_SESSION_TYPE \
-      --net=host \
-      --privileged \
-      --volume=/home/ubuntu/.Xauthority:/root/.Xauthority:rw \
-      --name=motor_control \
-      --rm \
-      -v /tmp:/tmp \
-      -v /dev:/dev \
-      -v /sys:/sys \
-      -v /etc/vart.conf:/etc/vart.conf \
-      -v /lib/firmware/xilinx:/lib/firmware/xilinx \
-      -v /run:/run \
-      -it xilinx/foc-motor-ctrl-ros2-canopen-host:latest bash
-  ```
-
-* Inside the container, run canopen host tests using the launch file described in the following
-  subsections. There are 2 tests:
+* Run the CANopen host tests from the KR260 container launched in
+  [Set Up the KR260 (CANopen Master)](#set-up-the-kr260-canopen-master), using
+  the launch file described in the following subsections. There are 2 tests:
 
   * *Simple CiA402 system*: where host accesses motor directly using ros2_canopen 402 driver.
   * *ROS2 Control example*: where host accesses motor over ros2_control interface.
@@ -522,10 +594,12 @@ The following images show what the dashboard looks like when a larger load is ap
   ```
   > **Reminder**: Ensure that the motor server on the KD240 is running before executing the script on the KR260.
 
-* Open a new terminal, start another session of the the same container.
+* Open a new terminal, start another session of the the same container and
+  source the ROS2 environment.
 
   ```bash
   docker exec -it motor_control bash
+  source /opt/ros/jazzy/setup.sh
   ```
 
 * Check the available services and their types.
@@ -648,10 +722,12 @@ The following images show what the dashboard looks like when a larger load is ap
   ```
   > **Reminder**: Ensure that the motor server on the KD240 is running before executing the script on the KR260.
 
-* Open a new terminal, start another session of the the same container.
+* Open a new terminal, start another session of the the same container and
+  source the ROS2 environment.
 
   ```bash
   docker exec -it motor_control bash
+  source /opt/ros/jazzy/setup.sh
   ```
 
 * List the available controllers using ros2 control cli utility
@@ -713,10 +789,12 @@ The following images show what the dashboard looks like when a larger load is ap
   This continuously updates the current state of the system and shows the position and speed of the motor.
 
 
-* Open a new terminal, start another session of the the same container.
+* Open a new terminal, start another session of the the same container and
+  source the ROS2 environment.
 
   ```bash
   docker exec -it motor_control bash
+  source /opt/ros/jazzy/setup.sh
   ```
 
 * Update the speed of the motor using velocity controller in a new terminal
