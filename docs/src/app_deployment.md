@@ -193,9 +193,9 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
 
 | Repository                                                                                             | Release Tag                   |
 | ------------------------------------------------------------------------------------------------------ | ----------------------------- |
-| [Kria SOM Vitis Platforms and Overlays](https://github.com/Xilinx/kria-vitis-platforms)                | [v2.0](https://github.com/Xilinx/kria-vitis-platforms/releases/tag/<placeholder_v2.0>)        |
-| [Kria FOC Motor Control App](https://github.com/Xilinx/foc-motor-ctrl)                                 | [v0.6](https://github.com/Xilinx/foc-motor-ctrl/tree/<placeholder_v0.6>)        |
-| [Kernel drivers for the FOC Motor Control App](https://github.com/Xilinx/motor-control-iio-modules)    | [v0.3](https://github.com/Xilinx/motor-control-iio-modules/releases/tag/<placeholder_v0.3>)        |
+| [Kria SOM Vitis Platforms and Overlays](https://github.com/Xilinx/kria-vitis-platforms)                | [v1.2](https://github.com/Xilinx/kria-vitis-platforms/releases/tag/v1.2)       |
+| [Kria FOC Motor Control App](https://github.com/Xilinx/foc-motor-ctrl)                                 | [v0.6](https://github.com/Xilinx/foc-motor-ctrl/releases/tag/v0.6)             |
+| [Kernel drivers for the FOC Motor Control App](https://github.com/Xilinx/motor-control-iio-modules)    | [v0.3](https://github.com/Xilinx/motor-control-iio-modules/releases/tag/v0.3)  |
 
 
 ### Initial Setup
@@ -205,7 +205,7 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
 2. Pull the docker image from dockerhub.
 
     ```bash
-    docker pull xilinx/foc-motor-ctrl-server:latest
+    docker pull xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06
     ```
     The storage volume on the SD card can be limited with multiple docker
     images installed. If there are space issues, use the following command
@@ -230,11 +230,12 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
 
     docker run --rm \
      -v /lib/firmware/xilinx/${FW_NAME}:/opt/firmware/xilinx/${FW_NAME} \
-     xilinx/foc-motor-ctrl-server:latest sh -c "
+     xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06 sh -c "
      dfx-fw-install --fw-name ${FW_NAME}
      "
     ```
-      > **Note:** All the application dependencies like `motor-control-iio-modules`, `pybind11`, `libiio-utils` and `bokeh` are installed automatically when the firmware is installed.
+
+    > Note: `dfx-fw-install` copies the firmware from the container image to the host at `/lib/firmware/xilinx/${FW_NAME}`. This host copy is required. `dfx-mgrd` loads firmware from the host, so without it the package won't appear in `dfx-mgr-client -listPackage` or load.
 
 ## Load the Firmware
 
@@ -246,8 +247,7 @@ To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](htt
     -v /dev:/dev \
     -v /sys:/sys \
     -v /var/run/dfx-mgrd.socket:/var/run/dfx-mgrd.socket \
-    -v /run:/run \
-    xilinx/foc-motor-ctrl-server:latest \
+    xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06 \
     /bin/bash
     ```
 
@@ -295,7 +295,7 @@ user to start a CANopen server on the KD240 and control the motor via service
 calls from another device over the CAN bus. The steps for both control
 interfaces are described in more detail below.
 
-Note: Only one interface can used at a time.
+Note: Only one interface can be used at a time.
 
 ## Run the Motor Control Dashboard Application
 
@@ -310,13 +310,13 @@ Complete [Initial Setup](#initial-setup) and [Load the Firmware](#load-the-firmw
 
   ```bash
   # Run the application to launch bokeh server for the dashboard
-  start_motor_dashboard
+  start_motor_control --dashboard
   ```
 
   Sample output of the terminal on launching the motor dashboard.
 
   ```bash
-  bash-5.2# start_motor_dashboard
+  bash-5.2# start_motor_control --dashboard
   Checking firmware status...
   Firmware kd240-motor-ctrl-qei is loaded
   To access the Application, open http://192.168.4.89:3006 in the host machine browser.
@@ -383,7 +383,7 @@ Complete [Initial Setup](#initial-setup) and [Load the Firmware](#load-the-firmw
 * The Open Loop - Vd text box is used to set the  direct voltage (Vd). The valid range for Vd is -24 to 24 volts.
   >**NOTE:** Normally this should be set to ~0V.
 * The Open Loop - Vq text box is used to set the quadrature voltage (Vq). The valid range for Vq is -24 to 24 volts.
-* The Fault Status indicators show if any faults have occured. When a critical fault occurs, the corresponding indicator will turn red. For a warning level faults, the corresponding indicator will turn yellow.
+* The Fault Status indicators show if any faults have occurred. When a critical fault occurs, the corresponding indicator will turn red. For a warning level faults, the corresponding indicator will turn yellow.
 * The Clear Faults button is used to clear all faults and put the system into Off mode.
 * The Electrical Data plot shows the currents and voltages for Phase A, B, and C. The voltage lines are hidden by default. The visibility of each current and voltage line can be toggled by clicking the legend labels. The current axis is shown on the left if any current lines are visible, and the voltage axis is shown on the right is any voltage lines are visible.
 * The Mechanical Data plot shows the speed and position of the motor. The visibility of each line can be toggled by clicking on the legend labels. The speed axis is shown on the left is speed is visible and the position axis is shown on the right if position is visible.
@@ -417,10 +417,10 @@ Starting with the **v0.6 release**, this app runs inside Docker containers on
 both boards: the CANopen server container on the KD240 and the ROS2 CANopen
 host container on the KR260.
 
-| Board | Docker image                               |
-| ----- | ------------------------------------------ |
-| KD240 | `xilinx/foc-motor-ctrl-server:latest`      |
-| KR260 | `xilinx/foc-motor-ctrl-ros2-canopen:latest`|
+| Board | Docker image                                      |
+| ----- | ------------------------------------------------- |
+| KD240 | `xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06`      |
+| KR260 | `xilinx/kria-foc-motor-ctrl-ros2-canopen:0.6-edf-26.06`|
 
 Complete the setup on both boards first, then verify CAN communication
 between them, and finally start the server and the host tests:
@@ -436,7 +436,7 @@ between them, and finally start the server and the host tests:
 * Pull the CANopen server docker image on the KD240.
 
   ```bash
-  docker pull xilinx/foc-motor-ctrl-server:latest
+  docker pull xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06
   ```
 
 * Launch the docker container on the KD240.
@@ -447,15 +447,15 @@ between them, and finally start the server and the host tests:
   -v /dev:/dev \
   -v /sys:/sys \
   -v /var/run/dfx-mgrd.socket:/var/run/dfx-mgrd.socket \
-  -v /run:/run \
-  xilinx/foc-motor-ctrl-server:latest \
+  xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06 \
   /bin/bash
   ```
 
 * Bring up the CAN interface from inside the KD240 container.
 
   ```bash
-  ip link set can0 up type can bitrate 100000
+  ip link set can0 down
+  ip link set can0 type can bitrate 100000
   ip link set can0 txqueuelen 10000
   ip link set can0 up
   ```
@@ -467,7 +467,7 @@ between them, and finally start the server and the host tests:
 * Pull the ROS2 CANopen host docker image on the KR260.
 
   ```bash
-  docker pull xilinx/foc-motor-ctrl-ros2-canopen:latest
+  docker pull xilinx/kria-foc-motor-ctrl-ros2-canopen:0.6-edf-26.06
   ```
 
 * Install the firmware blob on the KR260 using `dfx-fw-install` through the
@@ -481,7 +481,7 @@ between them, and finally start the server and the host tests:
 
   docker run --rm \
    -v /lib/firmware/xilinx/${FW_NAME}:/opt/firmware/xilinx/${FW_NAME} \
-   xilinx/foc-motor-ctrl-ros2-canopen:latest sh -c "
+   xilinx/kria-foc-motor-ctrl-ros2-canopen:0.6-edf-26.06 sh -c "
    dfx-fw-install --fw-name ${FW_NAME}
    "
   ```
@@ -495,8 +495,7 @@ between them, and finally start the server and the host tests:
       -v /dev:/dev \
       -v /sys:/sys \
       -v /var/run/dfx-mgrd.socket:/var/run/dfx-mgrd.socket \
-      -v /run:/run \
-      xilinx/foc-motor-ctrl-ros2-canopen:latest bash
+      xilinx/kria-foc-motor-ctrl-ros2-canopen:0.6-edf-26.06 bash
   ```
 
 * Source the ROS2 environment in the container. This has to be repeated in
@@ -528,7 +527,8 @@ between them, and finally start the server and the host tests:
 * Bring up the CAN interface from inside the KR260 container.
 
   ```bash
-  ip link set can0 up type can bitrate 100000
+  ip link set can0 down
+  ip link set can0 type can bitrate 100000
   ip link set can0 txqueuelen 10000
   ip link set can0 up
   ```
@@ -577,7 +577,7 @@ checks from inside the container on each board.
 ### Run the CANopen Host Tests on the KR260
 
 * Run the CANopen host tests from the KR260 container launched in
-  [Set Up the KR260 (CANopen Master)](#set-up-the-kr260-canopen-master), using
+  [Set Up the KR260](#set-up-the-kr260), using
   the launch file described in the following subsections. There are 2 tests:
 
   * *Simple CiA402 system*: where host accesses motor directly using ros2_canopen 402 driver.
@@ -818,6 +818,8 @@ checks from inside the container on each board.
     # Replace <id> with the package ID reported by dfx-mgr-client
     dfx-mgr-client -unload <id>
 
+    FW_NAME=kd240-motor-ctrl-qei
+
     # Load the target firmware package
     dfx-mgr-client -loadByName ${FW_NAME}
     ```
@@ -924,4 +926,4 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 -->
 
-<p class="sphinxhide" align="center">Copyright&copy; 2023-2025 Advanced Micro Devices, Inc</p>
+<p class="sphinxhide" align="center">Copyright&copy; 2023-2026 Advanced Micro Devices, Inc</p>

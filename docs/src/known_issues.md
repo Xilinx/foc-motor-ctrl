@@ -78,18 +78,6 @@ sudo ip link set can0 up
 ```
 If this issue occurs frequently, consider increasing the TX queue length on KR260 with `sudo ip link set can0 txqueuelen 20000`.
 
-# System Crash During Application Reload
-
-There is a known issue of system crash during the reload of the kd240-motor-ctrl-qei application. While the initial load and unload process works correctly, subsequent attempts to load the application result in a system crash. To prevent this, it is recommended to remove all the HLS modules before unloading the application firmware. This ensures that the next reload of the application does not cause a crash.
-
-To remove the HLS modules before unloading the firmware, use the following commands:
-
-```bash
-sudo rmmod $(lsmod | grep hls_ | awk '{print $1}') # Unloads all HLS modules
-sudo lsmod # Verify that HLS modules have been removed
-```
-> **Note**: Ensure that the HLS modules are not in use before executing the `xmutil unload` command.
-
 <!---
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
@@ -100,4 +88,4 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 -->
 
-<p class="sphinxhide" align="center">Copyright&copy; 2023 Advanced Micro Devices, Inc</p>
+<p class="sphinxhide" align="center">Copyright&copy; 2023-2026 Advanced Micro Devices, Inc</p>
