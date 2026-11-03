@@ -16,9 +16,23 @@
 
 This document shows how to set up the board, and run the motor control application.
 
-This guide is targeted for Ubuntu® 24.04 and the AMD 2024.1 toolchain.
+This guide is targeted for the AMD 2026.1 toolchain.
 
 ## Revision History
+
+### Version - v0.6
+
+#### Change Log
+
+Library & Apps:
+
+* Updated app scripts to support the `dfx-mgr` package migration from AMD 2024.2 to AMD 2026.1.
+* Enhanced app scripts for compatibility with the Docker-based deployment workflow.
+
+**Documentation**
+
+* Updated the application, library, and documentation to align with AMD 2026.1 EDF-based artifacts.
+* Refreshed documentation to reflect the latest deployment flow and platform updates.
 
 ### Version - v0.5.2
 
@@ -142,94 +156,135 @@ connects to ground and Yellow/White is Sense(data)
 
   ![KD240-KR260-CAN](./media/KD240_KR260_CAN.jpg)
 
-### Tested Artifacts
+### Docker Image Contents
+
+Starting with the **v0.6 release**, the application is deployed using a Docker-based workflow. Application dependencies and validated software components are packaged within the Docker image, eliminating the need to download and install individual application artifacts separately.
+
+The Docker image has been validated with the following platform and application components.
 
 **_KD240 Platform Artifacts_**
 
-| Components                           | Versions           |
-| ------------------------------------ | ------------------ |
-| Ubuntu                               | 24.04 Noble        |
-| Linux Kernel                         | 6.8.0-1015-xilinx  |
-| K24 Boot Firmware                    | K24-BootFW-v1.04   |
-| xlnx-firmware-kd240-motor-ctrl-qei   | 1.0-0xlnx2         |
+| Components                           | Versions                    |
+| ------------------------------------ | --------------------------- |
+| AMD EDF                              | 26.1                        |
+| Linux Kernel                         | 6.18.10-xilinx              |
+| K24 Boot Firmware                    | BOOT-k24-smk-sdt-1.05.bin   |
+| xlnx-firmware-kd240-motor-ctrl-qei   | 1.2                         |
 
 **_KR260 Platform Artifacts_**
 
-| Components                           | Versions           |
-| ------------------------------------ | ------------------ |
-| Ubuntu                               | 24.04 Noble        |
-| Linux Kernel                         | 6.8.0-1009-xilinx  |
-| K26 Boot Firmware                    | K26-BootFW-01.02   |
-| xlnx-firmware-kr260-tsn-rs485pmod    | 1.0-0xlnx2         |
+| Components                           | Versions                    |
+| ------------------------------------ | --------------------------- |
+| AMD EDF                              | 26.1                        |
+| Linux Kernel                         | 6.18.10-xilinx              |
+| K26 Boot Firmware                    | BOOT-k26-smk-sdt-1.06.bin   |
+| xlnx-firmware-kr260-tsn-rs485pmod    | 1.2                         |
 
 To obtain the latest Linux image and boot firmware, refer to the [Kria Wiki](https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/1641152513/Kria+K26+SOM#Boot-Firmware-Updates).
 
 **_Application artifacts_**
 
-| Application Package            | ubuntu versions |
-| ------------------------------ | --------------- |
-| xlnx-app-kd240-foc-motor-ctrl  | 0.5.2-0xlnx1      |
+| Application Package            | EDF versions |
+| ------------------------------ | ------------ |
+| xlnx-app-kd240-foc-motor-ctrl  | 0.6          |
 
 
 #### Repositories Information
 
 | Repository                                                                                             | Release Tag                   |
 | ------------------------------------------------------------------------------------------------------ | ----------------------------- |
-| [Kria SOM Vitis Platforms and Overlays](https://github.com/Xilinx/kria-vitis-platforms)                | [v1.0](https://github.com/Xilinx/kria-vitis-platforms/releases/tag/v1.0)        |
-| [Kria FOC Motor Control App](https://github.com/Xilinx/foc-motor-ctrl)                                 | [v0.5.2](https://github.com/Xilinx/foc-motor-ctrl/tree/v0.5.2)        |
-| [Kernel drivers for the FOC Motor Control App](https://github.com/Xilinx/motor-control-iio-modules)    | [v0.2](https://github.com/Xilinx/motor-control-iio-modules/releases/tag/v0.2)        |
+| [Kria SOM Vitis Platforms and Overlays](https://github.com/Xilinx/kria-vitis-platforms)                | [v1.2](https://github.com/Xilinx/kria-vitis-platforms/releases/tag/v1.2)       |
+| [Kria FOC Motor Control App](https://github.com/Xilinx/foc-motor-ctrl)                                 | [v0.6](https://github.com/Xilinx/foc-motor-ctrl/releases/tag/v0.6)             |
+| [Kernel drivers for the FOC Motor Control App](https://github.com/Xilinx/motor-control-iio-modules)    | [v0.3](https://github.com/Xilinx/motor-control-iio-modules/releases/tag/v0.3)  |
 
 
 ### Initial Setup
 
 1. Go through [Booting Kria Starter Kit Linux](https://xilinx.github.io/kria-apps-docs/kd240/linux_boot.html) to complete the minimum setup required to boot Linux before continuing with instructions on this page.
 
-2. Get the latest motor control application and firmware package:
+2. Pull the docker image from dockerhub.
 
-   * Install the firmware.
+    ```bash
+    docker pull xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06
+    ```
+    The storage volume on the SD card can be limited with multiple docker
+    images installed. If there are space issues, use the following command
+    to remove existing docker images.
 
-       ```bash
-       sudo apt install xlnx-firmware-kd240-motor-ctrl-qei
-       ```
-       > **Note:** The `motor-control-iio-modules` package will be installed automatically as a dependency when the firmware is installed.
+    ```bash
+    docker rmi --force <image>
+    ```
 
-   * Install the motor control application.
+    You can find the images installed with the following command:
 
-      ```bash
-      # Add lely PPA for lely-core libraries
-      sudo add-apt-repository ppa:lely/ppa
-      sudo apt-get update
+    ```bash
+    docker images
+    ```
 
-      sudo apt install xlnx-app-kd240-foc-motor-ctrl
-      ```
-      >**Note:** The packages `pybind11`, `libiio-utils` and `bokeh` will be installed as dependencies when the application is installed.
+3. Install the firmware blob using `dfx-fw-install` through the container.
 
-3. Install lm-sensors package for One Wire Temperature sensor
+    ```bash
+    FW_NAME=kd240-motor-ctrl-qei
 
-      ```bash
-      sudo apt install lm-sensors
-      ```
+    sudo mkdir -p /lib/firmware/xilinx/${FW_NAME}
+
+    docker run --rm \
+     -v /lib/firmware/xilinx/${FW_NAME}:/opt/firmware/xilinx/${FW_NAME} \
+     xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06 sh -c "
+     dfx-fw-install --fw-name ${FW_NAME}
+     "
+    ```
+
+    > Note: `dfx-fw-install` copies the firmware from the container image to the host at `/lib/firmware/xilinx/${FW_NAME}`. This host copy is required. `dfx-mgrd` loads firmware from the host, so without it the package won't appear in `dfx-mgr-client -listPackage` or load.
 
 ## Load the Firmware
 
-* Show the list and status of available application firmware.
+1. Start the Application Container on KD240 host.
 
-  After installing the firmware, execute xmutil listapps to verify that it is captured under the listapps function and to have dfx-mgrd rescan and register all accelerators in the firmware directory tree.
+    ```bash
+    docker run --rm -it --privileged \
+    --net=host \
+    -v /dev:/dev \
+    -v /sys:/sys \
+    -v /var/run/dfx-mgrd.socket:/var/run/dfx-mgrd.socket \
+    xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06 \
+    /bin/bash
+    ```
 
-  ```bash
-  ubuntu@kria:~$ sudo xmutil listapps
-                   Accelerator      Accel_type                          Base Pid       Base_type  #slots(PL+AIE)     Active_slot
-          kd240-motor-ctrl-qei        XRT_FLAT          kd240-motor-ctrl-qei  ok        XRT_FLAT           (0+0)              -1
-  ```
+2. Load Application Firmware.
 
-* Load the desired application firmware.
+    After launching the Docker container, load the required kernel modules and application firmware using `dfx-mgr-client`.
 
-  When there is already another accelerator/firmware loaded, unload it first, then load the kd240-foc-motor-ctrl firmware.
+    * Verify Available Firmware Packages
 
-  ```bash
-  sudo xmutil unloadapp
-  sudo xmutil loadapp kd240-motor-ctrl-qei
-  ```
+    Set the target firmware name, load the required modules, and verify that the firmware package is available.
+
+    ```bash
+    FW_NAME=kd240-motor-ctrl-qei
+
+    # Load required modules for the selected firmware
+    kria-modules-load --fw-name ${FW_NAME}
+
+    # List available firmware packages
+    dfx-mgr-client -listPackage
+    ```
+
+    The output should include the `${FW_NAME}` firmware package.
+
+   * Load the Firmware
+
+   If another firmware package is currently active, unload it before loading the target firmware.
+
+    ```bash
+    # Unload the currently active firmware package
+    # Replace <id> with the package ID reported by dfx-mgr-client
+    dfx-mgr-client -unload <id>
+
+    # Load the target firmware package
+    dfx-mgr-client -loadByName ${FW_NAME}
+    ```
+
+    After the load operation completes successfully, the accelerator is ready for application execution.
 
 ## Control Interfaces
 
@@ -240,41 +295,54 @@ user to start a CANopen server on the KD240 and control the motor via service
 calls from another device over the CAN bus. The steps for both control
 interfaces are described in more detail below.
 
-Note: Only one interface can used at a time.
+Note: Only one interface can be used at a time.
 
 ## Run the Motor Control Dashboard Application
 
-### On the KD240
+Complete [Initial Setup](#initial-setup) and [Load the Firmware](#load-the-firmware) first. Then start the dashboard on the KD240 and open it from a host PC:
+
+1. [Start the Dashboard on the KD240](#start-the-dashboard-on-the-kd240).
+2. [Access the Dashboard from the Host PC](#access-the-dashboard-from-the-host-pc).
+
+### Start the Dashboard on the KD240
 
 * Run the bokeh server:
 
   ```bash
   # Run the application to launch bokeh server for the dashboard
-  export PATH=${PATH}:/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl/bin
-  start_motor_dashboard
-  # Enter the sudo password if required and note the ip address of the board
+  start_motor_control --dashboard
   ```
-    >**NOTE:** To terminate the Bokeh server, use the command `sudo killall bokeh`.
 
   Sample output of the terminal on launching the motor dashboard.
 
   ```bash
-  ubuntu@kria:~$ sudo xmutil unloadapp
-  remove from slot 0 returns: 0 (Ok)
-  ubuntu@kria:~$ sudo xmutil loadapp kd240-motor-ctrl-qei
-  kd240-motor-ctrl-qei: loaded to slot 0
-  ubuntu@kria:~$ export PATH=${PATH}:/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl/bin
-  ubuntu@kria:~$ start_motor_dashboard
-  Please enter the password for sudo access
-  [sudo] password for ubuntu:
+  bash-5.2# start_motor_control --dashboard
+  Checking firmware status...
   Firmware kd240-motor-ctrl-qei is loaded
-  To the access the Application, enter "192.168.4.43:3006" in the host machine's browser.
-  ubuntu@kria:~$ 2025-05-20 01:55:26,517 Starting Bokeh server version 3.5.1 (running on Tornado 6.4)
-  2025-05-20 01:55:26,525 User authentication hooks NOT provided (default user enabled)
-  2025-05-20 01:55:26,540 Bokeh app running at: http://localhost:3006/dashboard
-  2025-05-20 01:55:26,541 Starting Bokeh server with process id: 21745
-  gio: http://localhost:3006/dashboard: Operation not supported
+  To access the Application, open http://192.168.4.89:3006 in the host machine browser.
+  Starting Bokeh server
+  2026-06-16 22:44:51,597 Starting Bokeh server version 3.5.1 (running on Tornado 6.4.2)
+  2026-06-16 22:44:51,606 User authentication hooks NOT provided (default user enabled)
+  2026-06-16 22:44:51,627 Bokeh app running at: http://localhost:3006/dashboard
+  2026-06-16 22:44:51,628 Starting Bokeh server with process id: 1920
+  Using uio device uio0 for motor contorl
+  Map uio physical address: 0x00000000a0020000
+  Map uio size: 0x0000000000001000
+  2026-06-16 22:44:58,395 WebSocket connection opened
+  2026-06-16 22:44:58,397 ServerConnection created
   ```
+
+  The following commands can be used to directly launch the Bokeh server without using the helper script:
+
+  ```bash
+  # Extract IP address of the ethernet port
+  IP_ADDR=$(ip -4 addr show end0 | awk '/inet / {print $2}' | cut -d/ -f1)
+
+  bokeh serve --port 3006 \
+      --allow-websocket-origin=${IP_ADDR}:3006 \
+      /usr/share/foc-motor-ctrl/dashboard
+  ```
+    >**NOTE:** To terminate the Bokeh server, use the command `sudo killall bokeh`.
 
 * Change Motor Configurations:
 
@@ -293,7 +361,7 @@ Note: Only one interface can used at a time.
 
   > Note: If no path is specified, the default configuration file [anaheim.config](https://github.com/Xilinx/foc-motor-ctrl/blob/main/lib/configs/anaheim.config) will be used. Inline comments in the config file explains each parameter.
 
-## On the Host PC
+### Access the Dashboard from the Host PC
 
 * Open &lt;ip&gt;:3006 in a web browser.
 
@@ -315,7 +383,7 @@ Note: Only one interface can used at a time.
 * The Open Loop - Vd text box is used to set the  direct voltage (Vd). The valid range for Vd is -24 to 24 volts.
   >**NOTE:** Normally this should be set to ~0V.
 * The Open Loop - Vq text box is used to set the quadrature voltage (Vq). The valid range for Vq is -24 to 24 volts.
-* The Fault Status indicators show if any faults have occured. When a critical fault occurs, the corresponding indicator will turn red. For a warning level faults, the corresponding indicator will turn yellow.
+* The Fault Status indicators show if any faults have occurred. When a critical fault occurs, the corresponding indicator will turn red. For a warning level faults, the corresponding indicator will turn yellow.
 * The Clear Faults button is used to clear all faults and put the system into Off mode.
 * The Electrical Data plot shows the currents and voltages for Phase A, B, and C. The voltage lines are hidden by default. The visibility of each current and voltage line can be toggled by clicking the legend labels. The current axis is shown on the left if any current lines are visible, and the voltage axis is shown on the right is any voltage lines are visible.
 * The Mechanical Data plot shows the speed and position of the motor. The visibility of each line can be toggled by clicking on the legend labels. The speed axis is shown on the left is speed is visible and the position axis is shown on the right if position is visible.
@@ -345,37 +413,135 @@ The following images show what the dashboard looks like when a larger load is ap
 
 ## Run the Motor Control ROS2 CANopen Application
 
-### Test CAN Communication
+Starting with the **v0.6 release**, this app runs inside Docker containers on
+both boards: the CANopen server container on the KD240 and the ROS2 CANopen
+host container on the KR260.
+
+| Board | Docker image                                      |
+| ----- | ------------------------------------------------- |
+| KD240 | `xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06`      |
+| KR260 | `xilinx/kria-foc-motor-ctrl-ros2-canopen:0.6-edf-26.06`|
+
+Complete the setup on both boards first, then verify CAN communication
+between them, and finally start the server and the host tests:
+
+1. [Set Up the KD240](#set-up-the-kd240)
+2. [Set Up the KR260](#set-up-the-kr260)
+3. [Test CAN Communication](#test-can-communication)
+4. [Run the CANopen Server on the KD240](#run-the-canopen-server-on-the-kd240)
+5. [Run the CANopen Host Tests on the KR260](#run-the-canopen-host-tests-on-the-kr260)
+
+### Set Up the KD240
+
+* Pull the CANopen server docker image on the KD240.
+
+  ```bash
+  docker pull xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06
+  ```
+
+* Launch the docker container on the KD240.
+
+  ```bash
+  docker run --rm -it --privileged \
+  --net=host \
+  -v /dev:/dev \
+  -v /sys:/sys \
+  -v /var/run/dfx-mgrd.socket:/var/run/dfx-mgrd.socket \
+  xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06 \
+  /bin/bash
+  ```
+
+* Bring up the CAN interface from inside the KD240 container.
+
+  ```bash
+  ip link set can0 down
+  ip link set can0 type can bitrate 100000
+  ip link set can0 txqueuelen 10000
+  ip link set can0 up
+  ```
+
+### Set Up the KR260
 
 * On the KR260, go through [Booting Kria Starter Kit Linux](https://xilinx.github.io/kria-apps-docs/kr260/build/html/docs/linux_boot.html) to complete the minimum setup required to boot Linux before continuing with instructions on this page.
 
-* Install and load firmware on KR260. The kr260-tsn-rs485pmod firmware is used
-  to enable to PMOD-CAN interface on KR260.
+* Pull the ROS2 CANopen host docker image on the KR260.
 
   ```bash
-  sudo apt install xlnx-firmware-kr260-tsn-rs485pmod
-  sudo xmutil unloadapp
-  sudo xmutil loadapp kr260-tsn-rs485pmod
+  docker pull xilinx/kria-foc-motor-ctrl-ros2-canopen:0.6-edf-26.06
   ```
 
-* Set up the CAN interface on both the KR260 and KD240.
+* Install the firmware blob on the KR260 using `dfx-fw-install` through the
+  container. The kr260-tsn-rs485pmod firmware is used to enable the PMOD-CAN
+  interface on the KR260.
 
   ```bash
-  sudo ip link set can0 up type can bitrate 100000
-  sudo ip link set can0 txqueuelen 10000
-  sudo ip link set can0 up
+  FW_NAME=kr260-tsn-rs485pmod
+
+  sudo mkdir -p /lib/firmware/xilinx/${FW_NAME}
+
+  docker run --rm \
+   -v /lib/firmware/xilinx/${FW_NAME}:/opt/firmware/xilinx/${FW_NAME} \
+   xilinx/kria-foc-motor-ctrl-ros2-canopen:0.6-edf-26.06 sh -c "
+   dfx-fw-install --fw-name ${FW_NAME}
+   "
   ```
 
-* Verify the CAN interface state
+* Launch the docker container on the KR260.
+
+  ```bash
+  docker run --rm -it --privileged \
+      --net=host \
+      --name=motor_control \
+      -v /dev:/dev \
+      -v /sys:/sys \
+      -v /var/run/dfx-mgrd.socket:/var/run/dfx-mgrd.socket \
+      xilinx/kria-foc-motor-ctrl-ros2-canopen:0.6-edf-26.06 bash
+  ```
+
+* Source the ROS2 environment in the container. This has to be repeated in
+  every container session before running any `ros2` command.
+
+  ```bash
+  source /opt/ros/jazzy/setup.sh
+  ```
+
+* Load the kr260-tsn-rs485pmod firmware from inside the KR260 container.
+
+  ```bash
+  FW_NAME=kr260-tsn-rs485pmod
+
+  # Load required modules for the selected firmware
+  kria-modules-load --fw-name ${FW_NAME}
+
+  # List available firmware packages
+  dfx-mgr-client -listPackage
+
+  # Unload the currently active firmware package, if any
+  # Replace <id> with the package ID reported by dfx-mgr-client
+  dfx-mgr-client -unload <id>
+
+  # Load the target firmware package
+  dfx-mgr-client -loadByName ${FW_NAME}
+  ```
+
+* Bring up the CAN interface from inside the KR260 container.
+
+  ```bash
+  ip link set can0 down
+  ip link set can0 type can bitrate 100000
+  ip link set can0 txqueuelen 10000
+  ip link set can0 up
+  ```
+
+### Test CAN Communication
+
+The `can-utils` tools are included in both docker images, so run the following
+checks from inside the container on each board.
+
+* Verify the CAN interface state on both boards.
 
   ```bash
   ip -d -s link show can0
-  ```
-
-* Install can-utils on both the KR260 and KD240.
-
-  ```bash
-  sudo apt install -y can-utils
   ```
 
 * On one board, run candump.
@@ -388,62 +554,31 @@ The following images show what the dashboard looks like when a larger load is ap
   show up on the board running candump.
 
   ```bash
-  sudo cansend can0 123#1122334455667788
+  cansend can0 123#1122334455667788
   ```
 
-### On the KD240
+### Run the CANopen Server on the KD240
 
-* Run the CANopen application.
+* In the KD240 container, run the CANopen application.
+
+  > **Note**: The kd240-motor-ctrl-qei firmware must be loaded before starting
+  the server. Refer to [Load the Firmware](#load-the-firmware).
 
   ```bash
-  export PATH=${PATH}:/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl/bin
-  start_motor_server
+  start_motor_control --canopen-server
   ```
 
-* To terminate the server
-
-  If it is required to kill the server kill fmc_canopen application
+* To terminate the server, kill the fmc_canopen application
 
   ```bash
-  sudo killall  fmc_canopen
+  killall fmc_canopen
   ```
 
-### On the KR260 (master)
+### Run the CANopen Host Tests on the KR260
 
-* Download the docker image on the KR260.
-
-  ```bash
-  docker pull xilinx/foc-motor-ctrl-ros2-canopen-host:latest
-  ```
-
-* You can find the images installed with the following command:
-
-  ```bash
-  docker images
-  ```
-
-* Launch the docker container on the KR260.
-
-  ```bash
-  docker run \
-      --env=DISPLAY \
-      --env=XDG_SESSION_TYPE \
-      --net=host \
-      --privileged \
-      --volume=/home/ubuntu/.Xauthority:/root/.Xauthority:rw \
-      --name=motor_control \
-      --rm \
-      -v /tmp:/tmp \
-      -v /dev:/dev \
-      -v /sys:/sys \
-      -v /etc/vart.conf:/etc/vart.conf \
-      -v /lib/firmware/xilinx:/lib/firmware/xilinx \
-      -v /run:/run \
-      -it xilinx/foc-motor-ctrl-ros2-canopen-host:latest bash
-  ```
-
-* Inside the container, run canopen host tests using the launch file described in the following
-  subsections. There are 2 tests:
+* Run the CANopen host tests from the KR260 container launched in
+  [Set Up the KR260](#set-up-the-kr260), using
+  the launch file described in the following subsections. There are 2 tests:
 
   * *Simple CiA402 system*: where host accesses motor directly using ros2_canopen 402 driver.
   * *ROS2 Control example*: where host accesses motor over ros2_control interface.
@@ -459,10 +594,12 @@ The following images show what the dashboard looks like when a larger load is ap
   ```
   > **Reminder**: Ensure that the motor server on the KD240 is running before executing the script on the KR260.
 
-* Open a new terminal, start another session of the the same container.
+* Open a new terminal, start another session of the the same container and
+  source the ROS2 environment.
 
   ```bash
   docker exec -it motor_control bash
+  source /opt/ros/jazzy/setup.sh
   ```
 
 * Check the available services and their types.
@@ -585,10 +722,12 @@ The following images show what the dashboard looks like when a larger load is ap
   ```
   > **Reminder**: Ensure that the motor server on the KD240 is running before executing the script on the KR260.
 
-* Open a new terminal, start another session of the the same container.
+* Open a new terminal, start another session of the the same container and
+  source the ROS2 environment.
 
   ```bash
   docker exec -it motor_control bash
+  source /opt/ros/jazzy/setup.sh
   ```
 
 * List the available controllers using ros2 control cli utility
@@ -650,10 +789,12 @@ The following images show what the dashboard looks like when a larger load is ap
   This continuously updates the current state of the system and shows the position and speed of the motor.
 
 
-* Open a new terminal, start another session of the the same container.
+* Open a new terminal, start another session of the the same container and
+  source the ROS2 environment.
 
   ```bash
   docker exec -it motor_control bash
+  source /opt/ros/jazzy/setup.sh
   ```
 
 * Update the speed of the motor using velocity controller in a new terminal
@@ -670,48 +811,46 @@ The following images show what the dashboard looks like when a larger load is ap
 
 * Ensure to load the motor-ctrl-qei firmware before running the demo
 
+   If another firmware package is currently active, unload it before loading the target firmware.
+
+    ```bash
+    # Unload the currently active firmware package
+    # Replace <id> with the package ID reported by dfx-mgr-client
+    dfx-mgr-client -unload <id>
+
+    FW_NAME=kd240-motor-ctrl-qei
+
+    # Load the target firmware package
+    dfx-mgr-client -loadByName ${FW_NAME}
+    ```
+
+* You can check if the slave entry is added under `/sys/bus/w1/devices` and if master bus also registers this slave.
+
   ```bash
-  sudo xmutil unloadapp
-  sudo xmutil loadapp kd240-motor-ctrl-qei
-  ```
-
-* Run a sanity check to verify if the 1-wire slave sensor has been probed successfully.
-
-  ```bash
-  ubuntu@kria:~$ sudo dmesg | grep 'w1'
-  [  247.023403] w1_master_driver w1_bus_master1: Attaching one wire slave 28.00000f0559bc crc dc
-  ```
-
-* You can also check if the slave entry is added under `/sys/bus/w1/devices` and if master bus also registers this slave.
-
-  ```bash
-  ubuntu@kria:/sys/bus/w1/devices$ ls
-  28-00000f0559bc  w1_bus_master1
-
-  ubuntu@kria:/sys/bus/w1/devices$ cat 28-00000f0559bc/name
-  28-00000f0559bc
-  ubuntu@kria:/sys/bus/w1/devices$ ls 28-00000f0559bc
-  alarms     eeprom_cmd  hwmon  power       temperature
-  conv_time  ext_power   id     resolution  uevent
-  driver     features    name   subsystem   w1_slave
-
-  ubuntu@kria:/sys/bus/w1/devices/w1_bus_master1$ cat w1_master_slave_count
+  bash-5.2# cd /sys/bus/w1/devices/
+  bash-5.2# ls
+  28-00000f051201  w1_bus_master1
+  bash-5.2# cat 28-00000f051201/name
+  28-00000f051201
+  bash-5.2# ls 28-00000f051201
+  alarms  conv_time  driver  eeprom_cmd  ext_power  features  hwmon  id  name  power  resolution  subsystem  temperature  uevent  w1_slave
+  bash-5.2# cd w1_bus_master1
+  bash-5.2# cat w1_master_slave_count
   1
-  ubuntu@kria:/sys/bus/w1/devices/w1_bus_master1$ cat w1_master_slaves
-  28-00000f0559bc
+  bash-5.2# cat w1_master_slaves
+  28-00000f051201
   ```
 
 * You can also read the temperature through the filesystem
 
   ```bash
-  ubuntu@kria:~$ ls /sys/class/hwmon/
+  bash-5.2# cd /sys/class/hwmon/
+  bash-5.2# ls
   hwmon0  hwmon1  hwmon2  hwmon3
-
-  ubuntu@kria:~$ cat /sys/class/hwmon/hwmon3/name
+  bash-5.2# cat hwmon3/name
   w1_slave_temp
-
-  ubuntu@kria:~$ cat /sys/class/hwmon/hwmon3/temp1_input
-  20618
+  bash-5.2# cat hwmon3/temp1_input
+  21250
   ```
 
 * The sensor read through the filesystem provides temperature in millidegrees Celsius
@@ -724,49 +863,50 @@ applies scaling and calibration and presents it in a human-readable format.
   ```bash
   # Output should be the following
 
-  ubuntu@kria:~$ sensors
-  ina260_u3-isa-0000
-  Adapter: ISA adapter
-  in1:           5.06 V
-  power1:        2.46 W
-  curr1:       487.00 mA
-
-  ams-isa-0000
-  Adapter: ISA adapter
-  in1:           1.21 V
-  in2:           0.00 V
-  in3:         720.00 mV
-  in4:         848.00 mV
-  in5:           1.79 V
-  in6:           1.79 V
-  in7:         852.00 mV
-  in8:         848.00 mV
-  in9:         849.00 mV
-  in10:          1.80 V
-  in11:          1.09 V
-  in12:          1.79 V
-  in13:          1.79 V
-  in14:          1.79 V
-  in15:          1.79 V
-  in16:        850.00 mV
-  in17:          1.80 V
-  in18:        598.00 mV
-  in19:        718.00 mV
-  in20:          1.80 V
-  in21:          1.25 V
-  in22:          0.00 V
-  in23:        846.00 mV
-  in24:        846.00 mV
-  in25:        852.00 mV
-  in26:          1.80 V
-  in27:        601.00 mV
-  temp1:        +25.1°C
-  temp2:        +26.5°C
-  temp3:        +27.1°C
+  bash-5.2# sensors
+  ina260-i2c-1-40
+  Adapter: Cadence I2C at ff030000
+  in0:         1000.00 uV (crit min =  +0.00 V, crit max =  +0.00 V)
+  in1:           5.07 V  (crit min =  +0.00 V, crit max =  +0.00 V)
+  power1:        2.55 W  (crit =   0.00 W)
+  curr1:       504.00 mA (crit min =  +0.00 A, crit max =  +0.00 A)
 
   w1_slave_temp-virtual-0
   Adapter: Virtual device
-  temp1:        +20.6°C
+  temp1:        +21.2 C
+
+  ams-isa-0000
+  Adapter: ISA adapter
+  VCC_PSPLL:         1.20 V
+  VCC_PSBATT:        0.00 V
+  VCCINT:          718.00 mV
+  VCCBRAM:         848.00 mV
+  VCCAUX:            1.80 V
+  VCC_PSDDR_PLL:     1.79 V
+  VCC_PSINTFP_DDR: 854.00 mV
+  VCC_PSINTLP:     847.00 mV
+  VCC_PSINTFP:     847.00 mV
+  VCC_PSAUX:         1.80 V
+  VCC_PSDDR:         1.09 V
+  VCC_PSIO3:         1.79 V
+  VCC_PSIO0:         1.79 V
+  VCC_PSIO1:         1.79 V
+  VCC_PSIO2:         1.79 V
+  PS_MGTRAVCC:     851.00 mV
+  PS_MGTRAVTT:       1.80 V
+  VCC_PSADC:         1.79 V
+  VCCINT:          717.00 mV
+  VCCAUX:            1.80 V
+  VREFP:             1.25 V
+  VREFN:             0.00 V
+  VCCBRAM:         848.00 mV
+  VCC_PSINTLP:     846.00 mV
+  VCC_PSINTFP:     850.00 mV
+  VCC_PSAUX:         1.80 V
+  VCCAMS:            1.78 V
+  Temp_LPD:         +40.0 C
+  Temp_FPD:         +40.1 C
+  Temp_PL:          +41.3 C
   ```
 
 * The output will have multiple sensors and `w1_slave_temp-virtual` is the desired One Wire Temperature Sensor value that is connected to KD240.
@@ -786,4 +926,4 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 -->
 
-<p class="sphinxhide" align="center">Copyright&copy; 2023-2025 Advanced Micro Devices, Inc</p>
+<p class="sphinxhide" align="center">Copyright&copy; 2023-2026 Advanced Micro Devices, Inc</p>
