@@ -8,14 +8,14 @@ master:
   node_id: 1
   driver: "ros2_canopen::MasterDriver"
   package: "canopen_master_driver"
-  sync_period: 10000
+  sync_period: 100000
 
 kd240_wheel:
   node_id: 4
   dcf: "foc-mc.eds"
   driver: "ros2_canopen::Cia402Driver"
   package: "canopen_402_driver"
-  period: 10
+  period: 100
   velocity_mode: 3
   sdo:
     - {index: 0x6060, sub_index: 0, value: 3}

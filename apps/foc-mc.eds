@@ -1190,7 +1190,7 @@ ObjectType=0x07
 
 [1A02]
 ParameterName=TPDO mapping parameter
-SubNumber=3
+SubNumber=4
 ObjectType=0x09
 
 [1A02sub0]
@@ -1198,7 +1198,7 @@ DataType=0x0005
 LowLimit=
 HighLimit=
 AccessType=const
-DefaultValue=2
+DefaultValue=3
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Number of mapped application objects in PDO
@@ -1223,6 +1223,17 @@ DefaultValue=0x606C0020
 PDOMapping=0
 ObjFlags=0x00
 ParameterName=Application object 2
+ObjectType=0x07
+
+[1A02sub3]
+DataType=0x0007
+LowLimit=
+HighLimit=
+AccessType=rw
+DefaultValue=0x60770010
+PDOMapping=0
+ObjFlags=0x00
+ParameterName=Application object 3
 ObjectType=0x07
 
 [1A03]

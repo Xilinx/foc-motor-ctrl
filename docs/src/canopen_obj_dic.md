@@ -59,6 +59,7 @@
 ||[0x6061,0x00] Modes of Operation display (Integer8)|
 |TPDO3|[0x6041,0x00] Statusword (Unsigned16)|
 ||[0x606C,0x00] Velocity Actual Value (Integer32)|
+||[0x6077,0x00] Torque Actual Value (Integer16)|
 |TPDO4|[0x6041,0x00] Statusword (Unsigned16)|
 ||[0x6064,0x00] Position Actual Value (Integer32)|
 
@@ -184,9 +185,10 @@
 |0x1A01|0x00|TPDO mapping parameter|U8|CO|2|
 ||0x01|Application object 1|U32|RW|0x60410010|
 ||0x02|Application object 2|U32|RW|0x60610008|
-|0x1A02|0x00|TPDO mapping parameter|U8|CO|2|
+|0x1A02|0x00|TPDO mapping parameter|U8|CO|3|
 ||0x01|Application object 1|U32|RW|0x60410010|
 ||0x02|Application object 2|U32|RW|0x606C0020|
+||0x03|Application object 3|U32|RW|0x60770010|
 |0x1A03|0x00|TPDO mapping parameter|U8|CO|2|
 ||0x01|Application object 1|U32|RW|0x60410010|
 ||0x02|Application object 2|U32|RW|0x60640020|
