@@ -4,6 +4,46 @@
 
 This repository provides a field oriented control based motor control library and application interface to use it. This library provides both C++ interface as well as Python interface.
 
+## How it is delivered
+
+Starting with the **v0.6 release**, you do not have to build this repository
+yourself to run it on a board. The libraries, the Dashboard Application and the
+ROS 2 CANopen Application are built from the source tree by a Yocto recipe and
+packaged into prebuilt **OCI (Docker) images**, published on Docker Hub. All
+application dependencies and validated software components are bundled in the
+image, so you no longer download and install the individual application
+artifacts separately.
+
+Two images are published for the application:
+
+| Board | Docker image |
+| ----- | ------------ |
+| KD240 (motor server / dashboard) | `xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06` |
+| KR260 (ROS 2 CANopen client)     | `xilinx/kria-foc-motor-ctrl-ros2-canopen:0.6-edf-26.06` |
+
+On the board, pull the image and run the application from inside the container:
+
+```bash
+# Pull the KD240 server/dashboard image
+docker pull xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06
+
+# Start the application container on the KD240 host
+docker run --rm -it --privileged \
+  --net=host \
+  -v /dev:/dev \
+  -v /sys:/sys \
+  -v /var/run/dfx-mgrd.socket:/var/run/dfx-mgrd.socket \
+  xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06 \
+  /bin/bash
+```
+
+* To **pull, deploy and run** the application on a board (firmware install,
+  dashboard and CANopen flows), see the
+  [FOC Motor Control Application Deployment Page](https://github.com/Xilinx/foc-motor-ctrl/blob/main/docs/src/app_deployment.md).
+* To **build the app from source**, use either the native build in
+  [Build Instructions](#build-instructions) or the
+  [Yocto recipe](#building-with-the-yocto-recipe) described below.
+
 ## Build Instructions
 
 1. Install build prerequisites:
@@ -64,11 +104,22 @@ This repository provides a field oriented control based motor control library an
 
     > With above configurations, the libraries are installed in `/opt/xilinx/xlnx-app-kd240-foc-motor-ctrl/lib`.
 
+## Building with the Yocto recipe
+
+This package is built as a Yocto recipe,
+[recipes-apps/foc-motor-ctrl](https://github.com/Xilinx/meta-kria-apps/tree/rel-v2026.1/recipes-apps/foc-motor-ctrl)
+in the meta-kria-apps layer, and is included in the FOC container image. To
+build just this component:
+
+```
+MACHINE=amd-cortexa53-mali-common bitbake foc-motor-ctrl
+```
+
 ## Run the Application
 
-For detailed instructions on how to deploy and run the application, please refer to the [FOC Motor Control Application Deployment Page](https://xilinx.github.io/kria-apps-docs/kd240/foc-motor-ctrl/0_5/build/html/docs/app_deployment.html).
+For detailed instructions on how to deploy and run the application, please refer to the [FOC Motor Control Application Deployment Page](https://github.com/Xilinx/foc-motor-ctrl/blob/main/docs/src/app_deployment.md).
 
 ## License
 
-Copyright (C) 2023-2025, Advanced Micro Devices, Inc.\
+Copyright (C) 2023-2026, Advanced Micro Devices, Inc.\
 SPDX-License-Identifier: MIT
