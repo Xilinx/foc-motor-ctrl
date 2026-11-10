@@ -26,12 +26,20 @@ This guide is targeted for the AMD 2026.1 toolchain.
 
 Library & Apps:
 
-* Updated app scripts to support the `dfx-mgr` package migration from AMD 2024.2 to AMD 2026.1.
+* Migrated deployment to a Docker-based workflow delivered as two containers:
+  the KD240 `foc-motor-ctrl-server` and the KR260 `foc-motor-ctrl-ros2-canopen`
+  client.
+* Updated app scripts to load firmware with `dfx-mgr` following the AMD 2024.2
+  to AMD 2026.1 migration, replacing the `xmutil` flow.
+* Consolidated the server and dashboard launch scripts into a single
+  `start_motor_control` command with `--dashboard` and `--canopen-server`
+  options.
+* Mapped torque into TPDO3 and slowed SYNC to 100 ms with a 10 Hz controller rate for a stable ros2_control link.
 * Enhanced app scripts for compatibility with the Docker-based deployment workflow.
 
-**Documentation**
+Documentation:
 
-* Updated the application, library, and documentation to align with AMD 2026.1 EDF-based artifacts.
+* Updated the application, library, and documentation to align with AMD EDF 26.06 artifacts.
 * Refreshed documentation to reflect the latest deployment flow and platform updates.
 
 ### Version - v0.5.2
