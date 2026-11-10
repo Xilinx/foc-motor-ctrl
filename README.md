@@ -21,30 +21,24 @@ Two images are published for the application:
 | KD240 (motor server / dashboard) | `xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06` |
 | KR260 (ROS 2 CANopen client)     | `xilinx/kria-foc-motor-ctrl-ros2-canopen:0.6-edf-26.06` |
 
-On the board, pull the image and run the application from inside the container:
+On each board, pull its image:
 
 ```bash
-# Pull the KD240 server/dashboard image
+# Pull the foc-motor-ctrl-server image on KD240
 docker pull xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06
 
-# Start the application container on the KD240 host
-docker run --rm -it --privileged \
-  --net=host \
-  -v /dev:/dev \
-  -v /sys:/sys \
-  -v /var/run/dfx-mgrd.socket:/var/run/dfx-mgrd.socket \
-  xilinx/kria-foc-motor-ctrl-server:0.6-edf-26.06 \
-  /bin/bash
+# Pull the foc-motor-ctrl-ros2-canopen image on KR260
+docker pull xilinx/kria-foc-motor-ctrl-ros2-canopen:0.6-edf-26.06
 ```
 
-* To **pull, deploy and run** the application on a board (firmware install,
+* To run the application on the boards (firmware install,
   dashboard and CANopen flows), see the
-  [FOC Motor Control Application Deployment Page](https://github.com/Xilinx/foc-motor-ctrl/blob/main/docs/src/app_deployment.md).
+  [FOC Motor Control Application Deployment Page](https://xilinx.github.io/kria-apps-docs/kd240/foc-motor-ctrl/0_6/build/html/docs/app_deployment.html).
 * To **build the app from source**, use either the native build in
-  [Build Instructions](#build-instructions) or the
+  [FOC Motor Control App Build Instructions](#foc-motor-control-app-build-instructions) or the
   [Yocto recipe](#building-with-the-yocto-recipe) described below.
 
-## Build Instructions
+## FOC Motor Control App Build Instructions
 
 1. Install build prerequisites:
 
@@ -82,7 +76,7 @@ docker run --rm -it --privileged \
     BUILD_TEST             | ON, OFF         | OFF        | Choose to build and install test applications for the library.
     BUILD_DASHBOARD_APP    | ON, OFF         | OFF        | Choose to build and install dashboard applications.
     BUILD_CMDLINE_APP      | ON, OFF         | OFF        | Choose to build and install command line applications.
-    BUILD_CANOPEN_APP      | ON, OFF         | OFF        | Choose to build and install canopen  applications.
+    BUILD_CANOPEN_APP      | ON, OFF         | OFF        | Choose to build and install canopen applications.
 
     **Other useful cmake configurations**
     Options                | Possible Values | Default    | Description
@@ -106,18 +100,67 @@ docker run --rm -it --privileged \
 
 ## Building with the Yocto recipe
 
-This package is built as a Yocto recipe,
-[recipes-apps/foc-motor-ctrl](https://github.com/Xilinx/meta-kria-apps/tree/rel-v2026.1/recipes-apps/foc-motor-ctrl)
-in the meta-kria-apps layer, and is included in the FOC container image. To
-build just this component:
+Both images are built with Yocto from the
+[meta-kria-apps](https://github.com/Xilinx/meta-kria-apps) layer. The native
+build above covers the FOC Motor Control App only; the
+steps below build the full OCI (Docker) images for each board.
 
-```
-MACHINE=amd-cortexa53-mali-common bitbake foc-motor-ctrl
-```
+1. Set up an AMD EDF build environment by following the
+   [Yocto Project build setup instructions for EDF](https://edf.docs.amd.com/en/latest/osdev/operating-system-integration-and-development.html#yocto-project-build-setup-instructions-for-edf).
+2. Add the meta-kria-apps layer:
+
+   ```
+   bitbake-layers add-layer /path/to/meta-kria-apps
+   ```
+
+3. Build the container image for your board:
+
+   - KD240 motor control server and dashboard
+     ([container-foc-motor-ctrl-server.bb](https://github.com/Xilinx/meta-kria-apps/blob/rel-v2026.1/recipes-containers/container-foc-motor-ctrl/container-foc-motor-ctrl-server.bb)).
+     This pulls in the
+     [foc-motor-ctrl](https://github.com/Xilinx/meta-kria-apps/blob/rel-v2026.1/recipes-apps/foc-motor-ctrl/foc-motor-ctrl.bb)
+     recipe, which builds the library, the motor server and the dashboard
+     from this repository.
+
+     ```
+     MACHINE=amd-cortexa53-mali-common bitbake container-foc-motor-ctrl-server
+     ```
+
+   - KR260 ROS 2 CANopen client
+     ([container-foc-motor-ctrl-ros2-canopen.bb](https://github.com/Xilinx/meta-kria-apps/blob/rel-v2026.1/recipes-containers/container-foc-motor-ctrl/container-foc-motor-ctrl-ros2-canopen.bb)).
+     This pulls in the
+     [kria-motor-control](https://github.com/Xilinx/meta-kria-apps/blob/rel-v2026.1/recipes-apps/foc-motor-ctrl/kria-motor-control.bb)
+     recipe, which builds the ROS 2 CANopen client from this repository.
+
+     ```
+     MACHINE=amd-cortexa53-mali-common bitbake container-foc-motor-ctrl-ros2-canopen
+     ```
+
+The resulting OCI images are written under `tmp/deploy/images/${MACHINE}/`.
+
+### Bundled components
+
+The container recipes are the source of truth for what each image bundles and
+which revision each component is built from.
+
+**KD240 server image** (`container-foc-motor-ctrl-server`):
+
+| Component | Built by recipe | Source |
+| --------- | --------------- | ------ |
+| FOC library, motor server, dashboard | [recipes-apps/foc-motor-ctrl](https://github.com/Xilinx/meta-kria-apps/tree/rel-v2026.1/recipes-apps/foc-motor-ctrl) (`foc-motor-ctrl`) | [Xilinx/foc-motor-ctrl](https://github.com/Xilinx/foc-motor-ctrl) |
+| Motor control IIO kernel drivers | [recipes-kernel/motor-control-iio-modules](https://github.com/Xilinx/meta-kria-apps/tree/rel-v2026.1/recipes-kernel/motor-control-iio-modules) | [Xilinx/motor-control-iio-modules](https://github.com/Xilinx/motor-control-iio-modules) |
+| KD240 firmware (`kd240-motor-ctrl-qei`) | [recipes-firmware/kd240-motor-ctrl-qei-fw](https://github.com/Xilinx/meta-kria-apps/tree/rel-v2026.1/recipes-firmware/kd240-motor-ctrl-qei-fw) | [Xilinx/kria-vitis-platforms](https://github.com/Xilinx/kria-vitis-platforms) |
+
+**KR260 client image** (`container-foc-motor-ctrl-ros2-canopen`):
+
+| Component | Built by recipe | Source |
+| --------- | --------------- | ------ |
+| ROS 2 CANopen client (`kria_motor_control`) | [recipes-apps/foc-motor-ctrl](https://github.com/Xilinx/meta-kria-apps/tree/rel-v2026.1/recipes-apps/foc-motor-ctrl) (`kria-motor-control`) | [Xilinx/foc-motor-ctrl](https://github.com/Xilinx/foc-motor-ctrl) |
+| KR260 firmware (`kr260-tsn-rs485pmod`) | [recipes-firmware/kr260-tsn-rs485pmod-fw](https://github.com/Xilinx/meta-kria-apps/tree/rel-v2026.1/recipes-firmware/kr260-tsn-rs485pmod-fw) | [Xilinx/kria-vitis-platforms](https://github.com/Xilinx/kria-vitis-platforms) |
 
 ## Run the Application
 
-For detailed instructions on how to deploy and run the application, please refer to the [FOC Motor Control Application Deployment Page](https://github.com/Xilinx/foc-motor-ctrl/blob/main/docs/src/app_deployment.md).
+For detailed instructions on how to deploy and run the application, please refer to the [FOC Motor Control Application Deployment Page](https://xilinx.github.io/kria-apps-docs/kd240/foc-motor-ctrl/0_6/build/html/docs/app_deployment.html).
 
 ## License
 
