@@ -45,7 +45,7 @@ Features
 
    Linux Boot <docs/kria_starterkit_linux_boot>
    Hardware Design and Firmware Build Instructions <docs/build_hw_firmware>
-   Building the Application <https://github.com/Xilinx/foc-motor-ctrl/blob/main/README.md#build-instructions>
+   Building the Application <https://github.com/Xilinx/foc-motor-ctrl/blob/main/README.md#foc-motor-control-app-build-instructions>
 
 
 
